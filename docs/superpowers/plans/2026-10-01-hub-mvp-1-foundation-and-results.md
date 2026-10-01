@@ -6,7 +6,7 @@
 
 **Architecture:** One Rails codebase organized as packs (`packs/events`, `packs/timing`) with packwerk enforcing boundaries. The results engine lives in `packs/results/lib` as plain Ruby (no Rails, no DB) — a pure function from an `Input` snapshot to an `Output`. A thin adapter (`ResultsSnapshot`) turns DB records into that snapshot.
 
-**Tech Stack:** Ruby 3.4.x, Rails 8.1.3, SQLite 3 (hub), PostgreSQL 17 (cloud/CI), Minitest, packs-rails, packwerk, GitHub Actions.
+**Tech Stack:** Ruby 4.0.x, Rails 8.1.3.1, SQLite 3 (hub), PostgreSQL 17 (cloud/CI), Minitest, packs-rails, packwerk, GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-10-01-hub-mvp-design.md` (§2, §3, §4, §8 durability, §10 results/CI testing)
 
@@ -14,7 +14,7 @@
 
 ## Global Constraints
 
-- Ruby **3.4.x** (needed for `SecureRandom.uuid_v7`); Rails **8.1.3**.
+- Ruby **4.0.x** (4.0.2 at time of writing; provides `SecureRandom.uuid_v7` and `it`); Rails **8.1.3.1**.
 - `TIMING_MODE` = `hub` (default) | `cloud`; `TIMING_DB` = `sqlite3` | `postgresql` (defaults: hub→sqlite3, cloud→postgresql).
 - All primary keys are **UUIDv7 strings** (`id: :string`); domain timestamps are **integer milliseconds since epoch** (`*_ms` bigint columns).
 - SQLite runs `journal_mode=WAL`, `synchronous=FULL`.
@@ -84,22 +84,22 @@ test/models/*_test.rb
 **Interfaces:**
 - Produces: `TimingMode.mode -> "hub"|"cloud"`, `TimingMode.hub?`, `TimingMode.cloud?`, `TimingMode.database_adapter -> "sqlite3"|"postgresql"`; `ApplicationRecord` assigns `SecureRandom.uuid_v7` ids; `bin/test-results`.
 
-- [ ] **Step 1: Install Ruby 3.4 and Rails 8.1.3**
+- [ ] **Step 1: Pin Ruby 4.0 and Rails 8.1.3.1**
 
 ```bash
 cd /Users/rmiles/1000paces/git/timing
-RUBY_VER=$(rbenv install -l | grep -E '^3\.4\.[0-9]+$' | tail -1)
-rbenv install -s "$RUBY_VER"
-rbenv local "$RUBY_VER"
+rbenv install -s 4.0.2
+rbenv local 4.0.2
+ruby -v   # ruby 4.0.2
 ruby -e 'require "securerandom"; puts SecureRandom.uuid_v7'
-gem install rails -v 8.1.3
+gem list '^rails$' | grep -q '8.1.3.1' || gem install rails -v 8.1.3.1
 ```
 Expected: a UUID like `0199a1b2-...-7...` prints (version nibble `7`).
 
 - [ ] **Step 2: Generate the API app into the existing repo**
 
 ```bash
-rails _8.1.3_ new . --api --database=sqlite3 --skip-kamal --skip-thruster --skip-docker --skip-ci \
+rails _8.1.3.1_ new . --api --database=sqlite3 --skip-kamal --skip-thruster --skip-docker --skip-ci \
   --skip-action-mailer --skip-action-mailbox --skip-action-text --skip-active-storage --skip-jbuilder
 bundle add pg packs-rails packwerk
 bundle binstubs packwerk
