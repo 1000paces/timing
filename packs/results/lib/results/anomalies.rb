@@ -91,7 +91,7 @@ module Results
         ratio = seg.ms / ref
         if ratio.between?(@config.missed_low, @config.missed_high) && neighbors_normal?(bib, seg, own, laps)
           missed(bib, race_id, seg, ref)
-        elsif ratio < @config.short_ratio && !seg.to.inserted
+        elsif ratio < @config.short_ratio && !seg.to.inserted && !long_neighbor?(bib, seg, own, laps)
           Suggestion.new(key: "short:#{bib}:#{seg.from_ref}:#{seg.to.ref}", kind: :suspected_duplicate, bib:, race_id:,
                          message: "Bib #{bib} lap #{seg.index} took #{fmt(seg.ms)}, much shorter than typical #{fmt(ref)} — duplicate tap or wrong bib?",
                          fix: { "kind" => "void_capture", "capture_id" => seg.to.ref })
@@ -103,6 +103,14 @@ module Results
       own.select { (it.index - seg.index).abs == 1 }.all? do |n|
         ref = laps.typical(bib, n.index, [seg.index, n.index])
         ref.nil? || (n.ms / ref).between?(@config.neighbor_low, @config.neighbor_high)
+      end
+    end
+
+    # A long adjacent lap means a missed crossing is distorting the reference.
+    def long_neighbor?(bib, seg, own, laps)
+      own.select { (it.index - seg.index).abs == 1 }.any? do |n|
+        ref = laps.typical(bib, n.index, [n.index])
+        ref&.positive? && n.ms / ref >= @config.missed_low
       end
     end
 

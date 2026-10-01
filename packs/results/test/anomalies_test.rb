@@ -74,4 +74,17 @@ class AnomaliesTest < Minitest::Test
     YAML
     assert_equal ["clock:d2"], out.suggestions.map(&:key)
   end
+
+  def test_missed_crossing_does_not_cause_false_short_suggestion_on_neighbour
+    others = "  1: [300, 600, 900, 1200]\n  3: [305, 610, 915, 1220]\n"
+    {
+      [300, 600, 1210] => "missed:2:c-2-2:c-2-3",
+      [300, 910, 1210] => "missed:2:c-2-1:c-2-2",
+      [300, 600, 1320] => nil
+    }.each do |times, missed_key|
+      out = compute("crossings:\n#{others}  2: [#{times.join(', ')}]\n", finish_rule: "{type: fixed_laps, laps: 10}")
+      assert_empty out.suggestions.select { it.key.start_with?("short:2:") }, "short for #{times}"
+      assert find(out, missed_key), "missed for #{times}" if missed_key
+    end
+  end
 end
