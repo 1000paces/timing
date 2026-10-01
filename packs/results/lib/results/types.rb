@@ -22,4 +22,11 @@ module Results
   # --- Derived ---
   Crossing = Data.define(:bib, :at_ms, :ref, :inserted) # ref: capture id, or ruling id for inserted crossings
   UnassignedCrossing = Data.define(:capture_id, :at_ms, :bib)
+
+  # --- Output ---
+  RiderResult = Data.define(:place, :bib, :name, :status, :laps, :elapsed_ms, :gap, :lap_times_ms)
+  Gap = Data.define(:laps_down, :ms) # ms only when on the same lap as the race leader
+  RaceResult = Data.define(:race_id, :state, :lap_count, :publication, :rows)
+  Suggestion = Data.define(:key, :kind, :bib, :race_id, :message, :fix) # fix: ruling-shaped string-keyed hash, or nil
+  Output = Data.define(:races, :suggestions, :unassigned, :log_digest)
 end
