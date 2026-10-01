@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
   create_table "categories", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.json "ability_levels", default: [], null: false
@@ -19,6 +19,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000001) do
     t.string "gender", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "device_entries", id: :string, force: :cascade do |t|
+    t.string "type", null: false
+    t.string "event_id", null: false
+    t.string "device_id", null: false
+    t.bigint "device_seq", null: false
+    t.bigint "captured_at_ms"
+    t.bigint "clock_offset_ms"
+    t.string "bib"
+    t.string "source"
+    t.string "capture_id"
+    t.string "prev_hash", null: false
+    t.string "entry_hash", null: false
+    t.bigint "received_at_ms", null: false
+    t.index ["capture_id"], name: "index_device_entries_on_capture_id"
+    t.index ["device_id", "device_seq"], name: "index_device_entries_on_device_id_and_device_seq", unique: true
+    t.index ["device_id"], name: "index_device_entries_on_device_id"
+    t.index ["event_id"], name: "index_device_entries_on_event_id"
+  end
+
+  create_table "devices", id: :string, force: :cascade do |t|
+    t.string "event_id", null: false
+    t.string "name", null: false
+    t.bigint "paired_at_ms", null: false
+    t.bigint "revoked_at_ms"
+    t.string "credential_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_devices_on_event_id"
   end
 
   create_table "events", id: :string, force: :cascade do |t|
@@ -68,6 +98,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000001) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "rulings", id: :string, force: :cascade do |t|
+    t.string "event_id", null: false
+    t.string "kind", null: false
+    t.json "payload", default: {}, null: false
+    t.string "official_id"
+    t.string "reason"
+    t.bigint "created_at_ms", null: false
+    t.index ["event_id", "created_at_ms"], name: "index_rulings_on_event_id_and_created_at_ms"
+    t.index ["event_id"], name: "index_rulings_on_event_id"
+  end
+
   create_table "start_groups", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "name", null: false
@@ -78,11 +119,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000001) do
     t.index ["event_id"], name: "index_start_groups_on_event_id"
   end
 
+  add_foreign_key "device_entries", "device_entries", column: "capture_id"
+  add_foreign_key "device_entries", "devices"
+  add_foreign_key "device_entries", "events"
+  add_foreign_key "devices", "events"
   add_foreign_key "races", "categories"
   add_foreign_key "races", "events"
   add_foreign_key "races", "start_groups"
   add_foreign_key "registrations", "events"
   add_foreign_key "registrations", "races"
   add_foreign_key "registrations", "riders"
+  add_foreign_key "rulings", "events"
   add_foreign_key "start_groups", "events"
 end

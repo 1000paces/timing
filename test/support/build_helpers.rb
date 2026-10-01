@@ -16,4 +16,17 @@ module BuildHelpers
   end
 
   def register(race:, bib:, rider: create_rider) = Registration.create!(race:, rider:, bib:)
+
+  def create_device(event:, name: "Tablet 1")
+    Device.create!(event:, name:, paired_at_ms: 0, credential_digest: "test-digest")
+  end
+
+  def record_capture(device:, seq:, at_ms:, bib: nil, offset_ms: 0, id: SecureRandom.uuid_v7)
+    Capture.create!(id:, event_id: device.event_id, device:, device_seq: seq, captured_at_ms: at_ms,
+                    clock_offset_ms: offset_ms, bib:, prev_hash: "p#{seq}", entry_hash: "h#{seq}")
+  end
+
+  def rule(event:, kind:, created_at_ms: nil, **payload)
+    Ruling.create!(event:, kind:, payload: payload.transform_keys(&:to_s), created_at_ms:)
+  end
 end
