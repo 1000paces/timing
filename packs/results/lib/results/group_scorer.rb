@@ -70,6 +70,7 @@ module Results
     def rider_state(entrant, start, crossings, finish_open_at)
       finish = finish_crossing(entrant.bib, crossings, finish_open_at)
       pull_at = @pulls[entrant.bib]&.payload&.fetch("at_ms")
+      pull_at = nil if pull_at && finish && finish.at_ms <= pull_at # a pull at/after the finish does not undo it
       status = if (s = @statuses[entrant.bib]) then s.kind.to_sym
                elsif pull_at then :pulled
                elsif finish then :finished

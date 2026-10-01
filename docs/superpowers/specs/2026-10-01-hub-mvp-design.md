@@ -241,7 +241,7 @@ Reference lap time for lap *i* of a rider:
 |---|---|---|
 | **Suspected missed crossing** | Lap time between 1.7× and 2.3× reference, and neighboring laps (if any) within 0.7×–1.3× | `insert_capture` at the midpoint; **or** `assign_bib` of an unassigned capture within ±15% of a lap of the midpoint, if one exists (preferred) |
 | **Suspected duplicate / wrong bib** | Lap time < 0.5× reference (after debounce), and no adjacent lap is itself ≥ 1.7× its reference (a long neighbour means a missed crossing is distorting the reference) | `void_capture`, or reassign bib |
-| **About to be lapped** (live) | Rider's projected next crossing (last crossing + reference lap) is after the group leader's projected next crossing | Prompt to `flag_finish` on final lap |
+| **About to be lapped** (live) | Projecting both riders forward at their typical pace, the group leader gains another whole lap on the rider before the rider's next crossing (live, only while the finish is not open) | Prompt to `flag_finish` on final lap |
 | **Unsynced clock** | Capture with null `clock_offset_ms` | Review; ranked provisionally |
 | **Unassigned capture** | No/unknown bib | `assign_bib` |
 
