@@ -91,13 +91,69 @@ class StandingsTest < Minitest::Test
     assert_equal [[1, "1", "finished", 3, 300], [nil, "2", "dnf", 0, nil], [nil, "3", "dns", 0, nil], [nil, "4", "dsq", 1, nil]], rows(out)
   end
 
+  TWO_GROUPS = <<~YAML
+    start_groups:
+      - {id: g1, finish_rule: {type: fixed_laps, laps: 3}, gun: 0}
+      - {id: g2, finish_rule: {type: fixed_laps, laps: 3}, gun: 0}
+    races:
+      - {id: r1, group: g1}
+      - {id: r2, group: g2}
+  YAML
+
+  def two_groups(entrants:, crossings:, rulings: "")
+    yaml = TWO_GROUPS + "entrants:\n" + entrants.map { |bib, race| "  - {bib: #{bib}, race: #{race}}\n" }.join
+    yaml += "crossings:\n" + crossings.map { |bib, times| "  #{bib}: #{times}\n" }.join
+    yaml += "rulings:\n" + rulings unless rulings.empty?
+    Results.compute(input_from(yaml))
+  end
+
+  def publication(out, race_id = "r1") = out.races.find { it.race_id == race_id }.publication
+  def publish_line(out, race_id = "r1") = "  - {kind: publish_results, race_id: #{race_id}, result_digest: #{out.races.find { it.race_id == race_id }.digest}}\n"
+
   def test_publication_lifecycle
-    yaml = "crossings:\n  1: [100, 200, 300]\n"
-    first = compute(yaml)
-    assert_equal :provisional, race(first).publication
-    published = yaml + "rulings:\n  - {kind: publish_results, race_id: r1, log_digest: #{first.log_digest}}\n"
-    assert_equal :published, race(compute(published)).publication
-    changed = published + "unassigned: [400]\n"
-    assert_equal :changed_since_published, race(compute(changed)).publication
+    entrants = [[1, "r1"], [2, "r1"], [3, "r2"]]
+    crossings = { 1 => "[100, 200, 300]", 2 => "[110, 220]", 3 => "[150]" }
+    base = two_groups(entrants:, crossings:)
+    assert_equal :provisional, publication(base)
+    assert_match(/\A\h{64}\z/, base.races.first.digest)
+
+    published = publish_line(base)
+    assert_equal :published, publication(two_groups(entrants:, crossings:, rulings: published))
+  end
+
+  def test_other_races_changes_do_not_unpublish
+    entrants = [[1, "r1"], [2, "r1"], [3, "r2"]]
+    crossings = { 1 => "[100, 200, 300]", 2 => "[110, 220]", 3 => "[150]" }
+    published = publish_line(two_groups(entrants:, crossings:))
+    more = crossings.merge(3 => "[150, 250]")
+    out = two_groups(entrants:, crossings: more, rulings: published)
+    assert_equal :published, publication(out)
+    assert_equal :provisional, publication(out, "r2")
+  end
+
+  def test_changed_rows_mark_changed_since_published
+    entrants = [[1, "r1"], [2, "r1"], [3, "r2"]]
+    crossings = { 1 => "[100, 200, 300]", 2 => "[110, 220]", 3 => "[150]" }
+    published = publish_line(two_groups(entrants:, crossings:))
+    out = two_groups(entrants:, crossings: crossings.merge(2 => "[110, 220, 330]"), rulings: published)
+    assert_equal :changed_since_published, publication(out)
+  end
+
+  def test_setup_change_marks_changed_since_published
+    entrants = [[1, "r1"], [2, "r1"], [3, "r2"]]
+    crossings = { 1 => "[100, 200, 300]", 2 => "[110, 220]", 3 => "[150]" }
+    published = publish_line(two_groups(entrants:, crossings:))
+    out = two_groups(entrants: [[1, "r1"], [3, "r2"], [2, "r2"]], crossings:, rulings: published)
+    assert_equal :changed_since_published, publication(out)
+  end
+
+  def test_pull_after_finish_is_ignored
+    out = compute("crossings:\n  1: [100, 200, 300]\n  2: [110, 220]\nrulings:\n  - {kind: pull, bib: 1, at: 300}\n  - {kind: pull, bib: 2, at: 400}\n")
+    assert_equal [1, "1", "finished", 3, 300], rows(out).first
+  end
+
+  def test_pull_before_finish_still_wins
+    out = compute("crossings:\n  1: [100, 200, 300]\n  2: [110, 220]\nrulings:\n  - {kind: pull, bib: 1, at: 250}\n")
+    assert_equal ["1", "pulled", 2, 200], rows(out).find { it[1] == "1" }[1..]
   end
 end

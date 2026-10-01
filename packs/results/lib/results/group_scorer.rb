@@ -1,3 +1,6 @@
+require "digest"
+require "json"
+
 module Results
   # Spec §4.2: finish logic is decided per start group; scoring is per race.
   class GroupScorer
@@ -32,13 +35,18 @@ module Results
                 elsif finish_open_at then :finish_open
                 else :in_progress
                 end
-        RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional,
-                       rows: Standings.rows(riders.select { it.entrant.race_id == race.id }))
+        rows = Standings.rows(riders.select { it.entrant.race_id == race.id })
+        RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows))
       end
       Scored.new(group: @group, lap_count:, finish_open_at:, riders:, race_results:)
     end
 
     private
+
+    # Fingerprint of what the race's standings show; publication compares against it.
+    def digest(lap_count, rows)
+      Digest::SHA256.hexdigest(JSON.generate([lap_count, rows.map { [it.place, it.bib, it.status.to_s, it.laps, it.elapsed_ms, it.lap_times_ms] }]))
+    end
 
     def resolve_lap_count
       rule = @group.finish_rule

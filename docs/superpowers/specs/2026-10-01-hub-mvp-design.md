@@ -152,7 +152,7 @@ on `(device_id, device_seq)`.
 | `pull` | `bib`, `at_ms` | Rider pulled from course |
 | `dnf` / `dns` / `dsq` | `bib` | Status |
 | `dismiss_suggestion` | `suggestion_key` | Suppresses an anomaly suggestion |
-| `publish_results` | `race_id`, `log_digest` | Marks results official as of this log state |
+| `publish_results` | `race_id`, `result_digest` | Marks this race's results official as of these standings |
 | `revert` | `ruling_id` | Cancels a prior ruling |
 
 Rulings are created only on the hub (requires connection to the hub).
@@ -217,8 +217,10 @@ not penalized. Per-rider output: place, bib, name, laps, elapsed time, gap to ra
 leader (time if same laps, otherwise "−N laps"), lap times, status.
 
 Standings are **provisional** until a `publish_results` ruling exists for the race
-whose `log_digest` matches the current log. If the log changes after publishing, the
-UI shows "changed since published".
+whose `result_digest` matches the race's current standings digest (SHA-256 of lap
+count + rows). If the race's standings change after publishing — from new captures,
+rulings, or setup edits — the UI shows "changed since published". Changes in other
+races don't affect it.
 
 ### 4.4 Anomaly detection (suggestions)
 
@@ -289,8 +291,8 @@ Spec 2.
 
 `hash = SHA-256(canonical_json(entry without hash/received_at) )`, where the entry
 includes `prev_hash` (genesis `prev_hash` = SHA-256 of `device_id`). Canonical JSON =
-sorted keys, no whitespace. Provides tamper evidence and a cheap log digest for
-publishing and (later) check-in.
+sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
+(later) check-in.
 
 ### 5.4 Capture UI
 

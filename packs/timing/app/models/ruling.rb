@@ -15,14 +15,14 @@ class Ruling < ApplicationRecord
     "dns" => %w[bib],
     "dsq" => %w[bib],
     "dismiss_suggestion" => %w[suggestion_key],
-    "publish_results" => %w[race_id log_digest],
+    "publish_results" => %w[race_id result_digest],
     "revert" => %w[ruling_id]
   }.freeze
 
   # Kinds whose bib must be registered in the ruling's event. assign_bib may
   # target an unregistered bib (shown as unassigned on purpose).
   REGISTERED_BIB_KINDS = %w[insert_capture flag_finish pull dnf dns dsq].freeze
-  ID_KEYS = %w[start_group_id race_id capture_id ruling_id suggestion_key log_digest].freeze
+  ID_KEYS = %w[start_group_id race_id capture_id ruling_id suggestion_key result_digest].freeze
 
   belongs_to :event
 
