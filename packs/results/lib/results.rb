@@ -6,6 +6,7 @@ require_relative "results/standings"
 require_relative "results/group_scorer"
 require_relative "results/log_digest"
 require_relative "results/publication"
+require_relative "results/anomalies"
 require_relative "results/engine"
 
 # Pure results engine: Input snapshot in, standings and suggestions out.
