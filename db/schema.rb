@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_000001) do
   create_table "categories", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.json "ability_levels", default: [], null: false
@@ -59,6 +59,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
     t.string "age_rule", default: "racing_age_dec31", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "officials", id: :string, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "role", null: false
+    t.string "pin_digest", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_officials_on_name", unique: true
   end
 
   create_table "races", id: :string, force: :cascade do |t|

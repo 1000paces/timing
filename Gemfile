@@ -41,3 +41,5 @@ end
 gem "pg", "~> 1.6"
 gem "packs-rails", "~> 0.1.0"
 gem "packwerk", "~> 3.3"
+
+gem "bcrypt", "~> 3.1"

@@ -43,5 +43,10 @@ module Timing
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+    # API-only apps drop cookies and sessions; officials sign in with a session cookie.
+    config.session_store :cookie_store, key: "_timing_session", same_site: :strict, httponly: true,
+                                        secure: ENV["HUB_TLS"] == "1"
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use config.session_store, config.session_options
   end
 end

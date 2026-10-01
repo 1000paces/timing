@@ -355,9 +355,7 @@ sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
 - **Device pairing**: ops console shows a QR code with hub LAN URL + one-time pairing
   token (expires in 10 min, single use). Device exchanges it for a long-lived
   device credential scoped to the event; stored digest-only on the hub; revocable.
-- **Officials**: PIN login at the hub. Roles: `timer` (capture only), `chief`
-  (rulings, start control, publishing), `admin` (setup, devices, officials). Every
-  ruling records `official_id`.
+- **Officials**: sign in at the hub with name + PIN (4–8 digits) via `POST /session` (rate limited to 5 attempts per minute per address); the session cookie is `SameSite=Strict`, `HttpOnly`, and `Secure` over HTTPS, and cross-origin requests are refused. Roles: `timer` (capture only), `chief` (rulings, start control, publishing), `admin` (setup, devices, officials). Every ruling records `official_id`, set by the hub.
 - **LAN HTTPS — local CA (decided: option A)**: on first run the hub generates a
   local root CA and a server certificate for its LAN IP(s) and mDNS hostname. Each
   crew-owned tablet installs and trusts the root CA once (manual install or MDM
