@@ -49,11 +49,10 @@ module Results
     end
 
     def resolve_lap_count
+      override = @rulings.latest_by("set_lap_count") { it.payload["start_group_id"] }[@group.id]
+      return override.payload.fetch("laps") if override
       rule = @group.finish_rule
-      case rule["type"]
-      when "fixed_laps" then rule["laps"]
-      when "timed" then @rulings.latest_by("set_lap_count") { it.payload["start_group_id"] }[@group.id]&.payload&.fetch("laps")
-      end
+      rule["laps"] if rule["type"] == "fixed_laps"
     end
 
     def race_starts(races)

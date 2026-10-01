@@ -147,6 +147,18 @@ class StandingsTest < Minitest::Test
     assert_equal :changed_since_published, publication(out)
   end
 
+  def test_set_lap_count_overrides_fixed_laps_rule
+    out = compute(<<~YAML, bibs: [1, 2], finish_rule: "{type: fixed_laps, laps: 5}")
+      crossings:
+        1: [100, 200, 300, 400, 500]
+        2: [110, 220, 330]
+      rulings:
+        - {kind: set_lap_count, start_group_id: g1, laps: 3}
+    YAML
+    assert_equal 3, race(out).lap_count
+    assert_equal [[1, "1", "finished", 3, 300], [2, "2", "finished", 3, 330]], rows(out)
+  end
+
   def test_pull_after_finish_is_ignored
     out = compute("crossings:\n  1: [100, 200, 300]\n  2: [110, 220]\nrulings:\n  - {kind: pull, bib: 1, at: 300}\n  - {kind: pull, bib: 2, at: 400}\n")
     assert_equal [1, "1", "finished", 3, 300], rows(out).first

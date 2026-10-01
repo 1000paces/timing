@@ -144,7 +144,7 @@ on `(device_id, device_seq)`.
 |---|---|---|
 | `set_group_start` | `start_group_id`, `at_ms` | Gun time for the start group |
 | `set_race_start` | `race_id`, `at_ms` | Overrides one race's start (held/delayed wave) |
-| `set_lap_count` | `start_group_id`, `laps` | Lap count; latest wins |
+| `set_lap_count` | `start_group_id`, `laps` | Lap count for the start group; latest wins; overrides the finish rule's lap count |
 | `assign_bib` | `capture_id`, `bib` | Sets/overrides a capture's bib |
 | `void_capture` | `capture_id` | Capture ignored for results |
 | `insert_capture` | `bib`, `at_ms` | Synthetic crossing for a missed rider |
@@ -187,9 +187,10 @@ order.
 
 ### 4.2 Finish logic (per start group)
 
-- **Lap count** = `fixed_laps.laps`, or latest `set_lap_count` for `timed` groups. If
-  a timed group has no lap count yet, standings are "in progress" with laps completed
-  only.
+- **Lap count** = the latest `set_lap_count` ruling for the start group if one exists
+  (officials may shorten or lengthen any race mid-race, including fixed-lap races);
+  otherwise `fixed_laps.laps`. If a timed group has no lap count yet, standings are
+  "in progress" with laps completed only.
 - **Group leader** = first rider from any race in the group to complete the lap count.
 - **Finish opens** at the group leader's finishing crossing.
 - **A rider's finish** = their first crossing at or after the finish opens, **or** a
