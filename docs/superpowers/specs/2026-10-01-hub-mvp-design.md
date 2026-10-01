@@ -121,7 +121,7 @@ Eligibility against the category is checked at registration and produces a
   "unsynced clock")
 - `bib` — nullable ("rider crossed, bib unknown")
 - `source` — `manual` (this spec) | `chip` (Spec 4)
-- `prev_hash`, `hash` — per-device hash chain (§5.3)
+- `prev_hash`, `entry_hash` — per-device hash chain (§5.3; `hash` is reserved in Ruby)
 - `received_at_ms` — set by hub on receipt (not part of the hash)
 
 Effective crossing time = `captured_at_ms + clock_offset_ms`.
@@ -130,6 +130,10 @@ The tap timestamp is taken at the moment of the tap; a bib may be added afterwar
 the device ("tap now, bib later"). Adding a bib on the device before sync produces a
 **new device log entry** (`bib_assignment` referencing the capture id), never a
 mutation — see §5.1.
+
+Captures and bib assignments share one per-device sequence, so both are stored in a
+single `device_entries` table (STI: `Capture`, `BibAssignment`) with a unique index
+on `(device_id, device_seq)`.
 
 **`Ruling`** — an official decision.
 - `id`, `event_id`, `kind`, `payload` (JSON), `official_id`, `reason` (nullable),
@@ -198,11 +202,15 @@ order.
 ### 4.3 Standings (per race)
 
 Ranking order:
-1. **Finishers**: laps completed descending, then finish crossing time ascending.
-2. **Pulled**: laps completed descending, then pull time ascending (pull order).
-3. **Racing / no finish yet** (provisional only): laps completed descending, then
-   latest crossing time ascending.
-4. **DNF**, then **DNS**, then **DSQ**.
+1. **Finishers and riders still racing**, ranked together: laps completed descending,
+   then latest counted crossing time ascending (for finishers, that is the finish
+   crossing). Ranking them together keeps live standings correct mid-race.
+2. **Pulled**: laps completed descending, then pull time ascending (pull order). Pulled
+   riders always rank below every rider still racing or finished.
+3. **DNF**, then **DNS**, then **DSQ**.
+
+Exact ties (same laps, same millisecond) are broken by crossing id so results are
+deterministic.
 
 Displayed times are **elapsed from the race's effective start**, so later waves are
 not penalized. Per-rider output: place, bib, name, laps, elapsed time, gap to race
@@ -219,8 +227,13 @@ Computed on every recompute. Suggestions never modify data; an official accepts
 suggestion has a stable `suggestion_key` (kind + bib + crossing ids) so dismissals
 stick.
 
-Reference lap time for a rider = median of their completed laps so far; if fewer than
-2 laps, the race median for that lap index.
+Reference lap time for lap *i* of a rider:
+- *i* ≥ 2: median of the rider's other laps (index ≥ 2, excluding the lap under test);
+  if the rider has none, the median of other riders' lap *i* in the same race.
+- *i* = 1 (the start lap, often a different length): the rider's own reference ×
+  the race's **start factor** (median over riders of lap 1 ÷ their own reference). If
+  either is unknown, lap 1 is not checked.
+- Neighbor laps are checked against a reference that also excludes the suspect lap.
 
 | Suggestion | Trigger | Proposed fix |
 |---|---|---|
