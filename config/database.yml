@@ -1,0 +1,40 @@
+<% adapter = TimingMode.database_adapter %>
+<% sqlite = adapter == "sqlite3" %>
+default: &default
+  adapter: <%= adapter %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+<% if sqlite %>
+  timeout: 5000
+  pragmas:
+    journal_mode: wal
+    synchronous: full
+<% else %>
+  host: <%= ENV.fetch("PGHOST", "localhost") %>
+  username: <%= ENV.fetch("PGUSER", ENV["USER"]) %>
+  password: <%= ENV["PGPASSWORD"] %>
+<% end %>
+
+development:
+  <<: *default
+  database: <%= sqlite ? "storage/development.sqlite3" : "timing_development" %>
+
+test:
+  <<: *default
+  database: <%= sqlite ? "storage/test.sqlite3" : "timing_test" %>
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: <%= sqlite ? "storage/production.sqlite3" : "timing_production" %>
+  cache:
+    <<: *primary_production
+    database: <%= sqlite ? "storage/production_cache.sqlite3" : "timing_production_cache" %>
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: <%= sqlite ? "storage/production_queue.sqlite3" : "timing_production_queue" %>
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: <%= sqlite ? "storage/production_cable.sqlite3" : "timing_production_cable" %>
+    migrations_paths: db/cable_migrate
