@@ -1,5 +1,7 @@
 require_relative "boot"
 require_relative "../lib/timing_mode"
+$LOAD_PATH.unshift File.expand_path("../packs/results/lib", __dir__)
+require "results"
 
 require "rails"
 # Pick the frameworks you want:
