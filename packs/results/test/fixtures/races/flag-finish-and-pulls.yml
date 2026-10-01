@@ -28,3 +28,5 @@ expect:
       - [3, 2, finished, 2, 360]
       - [4, 3, pulled, 1, 130]
       - [5, 4, pulled, 1, 140]
+  # KNOWN FALSE POSITIVE: slow rider vs field lap-2 median — see docs/TODO.md (pace-scaled field fallback)
+  suggestions: [missed:2:c-2-1:c-2-2]

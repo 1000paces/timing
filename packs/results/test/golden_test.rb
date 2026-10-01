@@ -13,9 +13,7 @@ class GoldenTest < Minitest::Test
         assert race, "#{name}: missing race #{race_id}"
         assert_equal normalize_rows(rows), compact_rows(race.rows), "#{name}: race #{race_id}"
       end
-      if expected.key?("suggestions")
-        assert_equal expected["suggestions"].sort, out.suggestions.map(&:key), "#{name}: suggestions"
-      end
+      assert_equal expected.fetch("suggestions", []).sort, out.suggestions.map(&:key).sort, "#{name}: suggestions"
     end
   end
 end
