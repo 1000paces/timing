@@ -5,7 +5,7 @@ module Results
     attr_reader :all
 
     def initialize(rulings)
-      sorted = rulings.uniq(&:id).sort_by { [it.created_at_ms, it.id] }
+      sorted = rulings.select { RulingShape.valid?(it) }.uniq(&:id).sort_by { [it.created_at_ms, it.id] }
       cancelled = Set.new
       sorted.reverse_each do |r|
         next if cancelled.include?(r.id)

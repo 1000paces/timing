@@ -1,5 +1,6 @@
 require "set"
 require_relative "results/types"
+require_relative "results/ruling_shape"
 require_relative "results/active_rulings"
 require_relative "results/resolver"
 require_relative "results/standings"

@@ -41,7 +41,49 @@ class TimingTest < ActiveSupport::TestCase
     refute Ruling.new(event: @event, kind: "teleport", payload: {}).valid?
   end
 
+  test "rulings reject wrongly typed payload values" do
+    invalid = ->(kind, **payload) { Ruling.new(event: @event, kind:, payload: payload.transform_keys(&:to_s)).tap(&:valid?) }
+    [
+      ["set_lap_count", { start_group_id: "g1", laps: "3" }],
+      ["set_lap_count", { start_group_id: "g1", laps: 0 }],
+      ["set_lap_count", { start_group_id: "g1", laps: -2 }],
+      ["set_race_start", { race_id: "r1", at_ms: "5" }],
+      ["set_group_start", { start_group_id: "g1", at_ms: nil }],
+      ["set_group_start", { start_group_id: "", at_ms: 5 }],
+      ["assign_bib", { capture_id: "c1", bib: "" }],
+      ["assign_bib", { capture_id: "c1", bib: 5 }],
+      ["void_capture", { capture_id: 7 }],
+      ["revert", { ruling_id: " " }],
+      ["dismiss_suggestion", { suggestion_key: nil }]
+    ].each do |kind, payload|
+      assert invalid.(kind, **payload).errors[:payload].any?, "#{kind} #{payload} should be invalid"
+    end
+    refute invalid.("insert_capture", bib: "1", at_ms: nil).errors.empty?
+  end
+
+  test "rulings accept well typed payload values" do
+    assert rule(event: @event, kind: "set_lap_count", start_group_id: "g1", laps: 1).persisted?
+    assert rule(event: @event, kind: "set_race_start", race_id: "r1", at_ms: 5).persisted?
+    assert rule(event: @event, kind: "assign_bib", capture_id: "c1", bib: "9").persisted?
+  end
+
+  test "bib-bearing rulings require a bib registered in the event, except assign_bib" do
+    register(race: create_race(event: @event), bib: "1")
+    %w[dnf dns dsq].each { |kind| assert rule(event: @event, kind:, bib: "1").persisted? }
+    assert rule(event: @event, kind: "pull", bib: "1", at_ms: 5).persisted?
+    assert rule(event: @event, kind: "insert_capture", bib: "1", at_ms: 5).persisted?
+    assert rule(event: @event, kind: "flag_finish", bib: "1", capture_id: "c1").persisted?
+    assert rule(event: @event, kind: "assign_bib", capture_id: "c1", bib: "404").persisted?
+
+    assert_raises(ActiveRecord::RecordInvalid) { rule(event: @event, kind: "pull", bib: "404", at_ms: 5) }
+    assert_raises(ActiveRecord::RecordInvalid) { rule(event: @event, kind: "insert_capture", bib: "404", at_ms: 5) }
+    assert_raises(ActiveRecord::RecordInvalid) { rule(event: @event, kind: "dnf", bib: "404") }
+    other = create_event(name: "Other")
+    assert_raises(ActiveRecord::RecordInvalid) { rule(event: other, kind: "dnf", bib: "1") }
+  end
+
   test "rulings are append-only and stamp created_at_ms" do
+    register(race: create_race(event: @event), bib: "7")
     ruling = rule(event: @event, kind: "dnf", bib: "7")
     assert_operator ruling.created_at_ms, :>, 1_700_000_000_000
     assert_raises(ActiveRecord::ReadOnlyRecord) { ruling.update!(reason: "oops") }

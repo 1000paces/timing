@@ -19,6 +19,11 @@ class Ruling < ApplicationRecord
     "revert" => %w[ruling_id]
   }.freeze
 
+  # Kinds whose bib must be registered in the ruling's event. assign_bib may
+  # target an unregistered bib (shown as unassigned on purpose).
+  REGISTERED_BIB_KINDS = %w[insert_capture flag_finish pull dnf dns dsq].freeze
+  ID_KEYS = %w[start_group_id race_id capture_id ruling_id suggestion_key log_digest].freeze
+
   belongs_to :event
 
   before_validation do
@@ -28,6 +33,8 @@ class Ruling < ApplicationRecord
 
   validates :kind, inclusion: { in: KINDS.keys }
   validate :payload_has_required_keys
+  validate :payload_types
+  validate :bib_registered
 
   private
 
@@ -35,5 +42,27 @@ class Ruling < ApplicationRecord
     return unless KINDS.key?(kind)
     missing = KINDS[kind] - (payload.is_a?(Hash) ? payload.keys : [])
     errors.add(:payload, "missing #{missing.join(', ')}") if missing.any?
+  end
+
+  def payload_types
+    return unless KINDS.key?(kind) && payload.is_a?(Hash)
+    KINDS[kind].each do |key|
+      next unless payload.key?(key)
+      message = type_error(key, payload[key])
+      errors.add(:payload, "#{key} #{message}") if message
+    end
+  end
+
+  def type_error(key, value)
+    if key.end_with?("_ms") then "must be an integer" unless value.is_a?(Integer)
+    elsif key == "laps" then "must be an integer greater than 0" unless value.is_a?(Integer) && value > 0
+    elsif key == "bib" || ID_KEYS.include?(key) then "must be a non-empty string" unless value.is_a?(String) && value.strip.present?
+    end
+  end
+
+  def bib_registered
+    return unless REGISTERED_BIB_KINDS.include?(kind) && payload.is_a?(Hash) && errors[:payload].empty?
+    return if Registration.exists?(event_id:, bib: payload["bib"])
+    errors.add(:payload, "bib #{payload['bib']} is not registered in this event")
   end
 end
