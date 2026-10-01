@@ -1,0 +1,30 @@
+# Bib 2 is shown the checkered flag early (before the leader finishes) to avoid
+# being lapped. Bibs 3 and 4 are pulled; same laps, so pull order decides.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 4}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+  - {bib: 3, race: r1}
+  - {bib: 4, race: r1}
+  - {bib: 5, race: r1}
+crossings:
+  1: [100, 200, 300, 400]
+  2: [180, 360, 540]
+  3: [130, 260]
+  4: [140]
+  5: [105, 210, 315, 420]
+rulings:
+  - {kind: pull, bib: 3, at: 250, created: 251}
+  - {kind: pull, bib: 4, at: 300, created: 301}
+  - {kind: flag_finish, bib: 2, capture_id: c-2-2, created: 370}
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 4, 400]
+      - [2, 5, finished, 4, 420]
+      - [3, 2, finished, 2, 360]
+      - [4, 3, pulled, 1, 130]
+      - [5, 4, pulled, 1, 140]

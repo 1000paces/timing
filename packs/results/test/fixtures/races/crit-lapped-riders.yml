@@ -1,0 +1,27 @@
+# 6-lap crit. Riders lapped 1x, 2x, 3x finish on their first crossing after the
+# leader finishes. Bib 3 crosses before bib 2 but has fewer laps. Bib 1's cool-down
+# crossing at 700 is ignored.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 6}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+  - {bib: 3, race: r1}
+  - {bib: 4, race: r1}
+  - {bib: 5, race: r1}
+crossings:
+  1: [100, 200, 300, 400, 500, 600, 700]
+  2: [121, 242, 363, 484, 605]
+  3: [151, 302, 453, 604]
+  4: [220, 440, 660]
+  5: [102, 204, 306, 408, 510, 612]
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 6, 600]
+      - [2, 5, finished, 6, 612]
+      - [3, 2, finished, 5, 605]
+      - [4, 3, finished, 4, 604]
+      - [5, 4, finished, 3, 660]

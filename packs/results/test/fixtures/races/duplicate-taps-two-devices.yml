@@ -1,0 +1,20 @@
+# Two tablets both tap bib 1 on lap 1 (2 s apart): one crossing, no suggestions.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 2}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+captures:
+  - {id: a1, bib: 1, at: 300, device: d1}
+  - {id: b1, bib: 1, at: 302, device: d2}
+  - {id: a2, bib: 2, at: 320, device: d1}
+  - {id: a3, bib: 1, at: 600, device: d1}
+  - {id: a4, bib: 2, at: 640, device: d1}
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 2, 600]
+      - [2, 2, finished, 2, 640]
+  suggestions: []

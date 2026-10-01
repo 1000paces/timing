@@ -1,0 +1,32 @@
+# Mass-start road race = 1 lap. Covers DNF / DNS / DSQ ordering.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 1}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+  - {bib: 3, race: r1}
+  - {bib: 4, race: r1}
+  - {bib: 5, race: r1}
+  - {bib: 6, race: r1}
+  - {bib: 7, race: r1}
+crossings:
+  1: [3600]
+  2: [3610]
+  3: [3700]
+  7: [3650]
+rulings:
+  - {kind: dnf, bib: 5}
+  - {kind: dns, bib: 6}
+  - {kind: dsq, bib: 7}
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 1, 3600]
+      - [2, 2, finished, 1, 3610]
+      - [3, 3, finished, 1, 3700]
+      - [4, 4, racing, 0, ~]
+      - [~, 5, dnf, 0, ~]
+      - [~, 6, dns, 0, ~]
+      - [~, 7, dsq, 1, ~]

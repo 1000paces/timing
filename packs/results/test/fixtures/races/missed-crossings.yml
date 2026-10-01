@@ -1,0 +1,24 @@
+# Bib 2 missed lap 3 (an unassigned tap at 935 matches); bib 3 missed lap 4 (no match).
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 5}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+  - {bib: 3, race: r1}
+crossings:
+  1: [300, 600, 900, 1200, 1500]
+  2: [310, 620, 1240, 1550]
+  3: [305, 610, 915, 1525]
+unassigned: [935]
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 5, 1500]
+      - [2, 3, finished, 4, 1525]
+      - [3, 2, finished, 4, 1550]
+  suggestions:
+    - missed:2:c-2-2:c-2-3
+    - missed:3:c-3-3:c-3-4
+    - unassigned:u-1

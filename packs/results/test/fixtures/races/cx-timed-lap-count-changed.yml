@@ -1,0 +1,23 @@
+# 45-minute CX. Lap count set to 6, then lowered to 5 after the leader had already
+# done more laps: finish opens retroactively at the leader's 5th crossing.
+start_groups:
+  - {id: g1, finish_rule: {type: timed, target_duration_ms: 2700000}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 10, race: r1}
+  - {bib: 11, race: r1}
+  - {bib: 12, race: r1}
+crossings:
+  10: [500, 1000, 1500, 2000, 2500, 3000]
+  11: [520, 1040, 1560, 2080, 2600]
+  12: [600, 1200, 1800, 2400, 3000]
+rulings:
+  - {kind: set_lap_count, start_group_id: g1, laps: 6, created: 600}
+  - {kind: set_lap_count, start_group_id: g1, laps: 5, created: 900}
+expect:
+  races:
+    r1:
+      - [1, 10, finished, 5, 2500]
+      - [2, 11, finished, 5, 2600]
+      - [3, 12, finished, 5, 3000]

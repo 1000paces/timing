@@ -1,0 +1,31 @@
+# Three races released 30 s apart in one start group. The group leader is in the
+# second wave (first to 3 laps on the road). Elapsed times are per race start.
+# Bib 301's crossing at 1050 is before its wave starts (1060) and is ignored.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 3}, gun: 1000}
+races:
+  - {id: rA, group: g1, offset: 0}
+  - {id: rB, group: g1, offset: 30}
+  - {id: rC, group: g1, offset: 60}
+entrants:
+  - {bib: 101, race: rA}
+  - {bib: 102, race: rA}
+  - {bib: 201, race: rB}
+  - {bib: 301, race: rC}
+  - {bib: 302, race: rC}
+crossings:
+  101: [1300, 1600, 1900]
+  102: [1310, 1620, 1930]
+  201: [1320, 1610, 1895]
+  301: [1050, 1400, 1750, 2100]
+  302: [1500, 1950]
+expect:
+  races:
+    rA:
+      - [1, 101, finished, 3, 900]
+      - [2, 102, finished, 3, 930]
+    rB:
+      - [1, 201, finished, 3, 865]
+    rC:
+      - [1, 301, finished, 3, 1040]
+      - [2, 302, finished, 2, 890]

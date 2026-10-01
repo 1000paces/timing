@@ -1,0 +1,19 @@
+# An official inserted a crossing for bib 2, then reverted it.
+start_groups:
+  - {id: g1, finish_rule: {type: fixed_laps, laps: 2}, gun: 0}
+races:
+  - {id: r1, group: g1, offset: 0}
+entrants:
+  - {bib: 1, race: r1}
+  - {bib: 2, race: r1}
+crossings:
+  1: [300, 600]
+  2: [310]
+rulings:
+  - {id: ins-1, kind: insert_capture, bib: 2, at: 620, created: 700}
+  - {id: rev-1, kind: revert, ruling_id: ins-1, created: 800}
+expect:
+  races:
+    r1:
+      - [1, 1, finished, 2, 600]
+      - [2, 2, racing, 1, 310]
