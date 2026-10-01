@@ -45,18 +45,6 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - **Where:** `packs/results/lib/results/anomalies.rb`, spec §4.4.
 - **Raised:** 2026-10-01 (final review of plan 1).
 
-## Decisions needed
-
-### Can officials change the lap count of a fixed-lap race mid-race?
-- **Today:** `set_lap_count` only applies to `timed` start groups; on a
-  `fixed_laps` group it is silently ignored.
-- **Real-world need:** crits get shortened mid-race (crash, schedule).
-- **Options:** (a) latest `set_lap_count` overrides any finish rule (one-line
-  engine change + spec §4.2 amendment); (b) the ops console rejects it for fixed
-  groups with a clear message, and shortening means editing setup.
-- Either way it must not be silent. The ops console plan must handle this.
-- **Raised:** 2026-10-01 (final review of plan 1).
-
 ## Carry into upcoming plans
 
 ### Ops console / API plan
@@ -65,6 +53,9 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Suggestion `fix` hashes are *templates*: `flag_finish` lacks `capture_id`,
   unassigned-capture fixes have `bib: nil`. The console must complete them before
   creating a ruling.
+- Lap-count changes: the console must let officials set the lap count on ANY start
+  group (fixed or timed) — decided 2026-10-01: a `set_lap_count` ruling overrides
+  the finish rule.
 - Show last good standings with an error banner if computing results fails (spec §9).
 
 ### Sync + capture plan
