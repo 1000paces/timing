@@ -18,6 +18,10 @@ class OfficialTest < ActiveSupport::TestCase
     refute Official.new(name: "x", role: "boss", pin: "1234").valid?
   end
 
+  test "at_least? raises on an unknown role" do
+    assert_raises(ArgumentError) { create_official.at_least?("boss") }
+  end
+
   test "names are unique" do
     create_official(name: "Pat")
     refute Official.new(name: "Pat", role: "timer", pin: "1234").valid?

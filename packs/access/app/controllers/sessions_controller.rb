@@ -4,7 +4,11 @@ class SessionsController < ApplicationController
 
   RATE_LIMIT_STORE = ActiveSupport::Cache::MemoryStore.new
 
-  rate_limit to: 5, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
+  # Compared against when no official matches, so unknown names cost the same as wrong PINs.
+  DUMMY_PIN_DIGEST = BCrypt::Password.create("0000").freeze
+
+  # Keyed on the socket peer: the hub has no reverse proxy, so X-Forwarded-For is client-controlled.
+  rate_limit to: 5, within: 1.minute, only: :create, store: RATE_LIMIT_STORE, by: -> { request.env["REMOTE_ADDR"] },
              with: -> { render json: { error: "Too many attempts. Wait a minute and try again." }, status: :too_many_requests }
 
   def create
@@ -14,6 +18,7 @@ class SessionsController < ApplicationController
       session[:official_id] = official.id
       render json: official_json(official), status: :created
     else
+      BCrypt::Password.new(DUMMY_PIN_DIGEST).is_password?(params[:pin].to_s) unless official
       render json: { error: "Name or PIN is incorrect" }, status: :unauthorized
     end
   end

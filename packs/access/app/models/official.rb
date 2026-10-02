@@ -9,5 +9,8 @@ class Official < ApplicationRecord
   validates :role, inclusion: { in: ROLES }
   validates :pin, format: { with: /\A\d{4,8}\z/, message: "must be 4 to 8 digits" }, allow_nil: true
 
-  def at_least?(role) = ROLES.index(self.role).to_i >= ROLES.index(role.to_s).to_i
+  def at_least?(role)
+    wanted = ROLES.index(role.to_s) or raise ArgumentError, "unknown role #{role}"
+    ROLES.index(self.role) >= wanted
+  end
 end

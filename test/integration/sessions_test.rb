@@ -31,6 +31,31 @@ class SessionsTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
+  test "rate limit cannot be bypassed with X-Forwarded-For" do
+    5.times do |i|
+      post "/session", params: { name: "Pat", pin: "0000" }.to_json,
+                       headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "10.9.8.#{i}")
+    end
+    post "/session", params: { name: "Pat", pin: "1357" }.to_json,
+                     headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "10.9.8.99")
+    assert_response :too_many_requests
+  end
+
+  test "unknown name is refused with the same message" do
+    post "/session", params: { name: "Nobody", pin: "1357" }.to_json, headers: ApiHelpers::JSON_HEADERS
+    assert_response :unauthorized
+    assert_equal "Name or PIN is incorrect", response.parsed_body["error"]
+  end
+
+  test "signing in resets the session (no fixation)" do
+    sign_in(@official, "1357")
+    before = cookies["_timing_session"]
+    assert before.present?
+    sign_in(@official, "1357")
+    assert_response :created
+    refute_equal before, cookies["_timing_session"]
+  end
+
   test "cross-origin requests are refused" do
     post "/session", params: { name: "Pat", pin: "1357" }.to_json,
                      headers: ApiHelpers::JSON_HEADERS.merge("Origin" => "http://evil.example")
