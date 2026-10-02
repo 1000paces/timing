@@ -71,7 +71,7 @@ class StandingsTest < Minitest::Test
     assert_equal 30_000, race(out).start_at_ms
   end
 
-  def test_set_race_start_overrides_group_gun_plus_offset
+  def test_set_race_start_overrides_group_gun
     out = compute("crossings:\n  1: [130, 230, 330]\nrulings:\n  - {kind: set_race_start, race_id: r1, at: 30}\n", bibs: [1])
     assert_equal [1, "1", "finished", 3, 300], rows(out).first
   end

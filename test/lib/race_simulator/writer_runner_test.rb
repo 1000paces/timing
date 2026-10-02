@@ -6,9 +6,9 @@ class RaceSimulator::WriterRunnerTest < ActiveSupport::TestCase
     @group = @event.start_groups.first
   end
 
-  test "demo event has one timed start group with three races at 30 s offsets" do
+  test "demo event has one timed start group with three races" do
     assert_equal({ "type" => "timed", "target_duration_ms" => 1_500_000 }, @group.finish_rule)
-    assert_equal [0, 30_000, 60_000], @group.races.order(:start_offset_ms).pluck(:start_offset_ms)
+    assert_equal 3, @group.races.count
     assert_equal %w[101 102 103 201 202 203 301 302 303], @event.registrations.order(:bib).pluck(:bib)
   end
 

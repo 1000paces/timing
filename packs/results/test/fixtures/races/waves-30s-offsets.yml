@@ -4,15 +4,18 @@
 start_groups:
   - {id: g1, finish_rule: {type: fixed_laps, laps: 3}, gun: 1000}
 races:
-  - {id: rA, group: g1, offset: 0}
-  - {id: rB, group: g1, offset: 30}
-  - {id: rC, group: g1, offset: 60}
+  - {id: rA, group: g1}
+  - {id: rB, group: g1}
+  - {id: rC, group: g1}
 entrants:
   - {bib: 101, race: rA}
   - {bib: 102, race: rA}
   - {bib: 201, race: rB}
   - {bib: 301, race: rC}
   - {bib: 302, race: rC}
+rulings:
+  - {kind: set_race_start, race_id: rB, at: 1030, created: 1}
+  - {kind: set_race_start, race_id: rC, at: 1060, created: 2}
 crossings:
   101: [1300, 1600, 1900]
   102: [1310, 1620, 1930]

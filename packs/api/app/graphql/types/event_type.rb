@@ -12,6 +12,6 @@ module Types
 
     def start_groups = object.start_groups.order(:scheduled_at_ms, :name, :id)
     def registrations = object.registrations.includes(:event, :rider, race: :category).order(:bib)
-    def races = object.races.includes(:category).order(:start_offset_ms, :id)
+    def races = object.races.includes(:category).order(:id)
   end
 end

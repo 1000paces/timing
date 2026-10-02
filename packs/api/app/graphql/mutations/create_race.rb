@@ -3,14 +3,13 @@ module Mutations
     argument :event_id, ID
     argument :category_id, ID
     argument :start_group_id, ID
-    argument :start_offset_ms, Types::Millis, required: false
 
     field :race, Types::RaceType
 
-    def resolve(event_id:, category_id:, start_group_id:, start_offset_ms: 0)
+    def resolve(event_id:, category_id:, start_group_id:)
       require_official!("admin")
       persist(Race.new(event: Event.find(event_id), category: Category.find(category_id),
-                       start_group: StartGroup.find(start_group_id), start_offset_ms:), :race)
+                       start_group: StartGroup.find(start_group_id)), :race)
     end
   end
 end

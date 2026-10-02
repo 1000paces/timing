@@ -20,7 +20,7 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     GQL
     race_id = gql(<<~GQL, eventId: event_id, categoryId: category_id, groupId: group_id).dig("data", "createRace", "race", "id")
       mutation($eventId: ID!, $categoryId: ID!, $groupId: ID!) {
-        createRace(eventId: $eventId, categoryId: $categoryId, startGroupId: $groupId, startOffsetMs: 30000) { race { id name } errors }
+        createRace(eventId: $eventId, categoryId: $categoryId, startGroupId: $groupId) { race { id name } errors }
       }
     GQL
     result = gql(<<~GQL, raceId: race_id).dig("data", "registerRider")

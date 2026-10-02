@@ -17,7 +17,7 @@ class EventBroadcastTest < ActiveSupport::TestCase
 
   test "setup edits announce too" do
     assert_broadcasts(@stream, 1) { @race.start_group.update!(name: "10:05") }
-    assert_broadcasts(@stream, 1) { @race.update!(start_offset_ms: 30_000) }
+    assert_broadcasts(@stream, 1) { @race.update!(category: create_category(name: "Juniors", gender: "M", ability_levels: [])) }
   end
 
   test "message shape" do

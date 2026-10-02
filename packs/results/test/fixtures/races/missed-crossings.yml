@@ -2,7 +2,7 @@
 start_groups:
   - {id: g1, finish_rule: {type: fixed_laps, laps: 5}, gun: 0}
 races:
-  - {id: r1, group: g1, offset: 0}
+  - {id: r1, group: g1}
 entrants:
   - {bib: 1, race: r1}
   - {bib: 2, race: r1}

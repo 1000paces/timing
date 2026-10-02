@@ -55,7 +55,7 @@ module Results
 
       input = Input.new(
         start_groups: groups.map { StartGroupDef.new(id: it["id"], finish_rule: it.fetch("finish_rule")) },
-        races: data.fetch("races").map { RaceDef.new(id: it["id"], start_group_id: it["group"], start_offset_ms: ms.(it.fetch("offset", 0))) },
+        races: data.fetch("races").map { RaceDef.new(id: it["id"], start_group_id: it["group"]) },
         entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Rider #{it['bib']}")) },
         captures:, bib_assignments: assignments, rulings:, now_ms: ms.(data.fetch("now", 0))
       )

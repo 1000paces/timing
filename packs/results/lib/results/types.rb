@@ -1,7 +1,7 @@
 module Results
   # --- Input: setup ---
   StartGroupDef = Data.define(:id, :finish_rule) # finish_rule: {"type"=>"fixed_laps","laps"=>n} | {"type"=>"timed","target_duration_ms"=>d}
-  RaceDef = Data.define(:id, :start_group_id, :start_offset_ms)
+  RaceDef = Data.define(:id, :start_group_id)
   Entrant = Data.define(:bib, :race_id, :name)
 
   # --- Input: race log ---

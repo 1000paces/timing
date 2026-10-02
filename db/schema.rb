@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_000001) do
   create_table "categories", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.json "ability_levels", default: [], null: false
@@ -87,7 +87,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_000003) do
     t.string "event_id", null: false
     t.string "category_id", null: false
     t.string "start_group_id", null: false
-    t.integer "start_offset_ms", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_races_on_category_id"

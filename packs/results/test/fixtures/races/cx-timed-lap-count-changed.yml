@@ -3,7 +3,7 @@
 start_groups:
   - {id: g1, finish_rule: {type: timed, target_duration_ms: 2700000}, gun: 0}
 races:
-  - {id: r1, group: g1, offset: 0}
+  - {id: r1, group: g1}
 entrants:
   - {bib: 10, race: r1}
   - {bib: 11, race: r1}

@@ -59,7 +59,8 @@ module Results
     def race_starts(races)
       gun = @rulings.latest_by("set_group_start") { it.payload["start_group_id"] }[@group.id]&.payload&.fetch("at_ms")
       overrides = @rulings.latest_by("set_race_start") { it.payload["race_id"] }
-      races.to_h { |r| [r.id, overrides[r.id]&.payload&.fetch("at_ms") || (gun && gun + r.start_offset_ms)] }
+      # Each race starts at its own start (waves are started by hand), else the group gun.
+      races.to_h { |r| [r.id, overrides[r.id]&.payload&.fetch("at_ms") || gun] }
     end
 
     def post_start(entrant, start)

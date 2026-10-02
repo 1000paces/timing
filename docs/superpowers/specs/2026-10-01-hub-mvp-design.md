@@ -98,7 +98,8 @@ datetime differences.
 
 **`Race`** — one category at one event, scored independently.
 - `event_id`, `category_id`, `start_group_id`
-- `start_offset_ms` — offset from the start group's gun (0, 30000, 60000, …)
+- No planned offset: races in a start group are started in waves by hand on the
+  console's Start screen (each race gets its own `set_race_start`).
 
 All races in a start group race the **same number of laps**.
 
@@ -179,7 +180,7 @@ order.
 4. Map bib → registration → race. Captures with no bib or unknown bib go to the
    **unassigned** list (shown in the review queue, never discarded).
 5. Effective start for each race = `set_race_start` if present, else
-   `set_group_start.at_ms + race.start_offset_ms`. Crossings before the race's
+   `set_group_start.at_ms`. Crossings before the race's
    effective start are ignored for laps (kept visible in review).
 6. Sort each rider's crossings by effective time. Collapse crossings within a
    **debounce window** (default 10 s, configurable per event) into one (keep the
