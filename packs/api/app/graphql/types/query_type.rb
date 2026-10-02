@@ -7,6 +7,9 @@ module Types
     end
     field :categories, [CategoryType], null: false
     field :officials, [OfficialType], null: false
+    field :standings, StandingsReportType, null: false do
+      argument :event_id, ID
+    end
 
     def me = context[:current_official]
 
@@ -23,6 +26,11 @@ module Types
     def officials
       require_official!("admin")
       Official.order(:name)
+    end
+
+    def standings(event_id:)
+      require_official!
+      StandingsService.report(Event.find(event_id))
     end
 
     def categories
