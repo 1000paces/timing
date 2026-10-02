@@ -41,4 +41,23 @@ class RegistrationImportTest < ActiveSupport::TestCase
     assert_equal 0, result.created
     assert_equal [[1, "missing column bib"]], result.errors.map { [it.row, it.message] }
   end
+
+  test "a UTF-8 BOM before the header is ignored" do
+    result = RegistrationImport.call(event: @event, csv: "\uFEFFfirst_name,last_name,gender,bib,category\nAnn,Lee,F,301,Women Open\n")
+    assert_equal 1, result.created
+    assert_empty result.errors
+  end
+
+  test "blank rows are skipped and later row numbers stay aligned" do
+    csv = "first_name,last_name,gender,bib,category\nAnn,Lee,F,301,Women Open\n\n,,,,\nBob,Ray,M,101,Cat 3 Men\nCy,Dee,M,101,Cat 3 Men\n"
+    result = RegistrationImport.call(event: @event, csv:)
+    assert_equal 2, result.created
+    assert_equal [[6, "Bib has already been taken"]], result.errors.map { [it.row, it.message] }
+  end
+
+  test "header names are stripped before matching" do
+    result = RegistrationImport.call(event: @event, csv: "first_name, last_name ,gender, bib,category\nAnn,Lee,F,301,Women Open\n")
+    assert_equal 1, result.created
+    assert_empty result.errors
+  end
 end
