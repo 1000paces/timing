@@ -34,10 +34,10 @@ class SessionsTest < ActionDispatch::IntegrationTest
   test "rate limit cannot be bypassed with X-Forwarded-For" do
     5.times do |i|
       post "/session", params: { name: "Pat", pin: "0000" }.to_json,
-                       headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "10.9.8.#{i}")
+                       headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "203.0.113.#{i + 1}")
     end
     post "/session", params: { name: "Pat", pin: "1357" }.to_json,
-                     headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "10.9.8.99")
+                     headers: ApiHelpers::JSON_HEADERS.merge("X-Forwarded-For" => "203.0.113.6")
     assert_response :too_many_requests
   end
 
@@ -48,12 +48,13 @@ class SessionsTest < ActionDispatch::IntegrationTest
   end
 
   test "signing in resets the session (no fixation)" do
+    other = create_official(name: "Sam", role: "timer", pin: "9753")
     sign_in(@official, "1357")
-    before = cookies["_timing_session"]
+    before = session.id.to_s
     assert before.present?
-    sign_in(@official, "1357")
+    sign_in(other, "9753")
     assert_response :created
-    refute_equal before, cookies["_timing_session"]
+    refute_equal before, session.id.to_s
   end
 
   test "cross-origin requests are refused" do
