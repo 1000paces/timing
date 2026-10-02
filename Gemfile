@@ -45,3 +45,5 @@ gem "packwerk", "~> 3.3"
 gem "bcrypt", "~> 3.1"
 
 gem "graphql", "~> 2.6"
+
+gem "csv", "~> 3.3"

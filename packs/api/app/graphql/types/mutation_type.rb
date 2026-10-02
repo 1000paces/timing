@@ -7,5 +7,6 @@ module Types
     field :create_race, mutation: Mutations::CreateRace
     field :register_rider, mutation: Mutations::RegisterRider
     field :create_official, mutation: Mutations::CreateOfficial
+    field :import_registrations, mutation: Mutations::ImportRegistrations
   end
 end
