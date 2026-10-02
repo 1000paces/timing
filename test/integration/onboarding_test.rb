@@ -18,6 +18,15 @@ class OnboardingTest < ActionDispatch::IntegrationTest
     assert_response :ok
     assert_includes response.body, "/onboarding/ca.crt"
     assert_includes response.body, "https://"
+    assert_includes response.body, @ca.root_fingerprint
+  end
+
+  test "CA certificate is a 404 when none exists" do
+    Dir.mktmpdir do |empty|
+      OnboardingController.local_ca = LocalCa.new(empty)
+      get "/onboarding/ca.crt"
+      assert_response :not_found
+    end
   end
 
   test "CA certificate downloads" do

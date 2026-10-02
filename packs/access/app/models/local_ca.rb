@@ -26,9 +26,16 @@ class LocalCa
 
   def ensure!(hosts:, ips:)
     FileUtils.mkdir_p(@dir)
+    File.chmod(0o700, @dir)
+    [root_key_path, server_key_path].each { File.chmod(0o600, it) if it.exist? }
     ensure_root!
     ensure_server!(hosts.uniq, ips.uniq)
     self
+  end
+
+  def root_fingerprint
+    OpenSSL::Digest::SHA256.hexdigest(OpenSSL::X509::Certificate.new(root_cert_path.read).to_der)
+                           .upcase.scan(/../).join(":")
   end
 
   private
@@ -65,6 +72,7 @@ class LocalCa
     return false unless server_cert_path.exist? && server_key_path.exist?
     cert = OpenSSL::X509::Certificate.new(server_cert_path.read)
     return false if cert.issuer.to_s != root.subject.to_s
+    return false unless cert.check_private_key(OpenSSL::PKey::RSA.new(server_key_path.read))
     return false if cert.not_after < Time.now + RENEW_WITHIN_DAYS * DAY
     alt = cert.extensions.find { it.oid == "subjectAltName" }&.value.to_s.split(", ").sort
     alt == (hosts.map { "DNS:#{it}" } + ips.map { "IP Address:#{it}" }).sort
@@ -89,7 +97,7 @@ class LocalCa
   end
 
   def write(path, contents, mode)
-    File.write(path, contents)
+    File.write(path, contents, perm: mode)
     File.chmod(mode, path)
   end
 end

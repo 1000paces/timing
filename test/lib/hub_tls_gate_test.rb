@@ -3,8 +3,8 @@ require "test_helper"
 class HubTlsGateTest < ActiveSupport::TestCase
   APP = ->(_env) { [200, {}, ["ok"]] }
 
-  def call(path, https: false, enabled: true)
-    env = Rack::MockRequest.env_for("#{https ? 'https' : 'http'}://hub.local:3000#{path}")
+  def call(path, https: false, enabled: true, headers: {})
+    env = Rack::MockRequest.env_for("#{https ? 'https' : 'http'}://hub.local:3000#{path}", headers)
     HubTlsGate.new(APP, enabled:).call(env)
   end
 
@@ -20,5 +20,10 @@ class HubTlsGateTest < ActiveSupport::TestCase
   test "HTTPS passes, and the gate is off unless enabled" do
     assert_equal 200, call("/graphql", https: true).first
     assert_equal 200, call("/graphql", enabled: false).first
+  end
+
+  test "forwarded-protocol headers on plain HTTP do not open the gate" do
+    assert_equal 403, call("/graphql", headers: { "HTTP_X_FORWARDED_PROTO" => "https" }).first
+    assert_equal 403, call("/graphql", headers: { "HTTP_X_FORWARDED_SSL" => "on" }).first
   end
 end

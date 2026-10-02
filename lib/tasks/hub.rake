@@ -4,5 +4,6 @@ namespace :hub do
     ca = LocalCa.new.ensure!(hosts: LocalCa.default_hosts, ips: LocalCa.lan_ips + ["127.0.0.1"])
     puts "Root CA:     #{ca.root_cert_path}"
     puts "Server cert: #{ca.server_cert_path}"
+    puts "Root fingerprint (SHA-256): #{ca.root_fingerprint}"
   end
 end

@@ -27,6 +27,28 @@ class LocalCaTest < ActiveSupport::TestCase
     server = OpenSSL::X509::Certificate.new(File.read(@ca.server_cert_path))
     assert_operator server.not_after, :<=, Time.now + 397 * 86_400
     assert_equal "600", format("%o", File.stat(@ca.server_key_path).mode & 0o777)
+    assert_equal "600", format("%o", File.stat(@ca.root_key_path).mode & 0o777)
+    assert_equal "700", format("%o", File.stat(@dir).mode & 0o777)
+  end
+
+  test "repairs loose permissions on existing keys" do
+    @ca.ensure!(hosts: ["hub.local"], ips: ["192.168.1.20"])
+    File.chmod(0o644, @ca.root_key_path)
+    @ca.ensure!(hosts: ["hub.local"], ips: ["192.168.1.20"])
+    assert_equal "600", format("%o", File.stat(@ca.root_key_path).mode & 0o777)
+  end
+
+  test "reissues when the server key does not match the certificate" do
+    @ca.ensure!(hosts: ["hub.local"], ips: ["192.168.1.20"])
+    File.write(@ca.server_key_path, OpenSSL::PKey::RSA.new(2048).to_pem)
+    @ca.ensure!(hosts: ["hub.local"], ips: ["192.168.1.20"])
+    cert = OpenSSL::X509::Certificate.new(File.read(@ca.server_cert_path))
+    assert cert.check_private_key(OpenSSL::PKey::RSA.new(File.read(@ca.server_key_path)))
+  end
+
+  test "root fingerprint is colon-separated uppercase SHA-256 hex" do
+    @ca.ensure!(hosts: ["hub.local"], ips: ["192.168.1.20"])
+    assert_match(/\A([0-9A-F]{2}:){31}[0-9A-F]{2}\z/, @ca.root_fingerprint)
   end
 
   test "keeps a current certificate, reissues when the network address changes" do
