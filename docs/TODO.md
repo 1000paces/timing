@@ -88,6 +88,32 @@ Items deliberately deferred. Each has enough context to pick up cold.
 ## Carry into upcoming plans
 
 ### Ops console / API plan
+- **Expose crossing ids per rider** (`crossings { ref atMs inserted counted }` on
+  standings rows, or a crossings query). Without them the console can't void a
+  bad tap, reassign a counted crossing, or flag-finish a specific crossing — and
+  "about to be lapped" fixes can't be completed. First API task of the plan.
+- **Guard against a second GO:** `fireStart` on an already-started group should
+  refuse unless `restart: true` (console confirm dialog). Today a second GO
+  silently moves the gun and shifts every elapsed time.
+- **Sessions:** expire after 12–24 h; `updateOfficial(id, active, role, pin)`
+  (admin); invalidate existing sessions on deactivation or PIN change (check in
+  `CurrentOfficial` and the cable connection). Today a copied cookie keeps
+  working after sign-out and there's no way to deactivate an official via the API.
+- **Pairing QR URL** must use the hub's LAN address (`LocalCa.lan_ips` +
+  `HUB_TLS_PORT`) or a configured hub URL — not the admin's request host
+  (`localhost` QR codes are unreachable from tablets).
+- **Coalesce broadcasts** during CSV import (one "changed" at the end, not one
+  per row); broadcast device pair/revoke so the device list is live.
+- **Simulator virtual clock:** taps are stamped ahead of the wall clock
+  (gun + race time), which confuses live features (about-to-be-lapped, `now`).
+- **Live updates across processes in development:** the dev cable adapter is
+  in-process (`async`), so `bin/simulate-race` won't push to an open console.
+  Use Solid Cable for hub mode, and align `config.action_cable.allowed_request_origins`
+  with `TIMING_ALLOWED_ORIGINS` (Vite dev server).
+- Smaller: strip `license_number` in `RiderRegistrar`; guard duplicate category
+  names per event; `revokeDevice` shouldn't overwrite the first revocation time;
+  CSV import row cap and per-row error resilience; runbook notes (restart
+  `bin/hub` after a network change; delete `storage/certs/server.*` if corrupt).
 - Clients must never set `Ruling#created_at_ms` ("latest wins" ordering depends
   on hub time) — the API sets it.
 - Suggestion `fix` hashes are *templates*: `flag_finish` lacks `capture_id`,
@@ -99,6 +125,10 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Show last good standings with an error banner if computing results fails (spec §9).
 
 ### Sync + capture plan
+- **Before any tablet/venue test:** run the hub in production mode (see "Run the
+  venue hub in production mode") and constrain the root CA (nameConstraints).
+- Strip the pairing token from the capture app URL after reading it
+  (`history.replaceState`); bound device name length.
 - Device entries must take their `event_id` from the authenticated device, never
   from the payload (and add a model check that it matches `device.event_id`).
 - Consider storing each raw device entry so hash chains can be re-verified later.
