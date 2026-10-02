@@ -1,4 +1,5 @@
 class Registration < ApplicationRecord
+  include BroadcastsEventChange
   belongs_to :event
   belongs_to :race
   belongs_to :rider

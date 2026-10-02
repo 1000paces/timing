@@ -334,9 +334,7 @@ sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
 - **GraphQL** (graphql-ruby, Apollo Client) for ops console and capture-app roster
   queries. Schema is mode-agnostic; cloud-only fields return a typed
   `NOT_AVAILABLE_IN_MODE` error in hub mode.
-- **Subscriptions** via ActionCable using **Solid Cable** (no Redis on the hub):
-  `standingsUpdated(raceId)`, `crossingRecorded(startGroupId)`,
-  `reviewQueueChanged(eventId)`, `deviceStatusChanged(eventId)`.
+- **Live updates** over ActionCable (Solid Cable in production, so no Redis on the hub): one stream per event, `EventChannel` / `event:<event_id>`, carrying `{type: "changed", at_ms}` whenever a capture, ruling, registration, race or start group changes. Clients refetch the GraphQL queries they display. Connections require a signed-in official.
 - Mutations: setup CRUD and CSV import (admin); start control `fireStart` (hub time), `setRaceStart`, `setLapCount`; `recordRuling(kind, payload)` for log rulings (assign/void/insert/flag/pull/DNF/DNS/DSQ); `revertRuling`; `acceptSuggestion` (applies a suggestion's fix, with any blank the official fills in) and `dismissSuggestion`; `publishResults` (the hub computes the digest). The hub sets each ruling's time and official; clients can't.
 - TypeScript types generated with GraphQL Code Generator into `packages/graphql`.
 

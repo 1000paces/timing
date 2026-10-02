@@ -1,4 +1,5 @@
 class DeviceEntry < ApplicationRecord
+  include BroadcastsEventChange
   include AppendOnly
 
   belongs_to :event
