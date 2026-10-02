@@ -63,6 +63,28 @@ Items deliberately deferred. Each has enough context to pick up cold.
   (choose the rule per event), spec §3.1.
 - **Raised:** 2026-10-02.
 
+## Hub operations & hardening
+
+### Run the venue hub in production mode (not development)
+- **Problem:** `bin/hub` starts Rails in the development environment, so at a venue
+  any device on the LAN that hits an error sees full debug pages (backtraces,
+  source), code reloads, and the development database is used.
+- **Why not a one-liner:** `config/environments/production.rb` has `force_ssl` /
+  `assume_ssl` (would redirect the plain-HTTP onboarding page that tablets need
+  before they trust the CA), needs `secret_key_base`, and uses separate
+  cache/queue/cable databases.
+- **Options:** a dedicated `hub` Rails environment, or production with
+  `config.ssl_options = { redirect: { exclude: ->(r) { r.path.start_with?("/onboarding", "/up") } } }`,
+  generated `secret_key_base` stored under `storage/`, and `bin/hub` setting `RAILS_ENV`.
+- **Raised:** 2026-10-02 (review of plan 2, task 9).
+
+### Constrain the hub's root CA
+- Add `pathlen:0` and critical `nameConstraints` (private IP ranges, `.local`,
+  `localhost`) so a stolen hub key can't mint certificates for real websites on
+  crew tablets. Caveat: the raw machine hostname (e.g. `laptop.lan`) must be
+  permitted or dropped from the server certificate.
+- **Raised:** 2026-10-02.
+
 ## Carry into upcoming plans
 
 ### Ops console / API plan
