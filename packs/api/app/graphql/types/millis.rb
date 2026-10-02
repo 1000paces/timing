@@ -4,6 +4,7 @@ module Types
     description "Milliseconds, as a JSON number"
 
     def self.coerce_input(value, _context)
+      return nil if value.nil?
       return value if value.is_a?(Integer)
       return value.to_i if value.is_a?(Float) && value == value.floor
       raise GraphQL::CoercionError, "#{value.inspect} is not a whole number of milliseconds"

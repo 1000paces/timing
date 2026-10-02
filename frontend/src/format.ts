@@ -21,3 +21,17 @@ export function formatClock(ms: number): string {
 export function formatScheduled(ms: number): string {
   return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
+
+// <input type="datetime-local"> uses local time as "YYYY-MM-DDTHH:MM".
+export function toLocalInput(ms: number | null | undefined): string {
+  if (ms == null) return "";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function fromLocalInput(value: string): number | null {
+  if (!value) return null;
+  const ms = new Date(value).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}

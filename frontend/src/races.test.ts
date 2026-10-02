@@ -12,3 +12,28 @@ describe("sortRaces", () => {
     expect(sortRaces(rows).map((r) => r.name)).toEqual(["Masters 35+", "Women Open", "Elite Men", "Juniors"]);
   });
 });
+
+import { cohortLapWarnings, defaultRaceName } from "./races";
+
+describe("defaultRaceName", () => {
+  it("joins category, age group and gender, skipping blanks (same rule as the hub)", () => {
+    expect(defaultRaceName("Cat 3", "Masters 35+", "men")).toBe("Cat 3 Masters 35+ Men");
+    expect(defaultRaceName("Novice", null, "women")).toBe("Novice Women");
+    expect(defaultRaceName(" ", "", "open")).toBe("Open");
+  });
+});
+
+describe("cohortLapWarnings", () => {
+  const race = (name: string, scheduledAtMs: number, expectedLaps: number | null, finishWithLeader = true) => ({
+    name,
+    scheduledAtMs,
+    expectedLaps,
+    finishWithLeader,
+  });
+
+  it("flags finish-with-leader races at one scheduled start with different expected laps", () => {
+    const warnings = cohortLapWarnings([race("A", 1, 5), race("B", 1, 4), race("C", 1, 3, false), race("D", 2, 9)]);
+    expect(warnings).toEqual(["A and B finish together but expect different laps (5, 4)"]);
+    expect(cohortLapWarnings([race("A", 1, 5), race("B", 1, 5)])).toEqual([]);
+  });
+});

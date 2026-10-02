@@ -6,17 +6,19 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { formatElapsed, formatGap } from "../format";
+import type { ReactNode } from "react";
 import type { RaceStandings } from "../queries";
 
 const STATE_LABEL: Record<string, string> = { NOT_STARTED: "not started", IN_PROGRESS: "in progress", FINISH_OPEN: "finish open" };
 const num = { textAlign: "right", fontVariantNumeric: "tabular-nums" } as const;
 
-export function Standings({ race }: { race: RaceStandings }) {
+export function Standings({ race, controls }: { race: RaceStandings; controls?: ReactNode }) {
   return (
     <Paper component="section" aria-label={race.race.name} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3" gutterBottom>
         {race.race.name} — {STATE_LABEL[race.state] ?? race.state} — {race.lapCount ? `${race.lapCount} laps` : "lap count not set"}
       </Typography>
+      {controls}
       <Table size="small">
         <TableHead>
           <TableRow>

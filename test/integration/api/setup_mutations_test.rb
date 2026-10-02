@@ -62,6 +62,15 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     assert_equal ["Cat 3 U23 Men", nil, nil, false], updated.values_at("name", "expectedLaps", "nameOverride", "finishWithLeaderOverride")
   end
 
+  test "a null Millis variable clears the expected duration" do
+    race = create_race(event: create_event, expected_duration_ms: 2_700_000)
+    body = gql(<<~GQL, id: race.id, ms: nil)
+      mutation($id: ID!, $ms: Millis) { updateRace(id: $id, expectedDurationMs: $ms) { race { expectedDurationMs } errors } }
+    GQL
+    assert_nil body["errors"]
+    assert_nil body.dig("data", "updateRace", "race", "expectedDurationMs")
+  end
+
   # Review Focus 4
   test "a race with registrations or a start can't be deleted; an empty one can" do
     event = create_event

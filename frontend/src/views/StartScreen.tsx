@@ -67,9 +67,7 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
   const startsById = new Map((standings.data?.standings.races ?? []).map((r) => [r.race.id, r.startAtMs]));
   const loaded = Boolean(standings.data);
   const rows = sortRaces(
-    event.data.event.startGroups.flatMap((g) =>
-      g.races.map((r) => ({ id: r.id, name: r.name, scheduledAtMs: g.scheduledAtMs, startAtMs: startsById.get(r.id) ?? null })),
-    ),
+    event.data.event.races.map((r) => ({ id: r.id, name: r.name, scheduledAtMs: r.scheduledAtMs, startAtMs: startsById.get(r.id) ?? null })),
   );
   const canAct = roleCanAct(official.role);
 
@@ -117,7 +115,7 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
 
   return (
     <Box sx={{ p: 2, maxWidth: 1000 }}>
-      <EventNav eventId={eventId} eventName={event.data.event.name} current="starts" />
+      <EventNav eventId={eventId} eventName={event.data.event.name} current="starts" admin={official.role === "admin"} />
       <Paper sx={{ p: 2 }}>
         <Stack direction="row" sx={{ alignItems: "center", mb: 1 }}>
           <Typography variant="h6" component="h2" sx={{ flex: 1 }}>

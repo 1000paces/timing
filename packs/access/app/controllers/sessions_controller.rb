@@ -7,8 +7,11 @@ class SessionsController < ApplicationController
   # Compared against when no official matches, so unknown names cost the same as wrong PINs.
   DUMMY_PIN_DIGEST = BCrypt::Password.create("0000").freeze
 
+  # The browser suite signs in more often than a person would; bin/e2e-server raises it.
+  SIGN_IN_LIMIT = Integer(ENV.fetch("TIMING_SIGN_IN_LIMIT", "5"))
+
   # Keyed on the socket peer: the hub has no reverse proxy, so X-Forwarded-For is client-controlled.
-  rate_limit to: 5, within: 1.minute, only: :create, store: RATE_LIMIT_STORE, by: -> { request.env["REMOTE_ADDR"] },
+  rate_limit to: SIGN_IN_LIMIT, within: 1.minute, only: :create, store: RATE_LIMIT_STORE, by: -> { request.env["REMOTE_ADDR"] },
              with: -> { render json: { error: "Too many attempts. Wait a minute and try again." }, status: :too_many_requests }
 
   def create

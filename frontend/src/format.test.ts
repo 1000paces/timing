@@ -31,3 +31,15 @@ describe("formatScheduled", () => {
     expect(formatScheduled(sixPm)).not.toMatch(/:\d\d:\d\d/);
   });
 });
+
+import { fromLocalInput, toLocalInput } from "./format";
+
+describe("local date-time inputs", () => {
+  it("round-trips through the browser's datetime-local format", () => {
+    const sixPm = new Date(2026, 9, 18, 18, 0, 0).getTime();
+    expect(toLocalInput(sixPm)).toBe("2026-10-18T18:00");
+    expect(fromLocalInput("2026-10-18T18:00")).toBe(sixPm);
+    expect(fromLocalInput("")).toBeNull();
+    expect(toLocalInput(null)).toBe("");
+  });
+});

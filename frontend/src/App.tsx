@@ -12,6 +12,7 @@ import { eventsHref, linkTo, useRoute } from "./route";
 import { currentOfficial, signOut, type Official } from "./session";
 import { Events } from "./views/Events";
 import { RaceScreen } from "./views/RaceScreen";
+import { SetupScreen } from "./views/SetupScreen";
 import { SignIn } from "./views/SignIn";
 import { StartScreen } from "./views/StartScreen";
 
@@ -59,11 +60,10 @@ export function App() {
           </Button>
         </Toolbar>
       </AppBar>
-      {route.view === "events" && <Events onSignedOut={signedOut} />}
+      {route.view === "events" && <Events official={official} onSignedOut={signedOut} />}
       {route.view === "starts" && <StartScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
-      {route.view === "race" && (
-        <RaceScreen eventId={route.eventId} groupId={route.groupId} official={official} onSignedOut={signedOut} />
-      )}
+      {route.view === "setup" && <SetupScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
+      {route.view === "race" && <RaceScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
     </>
   );
 }

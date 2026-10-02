@@ -3,8 +3,9 @@ import { useEffect, useState, type MouseEvent } from "react";
 // Real paths under /console/; the hub serves the console page for any of them.
 export type Route =
   | { view: "events" }
+  | { view: "setup"; eventId: string }
   | { view: "starts"; eventId: string }
-  | { view: "race"; eventId: string; groupId: string | null };
+  | { view: "race"; eventId: string };
 
 const BASE = "/console";
 const CHANGE = "console:navigate";
@@ -13,17 +14,16 @@ export function parseRoute(pathname: string): Route {
   const parts = pathname.replace(/^\/console\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   if (parts[0] === "event" && parts[1]) {
     if (parts[2] === "starts") return { view: "starts", eventId: parts[1] };
-    return { view: "race", eventId: parts[1], groupId: parts[2] === "groups" && parts[3] ? parts[3] : null };
+    if (parts[2] === "setup") return { view: "setup", eventId: parts[1] };
+    return { view: "race", eventId: parts[1] };
   }
   return { view: "events" };
 }
 
 export const eventsHref = () => `${BASE}/`;
+export const setupHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/setup`;
 export const startsHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/starts`;
-export function raceHref(eventId: string, groupId?: string | null): string {
-  const base = `${BASE}/event/${encodeURIComponent(eventId)}`;
-  return groupId ? `${base}/groups/${encodeURIComponent(groupId)}` : base;
-}
+export const raceHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}`;
 
 export function navigate(href: string): void {
   window.history.pushState(null, "", href);
