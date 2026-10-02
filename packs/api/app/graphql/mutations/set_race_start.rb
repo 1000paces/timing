@@ -5,6 +5,7 @@ module Mutations
     argument :at_ms, Types::Millis, required: false
 
     def resolve(race_id:, at_ms: nil)
+      require_official!("chief")
       race = Race.find(race_id)
       record(event: race.event, kind: "set_race_start", payload: { race_id: race.id, at_ms: at_ms || Clock.now_ms })
     end

@@ -6,9 +6,14 @@ module Mutations
     def resolve(race_id:)
       require_official!("chief")
       race = Race.find(race_id)
-      result = StandingsService.report(race.event).output.races.find { it.race_id == race.id }
-      return refuse("Race has not started") if result.nil? || result.state == :not_started
-      record(event: race.event, kind: "publish_results", payload: { race_id: race.id, result_digest: result.digest })
+      # Lock so the digest we record is of the standings as of this write, not a concurrent change.
+      race.event.with_lock do
+        report = StandingsService.report(race.event)
+        next refuse("Standings are out of date; try again in a moment") if report.stale
+        result = report.output.races.find { it.race_id == race.id }
+        next refuse("Race has not started") if result.nil? || result.state == :not_started
+        record(event: race.event, kind: "publish_results", payload: { race_id: race.id, result_digest: result.digest })
+      end
     end
   end
 end

@@ -4,6 +4,7 @@ module Mutations
     argument :key, String
 
     def resolve(event_id:, key:)
+      require_official!("chief")
       record(event: Event.find(event_id), kind: "dismiss_suggestion", payload: { suggestion_key: key })
     end
   end

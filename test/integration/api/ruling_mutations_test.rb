@@ -105,4 +105,31 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
     body = gql("mutation($id: ID!) { fireStart(startGroupId: $id) { errors } }", id: @group.id)
     assert_equal "Requires the chief role", body["errors"].first["message"]
   end
+
+  test "stale standings refuse accept and publish and record nothing" do
+    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")
+    original = StandingsService.method(:report)
+    StandingsService.define_singleton_method(:report) do |event, **|
+      StandingsService::Report.new(event:, output: original.call(event).output, computed_at_ms: 0, stale: true, error: "boom")
+    end
+    before = Ruling.count
+    msg = ["Standings are out of date; try again in a moment"]
+    assert_equal msg, mutate("acceptSuggestion", "$id: ID!", 'eventId: $id, key: "unassigned:loose", bib: "3"', id: @event.id)["errors"]
+    assert_equal msg, mutate("publishResults", "$id: ID!", "raceId: $id", id: @race.id)["errors"]
+    assert_equal before, Ruling.count
+  ensure
+    StandingsService.define_singleton_method(:report, original) if original
+  end
+
+  test "recordRuling rejects a non-object payload" do
+    result = gql("mutation($id: ID!) { recordRuling(eventId: $id, kind: DNF, payload: \"x\") { errors } }", id: @event.id)
+    assert_equal ["payload must be a JSON object"], result.dig("data", "recordRuling", "errors")
+  end
+
+  test "signed-out callers are told to sign in before any lookup" do
+    delete "/session"
+    body = gql("mutation { fireStart(startGroupId: \"nope\") { errors } }")
+    assert_equal "Sign in required", body["errors"].first["message"]
+  end
 end
