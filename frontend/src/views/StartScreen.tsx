@@ -18,7 +18,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatClock } from "../format";
+import { formatClock, formatScheduled } from "../format";
 import {
   EVENT,
   START_RACES,
@@ -158,7 +158,7 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
                     </TableCell>
                   )}
                   <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.scheduledAtMs != null ? formatClock(row.scheduledAtMs) : "—"}</TableCell>
+                  <TableCell>{row.scheduledAtMs != null ? formatScheduled(row.scheduledAtMs) : "—"}</TableCell>
                   <TableCell>{started ? `Started ${formatClock(row.startAtMs!)}` : loaded ? "Not started" : "…"}</TableCell>
                   {canAct && (
                     <TableCell align="right">

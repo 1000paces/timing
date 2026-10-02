@@ -17,3 +17,7 @@ export function formatGap(lapsDown: number | null | undefined, ms: number | null
 export function formatClock(ms: number): string {
   return new Date(ms).toLocaleTimeString([], { hour12: false });
 }
+
+export function formatScheduled(ms: number): string {
+  return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
