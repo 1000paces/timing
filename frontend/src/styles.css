@@ -1,0 +1,28 @@
+:root { font: 14px/1.4 system-ui, sans-serif; color: #1a1a1a; background: #f6f6f4; }
+body { margin: 0; }
+button { font: inherit; padding: 4px 10px; cursor: pointer; }
+button:disabled { cursor: default; opacity: 0.5; }
+input { font: inherit; padding: 3px 6px; }
+.topbar { display: flex; gap: 12px; align-items: center; padding: 8px 16px; background: #222; color: #fff; }
+.topbar a { color: #fff; }
+.spacer { flex: 1; }
+.page { padding: 16px; }
+.race-screen { display: grid; grid-template-columns: 1fr 360px; gap: 16px; padding: 16px; align-items: start; }
+.panel { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+.panel h2, .panel h3 { margin: 0 0 8px; font-size: 15px; }
+.groups { display: flex; gap: 8px; margin-bottom: 12px; }
+.groups a { padding: 4px 10px; border: 1px solid #bbb; border-radius: 4px; text-decoration: none; color: inherit; }
+.groups a.current { background: #222; color: #fff; }
+.controls { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.go { font-size: 18px; font-weight: 700; padding: 6px 24px; background: #1d7a32; color: #fff; border: 0; border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid #eee; }
+th { font-weight: 600; color: #555; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.error { color: #b00020; }
+.warning { background: #fff4d6; border: 1px solid #e6c35c; padding: 6px 10px; border-radius: 4px; margin-bottom: 12px; }
+.muted { color: #777; }
+.queue li { list-style: none; padding: 8px 0; border-bottom: 1px solid #eee; }
+.queue ul { padding: 0; margin: 0; }
+.queue .actions { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+.signin { max-width: 280px; margin: 80px auto; display: grid; gap: 8px; }
