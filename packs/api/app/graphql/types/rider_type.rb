@@ -8,5 +8,13 @@ module Types
     field :ability_level, String
     field :license_number, String
     field :team, String
+
+    # Spec §8: timers are capture-only; PII resolves to null for them.
+    def birth_date = chief? ? object.birth_date : nil
+    def license_number = chief? ? object.license_number : nil
+
+    private
+
+    def chief? = context[:current_official]&.at_least?("chief") || false
   end
 end
