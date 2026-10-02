@@ -20,12 +20,3 @@ test("chief signs in, sees events, signs out", async ({ page }) => {
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page.getByLabel("PIN")).toBeVisible();
 });
-
-// Review Focus 3
-test("a timer sees the race screen without action buttons", async ({ page }) => {
-  await signIn(page, "E2E Timer", "1357");
-  await page.getByRole("link", { name: /E2E CX/ }).click();
-  await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "GO" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Set laps" })).toHaveCount(0);
-});

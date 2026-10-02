@@ -6,6 +6,8 @@ cd "$(dirname "$0")/.."
 export TIMING_MODE=hub HUB_TLS=1
 bin/rails db:prepare
 bin/rails hub:certs
-[ -f public/console/index.html ] || bin/rails console:build
+# A missing console must never stop timing: warn and keep going.
+[ -f public/console/index.html ] || bin/rails console:build ||
+  echo "warning: ops console not built (needs Node 24 and npm); see docs/hub-runbook.md" >&2
 # `rails server -b/-p` would discard the TLS bind from config/puma.rb, so run puma directly.
 exec bundle exec puma -C config/puma.rb

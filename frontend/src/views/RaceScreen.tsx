@@ -35,10 +35,11 @@ export function RaceScreen({ eventId, groupId, official, onSignedOut }: Props) {
   const raceIds = new Set(group.races.map((r) => r.id));
   const report = standings.data?.standings;
   const races = report?.races.filter((r) => raceIds.has(r.race.id)) ?? [];
-  const started = races.some((r) => r.state !== "NOT_STARTED");
   const start = rulings.data?.rulings.find(
     (r) => r.kind === "set_group_start" && !r.reverted && r.payload.start_group_id === group.id,
   );
+  // null = not known yet: never offer GO until both standings and rulings have loaded.
+  const started = start != null || races.some((r) => r.state !== "NOT_STARTED") ? true : report && rulings.data ? false : null;
   const canAct = roleCanAct(official.role);
 
   return (

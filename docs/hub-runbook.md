@@ -29,6 +29,9 @@ bin/hub
 
 ## Ops console
 
+- Building the console needs Node 24 and npm, and network access for `npm ci` —
+  build it before you leave for the venue (`bin/rails console:build`). If the build
+  fails, `bin/hub` warns and still starts; timing works, the console doesn't.
 - At the venue: `bin/hub` builds the console the first time and serves it at
   `https://<hub address>:3443/console/`. After pulling new code, rebuild with
   `bin/rails console:build`.

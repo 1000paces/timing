@@ -5,7 +5,7 @@ import { FIRE_START, SET_LAP_COUNT, type MutationResult } from "../queries";
 
 type Props = {
   groupId: string;
-  started: boolean;
+  started: boolean | null; // null while not yet known
   startedAtMs: number | null;
   lapCount: number | null;
   canAct: boolean;
@@ -59,6 +59,8 @@ export function GroupControls({ groupId, started, startedAtMs, lapCount, canAct,
     <div className="panel controls">
       {started ? (
         <strong>Started at {startedAtMs ? formatClock(startedAtMs) : "—"}</strong>
+      ) : started === null ? (
+        <span className="muted">Checking start…</span>
       ) : canAct ? (
         <button className="go" onClick={go} disabled={firing}>GO</button>
       ) : (
