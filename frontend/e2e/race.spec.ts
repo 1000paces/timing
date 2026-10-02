@@ -20,45 +20,62 @@ async function openEvent(page: Page, name: string, pin: string) {
   await page.getByRole("link", { name: /E2E CX/ }).click();
 }
 
-test("chief runs a simulated race and clears the review queue", async ({ page, browser }) => {
+test("chief starts races in waves, unstarts a mistake, runs the race and clears the review queue", async ({ page, browser }) => {
   // Review Focus 3: a timer, watching alongside, never gets action buttons.
   const timerContext = await browser.newContext();
   const timer = await timerContext.newPage();
   await openEvent(timer, "E2E Timer", "1357");
-  await expect(timer.getByText("Not started", { exact: true })).toBeVisible();
-  await expect(timer.getByRole("button", { name: "GO" })).toHaveCount(0);
-  await expect(timer.getByRole("button", { name: "Set laps" })).toHaveCount(0);
+  await expect(timer.getByRole("heading", { name: "Starts" })).toBeVisible();
+  await expect(timer.getByRole("button", { name: "Start" })).toHaveCount(0);
+  await expect(timer.getByRole("checkbox")).toHaveCount(0);
 
   await openEvent(page, "E2E Chief", "2468");
+  const start = page.getByRole("button", { name: "Start", exact: true });
+  await expect(start).toBeDisabled();
 
+  // Wave 1: the two Masters races together. A double-click must not start anything twice.
+  await page.getByRole("checkbox", { name: "Select Masters 35+ Men" }).check();
+  await page.getByRole("checkbox", { name: "Select Masters 50+ Men" }).check();
+  await start.dblclick();
+  const row = (name: string) => page.getByRole("row").filter({ hasText: name });
+  await expect(row("Masters 35+ Men")).toContainText("Started");
+  await expect(row("Masters 50+ Men")).toContainText("Started");
+  await expect(page.getByRole("checkbox", { name: "Select Masters 35+ Men" })).toBeDisabled();
+  await expect(start).toBeDisabled();
+
+  // The Start screen has its own address and survives a reload.
+  await expect(page).toHaveURL(/\/console\/event\/[0-9a-f-]+\/starts$/);
+  await page.reload();
+  await expect(row("Masters 35+ Men")).toContainText("Started");
+
+  // Wave 2, started by mistake, then unstarted and started again.
+  await page.getByRole("checkbox", { name: "Select Women Open" }).check();
+  await start.click();
+  await expect(row("Women Open")).toContainText("Started");
+  await row("Women Open").getByRole("button", { name: "Unstart" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Unstart" }).click();
+  await expect(row("Women Open")).toContainText("Not started");
+  await page.getByRole("checkbox", { name: "Select Women Open" }).check();
+  await start.click();
+  await expect(row("Women Open")).toContainText("Started");
+
+  // Race screen: lap count, then the race itself.
+  await page.getByRole("tab", { name: "Race" }).click();
   await page.getByLabel("Laps").fill("3");
   await page.getByRole("button", { name: "Set laps" }).click();
   await expect(page.getByText("3 laps").first()).toBeVisible();
 
-  // Review Focus 1: a double-click must record one start.
-  await page.getByRole("button", { name: "GO" }).dblclick();
-  await expect(page.getByText(/Started at/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "GO" })).toHaveCount(0);
-
-  // Coming back while standings can't load (hub busy) must not offer GO again.
-  await page.getByRole("link", { name: "Events" }).click();
-  await page.route("**/graphql", (route) =>
-    (route.request().postData() ?? "").includes("query Standings") ? route.abort() : route.continue(),
-  );
-  await page.getByRole("link", { name: /E2E CX/ }).click();
-  await expect(page.getByText(/Started at/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "GO" })).toHaveCount(0);
-  await page.unroute("**/graphql");
-
   const output = simulateRace();
-  expect(output).toContain("GO rulings: 1");
+  expect(output).toContain("set_race_start rulings: 4");
 
   const missed = page.getByTestId("suggestion").filter({ hasText: "missed crossing" });
   await expect(missed.first()).toBeVisible({ timeout: 20_000 });
+  await timer.getByRole("tab", { name: "Race" }).click();
   await expect(timer.getByTestId("suggestion").first()).toBeVisible({ timeout: 20_000 });
   await expect(timer.getByRole("button", { name: "Accept" })).toHaveCount(0);
   await expect(timer.getByRole("button", { name: "Dismiss" })).toHaveCount(0);
   await timerContext.close();
+
   for (let remaining = await missed.count(); remaining > 0; remaining--) {
     await missed.first().getByRole("button", { name: "Accept" }).click();
     await expect(missed).toHaveCount(remaining - 1, { timeout: 20_000 });

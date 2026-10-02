@@ -16,6 +16,8 @@ module Types
     field :accept_suggestion, mutation: Mutations::AcceptSuggestion
     field :dismiss_suggestion, mutation: Mutations::DismissSuggestion
     field :publish_results, mutation: Mutations::PublishResults
+    field :start_races, mutation: Mutations::StartRaces
+    field :unstart_race, mutation: Mutations::UnstartRace
     field :create_pairing_token, mutation: Mutations::CreatePairingToken
     field :revoke_device, mutation: Mutations::RevokeDevice
   end

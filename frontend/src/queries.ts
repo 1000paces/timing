@@ -10,7 +10,7 @@ export const EVENTS = gql`
 `;
 
 export type RaceInfo = { id: string; name: string };
-export type StartGroupInfo = { id: string; name: string; finishRule: { type: string }; races: RaceInfo[] };
+export type StartGroupInfo = { id: string; name: string; scheduledAtMs: number | null; finishRule: { type: string }; races: RaceInfo[] };
 export type EventData = { event: { id: string; name: string; startGroups: StartGroupInfo[] } };
 
 export const EVENT = gql`
@@ -18,7 +18,7 @@ export const EVENT = gql`
     event(id: $id) {
       id
       name
-      startGroups { id name finishRule races { id name } }
+      startGroups { id name scheduledAtMs finishRule races { id name } }
     }
   }
 `;
@@ -33,7 +33,13 @@ export type Row = {
   gapLapsDown: number | null;
   gapMs: number | null;
 };
-export type RaceStandings = { race: { id: string; name: string }; state: string; lapCount: number | null; rows: Row[] };
+export type RaceStandings = {
+  race: { id: string; name: string };
+  state: string;
+  lapCount: number | null;
+  startAtMs: number | null;
+  rows: Row[];
+};
 export type Suggestion = { key: string; kind: string; bib: string | null; message: string; needs: string[] };
 export type StandingsData = {
   standings: { stale: boolean; error: string | null; races: RaceStandings[]; suggestions: Suggestion[] };
@@ -48,6 +54,7 @@ export const STANDINGS = gql`
         race { id name }
         state
         lapCount
+        startAtMs
         rows { place bib name status laps elapsedMs gapLapsDown gapMs }
       }
       suggestions { key kind bib message needs }
@@ -55,19 +62,8 @@ export const STANDINGS = gql`
   }
 `;
 
-export type RulingsData = { rulings: { id: string; kind: string; payload: Record<string, unknown>; reverted: boolean }[] };
-
-export const RULINGS = gql`
-  query Rulings($eventId: ID!) {
-    rulings(eventId: $eventId) { id kind payload reverted }
-  }
-`;
-
 export type MutationResult = { errors: string[] };
 
-export const FIRE_START = gql`
-  mutation FireStart($startGroupId: ID!) { fireStart(startGroupId: $startGroupId) { errors } }
-`;
 export const SET_LAP_COUNT = gql`
   mutation SetLapCount($startGroupId: ID!, $laps: Int!) { setLapCount(startGroupId: $startGroupId, laps: $laps) { errors } }
 `;
@@ -78,4 +74,13 @@ export const ACCEPT_SUGGESTION = gql`
 `;
 export const DISMISS_SUGGESTION = gql`
   mutation DismissSuggestion($eventId: ID!, $key: String!) { dismissSuggestion(eventId: $eventId, key: $key) { errors } }
+`;
+
+export type StartRacesResult = { startRaces: MutationResult };
+export const START_RACES = gql`
+  mutation StartRaces($raceIds: [ID!]!) { startRaces(raceIds: $raceIds) { errors } }
+`;
+export type UnstartRaceResult = { unstartRace: MutationResult };
+export const UNSTART_RACE = gql`
+  mutation UnstartRace($raceId: ID!) { unstartRace(raceId: $raceId) { errors } }
 `;

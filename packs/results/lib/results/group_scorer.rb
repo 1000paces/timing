@@ -36,7 +36,8 @@ module Results
                 else :in_progress
                 end
         rows = Standings.rows(riders.select { it.entrant.race_id == race.id })
-        RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows))
+        RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
+                       start_at_ms: starts[race.id])
       end
       Scored.new(group: @group, lap_count:, finish_open_at:, riders:, race_results:)
     end

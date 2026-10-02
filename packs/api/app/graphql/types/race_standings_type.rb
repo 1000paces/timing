@@ -7,6 +7,7 @@ module Types
     field :publication, PublicationEnum, null: false
     field :digest, String, null: false
     field :rows, [StandingRowType], null: false
+    field :start_at_ms, Millis, description: "When the race actually started, or null"
 
     def race = object[:race]
     def state = object[:result].state
@@ -14,5 +15,6 @@ module Types
     def publication = object[:result].publication
     def digest = object[:result].digest
     def rows = object[:result].rows
+    def start_at_ms = object[:result].start_at_ms
   end
 end

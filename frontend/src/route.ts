@@ -1,27 +1,58 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
-export type Route = { view: "events" } | { view: "event"; eventId: string; groupId: string | null };
+// Real paths under /console/; the hub serves the console page for any of them.
+export type Route =
+  | { view: "events" }
+  | { view: "starts"; eventId: string }
+  | { view: "race"; eventId: string; groupId: string | null };
 
-export function parseRoute(hash: string): Route {
-  const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-  if (parts[0] === "events" && parts[1]) {
-    const groupId = parts[2] === "groups" && parts[3] ? decodeURIComponent(parts[3]) : null;
-    return { view: "event", eventId: decodeURIComponent(parts[1]), groupId };
+const BASE = "/console";
+const CHANGE = "console:navigate";
+
+export function parseRoute(pathname: string): Route {
+  const parts = pathname.replace(/^\/console\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === "event" && parts[1]) {
+    if (parts[2] === "starts") return { view: "starts", eventId: parts[1] };
+    return { view: "race", eventId: parts[1], groupId: parts[2] === "groups" && parts[3] ? parts[3] : null };
   }
   return { view: "events" };
 }
 
-export function eventHref(eventId: string, groupId?: string | null): string {
-  const base = `#/events/${encodeURIComponent(eventId)}`;
+export const eventsHref = () => `${BASE}/`;
+export const startsHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/starts`;
+export function raceHref(eventId: string, groupId?: string | null): string {
+  const base = `${BASE}/event/${encodeURIComponent(eventId)}`;
   return groupId ? `${base}/groups/${encodeURIComponent(groupId)}` : base;
 }
 
+export function navigate(href: string): void {
+  window.history.pushState(null, "", href);
+  window.dispatchEvent(new Event(CHANGE));
+}
+
+// Click handler for in-app links: plain left clicks navigate without a reload;
+// modified clicks (new tab, etc.) keep the browser's behaviour.
+export function linkTo(href: string) {
+  return {
+    href,
+    onClick(event: MouseEvent) {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      navigate(href);
+    },
+  };
+}
+
 export function useRoute(): Route {
-  const [route, setRoute] = useState(() => parseRoute(window.location.hash));
+  const [route, setRoute] = useState(() => parseRoute(window.location.pathname));
   useEffect(() => {
-    const update = () => setRoute(parseRoute(window.location.hash));
-    window.addEventListener("hashchange", update);
-    return () => window.removeEventListener("hashchange", update);
+    const update = () => setRoute(parseRoute(window.location.pathname));
+    window.addEventListener("popstate", update);
+    window.addEventListener(CHANGE, update);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener(CHANGE, update);
+    };
   }, []);
   return route;
 }

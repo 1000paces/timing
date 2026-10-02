@@ -26,7 +26,7 @@ module Results
   # --- Output ---
   RiderResult = Data.define(:place, :bib, :name, :status, :laps, :elapsed_ms, :gap, :lap_times_ms)
   Gap = Data.define(:laps_down, :ms) # ms only when on the same lap as the race leader
-  RaceResult = Data.define(:race_id, :state, :lap_count, :publication, :rows, :digest)
+  RaceResult = Data.define(:race_id, :state, :lap_count, :publication, :rows, :digest, :start_at_ms)
   Suggestion = Data.define(:key, :kind, :bib, :race_id, :message, :fix) # fix: ruling-shaped string-keyed hash, or nil
   Output = Data.define(:races, :suggestions, :unassigned)
 end

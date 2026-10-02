@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import { EVENTS, type EventsData } from "../queries";
 import { isSignedOutError } from "../roles";
-import { eventHref } from "../route";
+import { linkTo, startsHref } from "../route";
 
 export function Events({ onSignedOut }: { onSignedOut: () => void }) {
   const { data, error, loading } = useQuery<EventsData>(EVENTS, { fetchPolicy: "network-only" });
@@ -30,7 +30,7 @@ export function Events({ onSignedOut }: { onSignedOut: () => void }) {
           <List>
             {data.events.map((event) => (
               <ListItem key={event.id}>
-                <Link href={eventHref(event.id)} underline="hover">
+                <Link {...linkTo(startsHref(event.id))} underline="hover">
                   {event.name} — {event.date}
                 </Link>
               </ListItem>

@@ -8,11 +8,12 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "./api";
 import { ColorModeToggle } from "./ColorModeToggle";
-import { useRoute } from "./route";
+import { eventsHref, linkTo, useRoute } from "./route";
 import { currentOfficial, signOut, type Official } from "./session";
 import { Events } from "./views/Events";
 import { RaceScreen } from "./views/RaceScreen";
 import { SignIn } from "./views/SignIn";
+import { StartScreen } from "./views/StartScreen";
 
 export function App() {
   const [official, setOfficial] = useState<Official | null | undefined>(undefined);
@@ -45,7 +46,7 @@ export function App() {
     <>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar variant="dense" sx={{ gap: 2 }}>
-          <Link href="#/" color="inherit" underline="hover" variant="h6">
+          <Link {...linkTo(eventsHref())} color="inherit" underline="hover" variant="h6">
             Events
           </Link>
           <Box sx={{ flex: 1 }} />
@@ -59,7 +60,8 @@ export function App() {
         </Toolbar>
       </AppBar>
       {route.view === "events" && <Events onSignedOut={signedOut} />}
-      {route.view === "event" && (
+      {route.view === "starts" && <StartScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
+      {route.view === "race" && (
         <RaceScreen eventId={route.eventId} groupId={route.groupId} official={official} onSignedOut={signedOut} />
       )}
     </>
