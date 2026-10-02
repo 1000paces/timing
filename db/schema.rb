@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_000003) do
   create_table "categories", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.json "ability_levels", default: [], null: false
@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_000001) do
     t.string "team"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["license_number"], name: "index_riders_on_license_number", unique: true
   end
 
   create_table "rulings", id: :string, force: :cascade do |t|

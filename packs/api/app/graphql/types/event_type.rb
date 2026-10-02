@@ -11,7 +11,7 @@ module Types
     field :registrations, [RegistrationType], null: false
 
     def start_groups = object.start_groups.order(:scheduled_at_ms, :name, :id)
-    def registrations = object.registrations.includes(:rider, race: :category).order(:bib)
+    def registrations = object.registrations.includes(:event, :rider, race: :category).order(:bib)
     def races = object.races.includes(:category).order(:start_offset_ms, :id)
   end
 end

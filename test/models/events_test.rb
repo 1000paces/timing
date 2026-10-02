@@ -59,4 +59,11 @@ class EventsTest < ActiveSupport::TestCase
     assert_equal race.event_id, reg.event_id
     assert_equal "7", reg.bib
   end
+
+  test "rider license numbers are unique" do
+    create_rider(license_number: "U1")
+    dup = Rider.new(first_name: "A", last_name: "B", gender: "M", license_number: "U1")
+    refute dup.valid?
+    assert_includes dup.errors[:license_number], "has already been taken"
+  end
 end
