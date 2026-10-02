@@ -39,4 +39,10 @@ class GraphqlTest < ActionDispatch::IntegrationTest
                      headers: ApiHelpers::JSON_HEADERS.merge("Origin" => "http://evil.example")
     assert_response :forbidden
   end
+
+  test "queries nested deeper than the max depth are rejected" do
+    body = gql("{ __schema { types { fields { type { ofType { ofType { ofType { ofType { ofType { ofType { ofType { ofType { name } } } } } } } } } } } } }")
+    assert body["errors"].present?
+    assert_match(/depth/i, body["errors"].first["message"])
+  end
 end

@@ -6,6 +6,7 @@ module Types
       argument :id, ID
     end
     field :categories, [CategoryType], null: false
+    field :officials, [OfficialType], null: false
 
     def me = context[:current_official]
 
@@ -17,6 +18,11 @@ module Types
     def event(id:)
       require_official!
       Event.find(id)
+    end
+
+    def officials
+      require_official!("admin")
+      Official.order(:name)
     end
 
     def categories
