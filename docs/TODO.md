@@ -45,6 +45,24 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - **Where:** `packs/results/lib/results/anomalies.rb`, spec §4.4.
 - **Raised:** 2026-10-01 (final review of plan 1).
 
+## Events & eligibility
+
+### Cyclocross racing age (season spans two calendar years)
+- **Need:** CX seasons run through the winter (autumn into the following year), so
+  CX racing age is the rider's age on **Dec 31 of the following year** — i.e.
+  one year older than road racing age for autumn races.
+- **Today:** `Event#age_rule` supports `racing_age_dec31` (age on Dec 31 of the
+  event's year) and `age_on_event_date`. Neither gives CX age for an October race.
+- **Proposed:** add an age rule (e.g. `cx_racing_age`) that uses Dec 31 of the
+  *season's* end year. Simplest: for events dated Sep–Dec, use Dec 31 of the next
+  year; for Jan–Feb events, use Dec 31 of the event's own year (both = the season's
+  end year). Possibly configure the season boundary per organisation instead of
+  hard-coding months.
+- **Where:** `packs/events/app/models/event.rb` (`AGE_RULES`, `#age_of`),
+  eligibility warnings (`Eligibility.warnings`), CSV import and setup UI
+  (choose the rule per event), spec §3.1.
+- **Raised:** 2026-10-02.
+
 ## Carry into upcoming plans
 
 ### Ops console / API plan
