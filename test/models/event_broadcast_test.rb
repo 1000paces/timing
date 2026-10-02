@@ -26,4 +26,17 @@ class EventBroadcastTest < ActiveSupport::TestCase
     assert_equal "changed", message["type"]
     assert_kind_of Integer, message["at_ms"]
   end
+
+  test "a failing broadcast does not fail the committed write" do
+    server = ActionCable.server
+    server.define_singleton_method(:broadcast) { |*| raise "cable down" }
+    begin
+      assert_difference -> { Ruling.count }, 1 do
+        rule(event: @event, kind: "set_lap_count", start_group_id: @race.start_group_id, laps: 3)
+      end
+      assert_nil EventBroadcast.changed(@event.id)
+    ensure
+      server.singleton_class.send(:remove_method, :broadcast)
+    end
+  end
 end

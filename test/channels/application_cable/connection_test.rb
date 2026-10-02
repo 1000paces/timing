@@ -11,4 +11,11 @@ class ApplicationCable::ConnectionTest < ActionCable::Connection::TestCase
   test "rejects anonymous connections" do
     assert_reject_connection { connect }
   end
+
+  test "rejects a deactivated official" do
+    official = create_official
+    cookies.encrypted["_timing_session"] = { value: { "official_id" => official.id } }
+    official.update!(active: false)
+    assert_reject_connection { connect }
+  end
 end
