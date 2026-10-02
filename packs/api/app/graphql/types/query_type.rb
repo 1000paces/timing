@@ -15,6 +15,10 @@ module Types
       argument :event_id, ID
     end
 
+    field :devices, [DeviceType], null: false do
+      argument :event_id, ID
+    end
+
     def me = context[:current_official]
 
     def events
@@ -43,6 +47,11 @@ module Types
       engine_rulings = rulings.map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
       context[:cancelled_ruling_ids] = Results::ActiveRulings.new(engine_rulings).cancelled_ids
       rulings
+    end
+
+    def devices(event_id:)
+      require_official!
+      Device.where(event_id:).order(:paired_at_ms, :id)
     end
 
     def categories

@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   resource :session, only: %i[create show destroy]
+  post "devices/pair", to: "devices#pair"
   post "graphql", to: "graphql#execute"
   mount ActionCable.server => "/cable"
 

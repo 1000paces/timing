@@ -13,5 +13,8 @@ end
 
 ActiveSupport.on_load(:action_dispatch_integration_test) do
   include ApiHelpers
-  setup { SessionsController::RATE_LIMIT_STORE.clear }
+  setup do
+    SessionsController::RATE_LIMIT_STORE.clear
+    DevicesController::RATE_LIMIT_STORE.clear
+  end
 end
