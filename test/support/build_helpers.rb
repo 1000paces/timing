@@ -29,4 +29,8 @@ module BuildHelpers
   def rule(event:, kind:, created_at_ms: nil, **payload)
     Ruling.create!(event:, kind:, payload: payload.transform_keys(&:to_s), created_at_ms:)
   end
+
+  def create_official(name: "Official #{SecureRandom.hex(3)}", role: "chief", pin: "2468")
+    Official.create!(name:, role:, pin:)
+  end
 end

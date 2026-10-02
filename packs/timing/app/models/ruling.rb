@@ -1,4 +1,5 @@
 class Ruling < ApplicationRecord
+  include BroadcastsEventChange
   include AppendOnly
 
   # kind => payload keys that must be present

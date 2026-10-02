@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_000003) do
   create_table "categories", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.json "ability_levels", default: [], null: false
@@ -61,6 +61,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "officials", id: :string, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "role", null: false
+    t.string "pin_digest", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_officials_on_name", unique: true
+  end
+
+  create_table "pairing_tokens", id: :string, force: :cascade do |t|
+    t.string "event_id", null: false
+    t.string "token_digest", null: false
+    t.bigint "expires_at_ms", null: false
+    t.bigint "used_at_ms"
+    t.string "created_by_official_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_pairing_tokens_on_event_id"
+    t.index ["token_digest"], name: "index_pairing_tokens_on_token_digest", unique: true
+  end
+
   create_table "races", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "category_id", null: false
@@ -96,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
     t.string "team"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["license_number"], name: "index_riders_on_license_number", unique: true
   end
 
   create_table "rulings", id: :string, force: :cascade do |t|
@@ -123,6 +146,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_000002) do
   add_foreign_key "device_entries", "devices"
   add_foreign_key "device_entries", "events"
   add_foreign_key "devices", "events"
+  add_foreign_key "pairing_tokens", "events"
   add_foreign_key "races", "categories"
   add_foreign_key "races", "events"
   add_foreign_key "races", "start_groups"

@@ -1,4 +1,5 @@
 class Race < ApplicationRecord
+  include BroadcastsEventChange
   belongs_to :event
   belongs_to :category
   belongs_to :start_group

@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+require "optparse"
+
+options = { speed: 20.0, seed: 1, laps: 5, untagged_rate: 0.1 }
+OptionParser.new do |o|
+  o.banner = "Usage: bin/simulate-race (--demo | --event ID) [options]"
+  o.on("--demo", "Create a demo CX event and race it") { options[:demo] = true }
+  o.on("--event ID", "Race an existing event") { options[:event] = it }
+  o.on("--speed N", Float, "Times faster than real time; 0 writes everything at once (default 20)") { options[:speed] = it }
+  o.on("--seed N", Integer, "Random seed (default 1)") { options[:seed] = it }
+  o.on("--laps N", Integer, "Laps for the leader (default 5)") { options[:laps] = it }
+  o.on("--untagged-rate R", Float, "Share of riders with one bib-less tap (default 0.1)") { options[:untagged_rate] = it }
+end.parse!
+
+require_relative "../config/environment"
+event = if options[:demo] then RaceSimulator::Demo.create!
+        elsif options[:event] then Event.find(options[:event])
+        else abort "Pass --demo or --event ID"
+        end
+RaceSimulator.run(event:, **options.slice(:speed, :seed, :laps, :untagged_rate))

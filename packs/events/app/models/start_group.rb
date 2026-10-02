@@ -1,4 +1,5 @@
 class StartGroup < ApplicationRecord
+  include BroadcastsEventChange
   belongs_to :event
   has_many :races, dependent: :restrict_with_error
 

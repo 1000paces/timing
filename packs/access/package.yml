@@ -1,0 +1,5 @@
+enforce_dependencies: true
+dependencies:
+  - "."
+  - packs/events
+  - packs/timing

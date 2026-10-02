@@ -334,10 +334,8 @@ sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
 - **GraphQL** (graphql-ruby, Apollo Client) for ops console and capture-app roster
   queries. Schema is mode-agnostic; cloud-only fields return a typed
   `NOT_AVAILABLE_IN_MODE` error in hub mode.
-- **Subscriptions** via ActionCable using **Solid Cable** (no Redis on the hub):
-  `standingsUpdated(raceId)`, `crossingRecorded(startGroupId)`,
-  `reviewQueueChanged(eventId)`, `deviceStatusChanged(eventId)`.
-- Mutations map 1:1 to ruling kinds plus setup CRUD.
+- **Live updates** over ActionCable (Solid Cable in production, so no Redis on the hub): one stream per event, `EventChannel` / `event:<event_id>`, carrying `{type: "changed", at_ms}` whenever a capture, ruling, registration, race or start group changes. Clients refetch the GraphQL queries they display. Connections require a signed-in official.
+- Mutations: setup CRUD and CSV import (admin); start control `fireStart` (hub time), `setRaceStart`, `setLapCount`; `recordRuling(kind, payload)` for log rulings (assign/void/insert/flag/pull/DNF/DNS/DSQ); `revertRuling`; `acceptSuggestion` (applies a suggestion's fix, with any blank the official fills in) and `dismissSuggestion`; `publishResults` (the hub computes the digest). The hub sets each ruling's time and official; clients can't.
 - TypeScript types generated with GraphQL Code Generator into `packages/graphql`.
 
 ---
@@ -355,9 +353,7 @@ sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
 - **Device pairing**: ops console shows a QR code with hub LAN URL + one-time pairing
   token (expires in 10 min, single use). Device exchanges it for a long-lived
   device credential scoped to the event; stored digest-only on the hub; revocable.
-- **Officials**: PIN login at the hub. Roles: `timer` (capture only), `chief`
-  (rulings, start control, publishing), `admin` (setup, devices, officials). Every
-  ruling records `official_id`.
+- **Officials**: sign in at the hub with name + PIN (4–8 digits) via `POST /session` (rate limited to 5 attempts per minute per address); the session cookie is `SameSite=Strict`, `HttpOnly`, and `Secure` over HTTPS, and cross-origin requests are refused. Roles: `timer` (capture only), `chief` (rulings, start control, publishing), `admin` (setup, devices, officials). Every ruling records `official_id`, set by the hub.
 - **LAN HTTPS — local CA (decided: option A)**: on first run the hub generates a
   local root CA and a server certificate for its LAN IP(s) and mDNS hostname. Each
   crew-owned tablet installs and trusts the root CA once (manual install or MDM

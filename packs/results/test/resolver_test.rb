@@ -102,4 +102,15 @@ class ResolverTest < Minitest::Test
     ])
     assert_equal "late", rulings.latest_by("set_lap_count") { it.payload["start_group_id"] }["g1"].id
   end
+
+  def test_cancelled_ids_lists_reverted_rulings_including_reverted_reverts
+    rulings = Results::ActiveRulings.new([
+      Results::Ruling.new(id: "v", kind: "void_capture", payload: { "capture_id" => "c" }, created_at_ms: 1),
+      Results::Ruling.new(id: "rv", kind: "revert", payload: { "ruling_id" => "v" }, created_at_ms: 2),
+      Results::Ruling.new(id: "d", kind: "dnf", payload: { "bib" => "1" }, created_at_ms: 3),
+      Results::Ruling.new(id: "rd", kind: "revert", payload: { "ruling_id" => "d" }, created_at_ms: 4),
+      Results::Ruling.new(id: "rrd", kind: "revert", payload: { "ruling_id" => "rd" }, created_at_ms: 5)
+    ])
+    assert_equal Set["v", "rd"], rulings.cancelled_ids
+  end
 end
