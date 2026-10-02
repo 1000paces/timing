@@ -10,7 +10,7 @@ class StandingsService
     LAST_GOOD[event.id] = [output, now_ms]
     Report.new(event:, output:, computed_at_ms: now_ms, stale: false, error: nil)
   rescue StandardError => e
-    Rails.logger.error("[standings] event #{event.id}: #{e.class}: #{e.message}")
+    Rails.logger.error("[standings] event #{event.id}: #{e.class}: #{e.message}\n#{Array(e.backtrace).first(10).join("\n")}")
     output, at = LAST_GOOD[event.id]
     Report.new(event:, output: output || EMPTY, computed_at_ms: at, stale: true, error: "#{e.class}: #{e.message}")
   end

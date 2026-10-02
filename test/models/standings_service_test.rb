@@ -2,6 +2,7 @@ require "test_helper"
 
 class StandingsServiceTest < ActiveSupport::TestCase
   setup do
+    StandingsService::LAST_GOOD.clear
     @event = create_event
     race = create_race(event: @event)
     register(race:, bib: "1")

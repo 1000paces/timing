@@ -11,9 +11,11 @@ module SuggestionFix
   end
 
   def complete(fix, capture_id: nil, bib: nil)
+    return fix unless fix
+    needed = missing(fix)
     filled = fix.dup
-    filled["capture_id"] = capture_id if capture_id && (filled["capture_id"].nil? || !filled.key?("capture_id"))
-    filled["bib"] = bib if bib && filled.key?("bib") && filled["bib"].nil?
+    filled["capture_id"] = capture_id if capture_id && needed.include?("capture_id")
+    filled["bib"] = bib if bib && needed.include?("bib")
     filled
   end
 end
