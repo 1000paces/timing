@@ -14,27 +14,27 @@ class StandingsTest < Minitest::Test
   end
 
   def test_timed_group_without_lap_count_is_in_progress_ranked_live
-    out = compute("crossings:\n  1: [100, 200]\n  2: [110]\n  3: [105, 215]\n", finish_rule: "{type: timed, target_duration_ms: 2700000}")
+    out = compute("crossings:\n  1: [100, 200]\n  2: [110]\n  3: [105, 215]\n", laps: nil)
     assert_equal :in_progress, race(out).state
     assert_nil race(out).lap_count
     assert_equal [[1, "1", "racing", 2, 200], [2, "3", "racing", 2, 215], [3, "2", "racing", 1, 110]], rows(out)
   end
 
   # Review Focus 2
-  def test_no_gun_means_not_started_and_crossings_do_not_count
-    out = compute("crossings:\n  1: [100, 200]\n", gun: nil)
+  def test_no_start_means_not_started_and_crossings_do_not_count
+    out = compute("crossings:\n  1: [100, 200]\n", start: nil)
     assert_equal :not_started, race(out).state
     assert_equal [[1, "1", "racing", 0, nil], [2, "2", "racing", 0, nil], [3, "3", "racing", 0, nil]], rows(out)
   end
 
   def test_crossings_before_race_start_are_ignored
-    out = compute("crossings:\n  1: [50, 150, 250, 350]\n", gun: 100)
+    out = compute("crossings:\n  1: [50, 150, 250, 350]\n", start: 100)
     assert_equal [1, "1", "finished", 3, 250], rows(out).first
   end
 
   # Review Focus 1
   def test_identical_times_tie_break_deterministically_by_crossing_id
-    out = compute("crossings:\n  2: [100]\n  1: [100]\n", bibs: [1, 2], finish_rule: "{type: fixed_laps, laps: 1}")
+    out = compute("crossings:\n  2: [100]\n  1: [100]\n", bibs: [1, 2], laps: 1)
     assert_equal ["1", "2"], race(out).rows.map(&:bib)
   end
 
@@ -65,13 +65,13 @@ class StandingsTest < Minitest::Test
   end
 
   def test_race_reports_its_effective_start
-    assert_nil race(compute("crossings:\n  1: [100]\n", gun: nil)).start_at_ms
-    assert_equal 100_000, race(compute("crossings:\n  1: [300]\n", gun: 100)).start_at_ms
-    out = compute("rulings:\n  - {kind: set_race_start, race_id: r1, at: 30}\n", gun: nil)
+    assert_nil race(compute("crossings:\n  1: [100]\n", start: nil)).start_at_ms
+    assert_equal 100_000, race(compute("crossings:\n  1: [300]\n", start: 100)).start_at_ms
+    out = compute("rulings:\n  - {kind: set_race_start, race_id: r1, at: 30}\n", start: nil)
     assert_equal 30_000, race(out).start_at_ms
   end
 
-  def test_set_race_start_overrides_group_gun
+  def test_latest_set_race_start_wins
     out = compute("crossings:\n  1: [130, 230, 330]\nrulings:\n  - {kind: set_race_start, race_id: r1, at: 30}\n", bibs: [1])
     assert_equal [1, "1", "finished", 3, 300], rows(out).first
   end
@@ -98,13 +98,11 @@ class StandingsTest < Minitest::Test
     assert_equal [[1, "1", "finished", 3, 300], [nil, "2", "dnf", 0, nil], [nil, "3", "dns", 0, nil], [nil, "4", "dsq", 1, nil]], rows(out)
   end
 
+  # Two races in separate cohorts (different scheduled starts).
   TWO_GROUPS = <<~YAML
-    start_groups:
-      - {id: g1, finish_rule: {type: fixed_laps, laps: 3}, gun: 0}
-      - {id: g2, finish_rule: {type: fixed_laps, laps: 3}, gun: 0}
     races:
-      - {id: r1, group: g1}
-      - {id: r2, group: g2}
+      - {id: r1, scheduled: 0, laps: 3, start: 0}
+      - {id: r2, scheduled: 60, laps: 3, start: 0}
   YAML
 
   def two_groups(entrants:, crossings:, rulings: "")
@@ -154,13 +152,13 @@ class StandingsTest < Minitest::Test
     assert_equal :changed_since_published, publication(out)
   end
 
-  def test_set_lap_count_overrides_fixed_laps_rule
-    out = compute(<<~YAML, bibs: [1, 2], finish_rule: "{type: fixed_laps, laps: 5}")
+  def test_set_lap_count_overrides_expected_laps
+    out = compute(<<~YAML, bibs: [1, 2], laps: 5)
       crossings:
         1: [100, 200, 300, 400, 500]
         2: [110, 220, 330]
       rulings:
-        - {kind: set_lap_count, start_group_id: g1, laps: 3}
+        - {kind: set_lap_count, race_id: r1, laps: 3}
     YAML
     assert_equal 3, race(out).lap_count
     assert_equal [[1, "1", "finished", 3, 300], [2, "2", "finished", 3, 330]], rows(out)
@@ -174,5 +172,49 @@ class StandingsTest < Minitest::Test
   def test_pull_before_finish_still_wins
     out = compute("crossings:\n  1: [100, 200, 300]\n  2: [110, 220]\nrulings:\n  - {kind: pull, bib: 1, at: 250}\n")
     assert_equal ["1", "pulled", 2, 200], rows(out).find { it[1] == "1" }[1..]
+  end
+
+  # --- Cohorts: finish-with-leader races sharing a scheduled start finish together ---
+
+  def cohort_out(races, crossings, rulings = "")
+    entrants = { "1" => "r1", "2" => "r2", "3" => "r3", "4" => "r3" }.select { |_, race| races.include?("id: #{race}") }
+    yaml = "races:\n#{races}entrants:\n" + entrants.map { |bib, race| "  - {bib: #{bib}, race: #{race}}\n" }.join
+    yaml += "crossings:\n" + crossings.map { |bib, times| "  #{bib}: #{times}\n" }.join
+    yaml += "rulings:\n#{rulings}" unless rulings.empty?
+    Results.compute(input_from(yaml))
+  end
+
+  def rows_of(out, race_id) = compact_rows(out.races.find { it.race_id == race_id }.rows)
+
+  def test_finish_with_leader_races_at_one_scheduled_start_finish_together_others_finish_alone
+    races = <<~YAML
+      - {id: r1, scheduled: 0, fwl: true, laps: 3, start: 0}
+      - {id: r2, scheduled: 0, fwl: true, laps: 3, start: 30}
+      - {id: r3, scheduled: 0, fwl: false, laps: 3, start: 0}
+    YAML
+    out = cohort_out(races.gsub(/^/, "  "), { "1" => "[100, 200, 300]", "2" => "[160, 320, 480]",
+                                             "3" => "[110, 210, 310, 410]", "4" => "[150, 305, 460]" })
+    assert_equal [[1, "1", "finished", 3, 300]], rows_of(out, "r1")
+    assert_equal [[1, "2", "finished", 2, 290]], rows_of(out, "r2"), "r2 finishes when r1's leader does"
+    assert_equal [[1, "3", "finished", 3, 310], [2, "4", "finished", 3, 460]], rows_of(out, "r3"), "r3 finishes on its own leader"
+  end
+
+  def test_finish_with_leader_races_at_different_scheduled_starts_are_separate
+    races = "  - {id: r1, scheduled: 0, laps: 3, start: 0}\n  - {id: r2, scheduled: 60, laps: 3, start: 0}\n"
+    out = cohort_out(races, { "1" => "[100, 200, 300]", "2" => "[160, 320, 480]" })
+    assert_equal [[1, "2", "finished", 3, 480]], rows_of(out, "r2")
+  end
+
+  def test_cohort_lap_count_from_agreed_expected_laps_else_not_set
+    agreed = cohort_out("  - {id: r1, laps: 3, start: 0}\n  - {id: r2, laps: 3, start: 0}\n", { "1" => "[100]" })
+    assert_equal [3, 3], agreed.races.map(&:lap_count)
+    differ = cohort_out("  - {id: r1, laps: 3, start: 0}\n  - {id: r2, laps: 4, start: 0}\n", { "1" => "[100]" })
+    assert_equal [nil, nil], differ.races.map(&:lap_count)
+  end
+
+  def test_set_lap_count_on_one_race_applies_to_its_cohort
+    out = cohort_out("  - {id: r1, start: 0}\n  - {id: r2, start: 0}\n", { "1" => "[100]" },
+                     "  - {kind: set_lap_count, race_id: r2, laps: 2}\n")
+    assert_equal [2, 2], out.races.map(&:lap_count)
   end
 end

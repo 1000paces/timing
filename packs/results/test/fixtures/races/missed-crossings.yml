@@ -1,8 +1,6 @@
 # Bib 2 missed lap 3 (an unassigned tap at 935 matches); bib 3 missed lap 4 (no match).
-start_groups:
-  - {id: g1, finish_rule: {type: fixed_laps, laps: 5}, gun: 0}
 races:
-  - {id: r1, group: g1}
+  - {id: r1, laps: 5, start: 0}
 entrants:
   - {bib: 1, race: r1}
   - {bib: 2, race: r1}

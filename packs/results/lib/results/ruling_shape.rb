@@ -3,9 +3,8 @@ module Results
   # rules on write; this guards the engine against rows that predate or bypass it).
   module RulingShape
     KEYS = {
-      "set_group_start" => %w[start_group_id at_ms],
       "set_race_start" => %w[race_id at_ms],
-      "set_lap_count" => %w[start_group_id laps],
+      "set_lap_count" => %w[race_id laps],
       "assign_bib" => %w[capture_id bib],
       "void_capture" => %w[capture_id],
       "insert_capture" => %w[bib at_ms],
@@ -19,7 +18,7 @@ module Results
       "revert" => %w[ruling_id]
     }.freeze
 
-    ID_KEYS = %w[start_group_id race_id capture_id ruling_id suggestion_key result_digest].freeze
+    ID_KEYS = %w[race_id capture_id ruling_id suggestion_key result_digest].freeze
 
     module_function
 

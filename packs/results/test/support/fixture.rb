@@ -2,6 +2,8 @@ require "yaml"
 
 module Results
   # Builds an Input from a compact YAML race description (times in seconds).
+  # races: [{id, scheduled (default 0), fwl (finish with leader, default true),
+  #          laps (expected laps), start (adds a set_race_start ruling)}]
   module Fixture
     module_function
 
@@ -38,9 +40,9 @@ module Results
         BibAssignment.new(id: b["id"], capture_id: b["capture"], bib: b["bib"].to_s, device_seq: next_seq.(devices.fetch(b["capture"])))
       end
 
-      groups = data.fetch("start_groups")
-      rulings = groups.select { it.key?("gun") }.map do |g|
-        Ruling.new(id: "gun-#{g['id']}", kind: "set_group_start", payload: { "start_group_id" => g["id"], "at_ms" => ms.(g["gun"]) }, created_at_ms: 0)
+      races = data.fetch("races")
+      rulings = races.select { it.key?("start") }.map do |r|
+        Ruling.new(id: "start-#{r['id']}", kind: "set_race_start", payload: { "race_id" => r["id"], "at_ms" => ms.(r["start"]) }, created_at_ms: 0)
       end
       (data["rulings"] || []).each_with_index do |r, i|
         payload = r.except("id", "kind", "created").to_h do |k, v|
@@ -54,8 +56,10 @@ module Results
       end
 
       input = Input.new(
-        start_groups: groups.map { StartGroupDef.new(id: it["id"], finish_rule: it.fetch("finish_rule")) },
-        races: data.fetch("races").map { RaceDef.new(id: it["id"], start_group_id: it["group"]) },
+        races: races.map do
+          RaceDef.new(id: it["id"], scheduled_at_ms: ms.(it.fetch("scheduled", 0)), finish_with_leader: it.fetch("fwl", true),
+                      expected_laps: it["laps"])
+        end,
         entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Rider #{it['bib']}")) },
         captures:, bib_assignments: assignments, rulings:, now_ms: ms.(data.fetch("now", 0))
       )
