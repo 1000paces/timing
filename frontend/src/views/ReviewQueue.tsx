@@ -10,9 +10,9 @@ import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { ACCEPT_SUGGESTION, DISMISS_SUGGESTION, type MutationResult, type Suggestion } from "../queries";
 
-type Props = { eventId: string; suggestions: Suggestion[]; canAct: boolean; onChanged: () => void };
+type Props = { eventId: string; suggestions: Suggestion[]; labels: Map<string, string>; canAct: boolean; onChanged: () => void };
 
-export function ReviewQueue({ eventId, suggestions, canAct, onChanged }: Props) {
+export function ReviewQueue({ eventId, suggestions, labels, canAct, onChanged }: Props) {
   return (
     <Paper component="aside" sx={{ p: 2, position: "sticky", top: 16 }}>
       <Typography variant="h6" component="h2">
@@ -21,14 +21,14 @@ export function ReviewQueue({ eventId, suggestions, canAct, onChanged }: Props) 
       {suggestions.length === 0 && <Typography color="text.secondary">Nothing to review.</Typography>}
       <List disablePadding>
         {suggestions.map((s) => (
-          <SuggestionItem key={s.key} eventId={eventId} suggestion={s} canAct={canAct} onChanged={onChanged} />
+          <SuggestionItem key={s.key} eventId={eventId} suggestion={s} label={labels.get(s.key)} canAct={canAct} onChanged={onChanged} />
         ))}
       </List>
     </Paper>
   );
 }
 
-function SuggestionItem({ eventId, suggestion, canAct, onChanged }: { eventId: string; suggestion: Suggestion; canAct: boolean; onChanged: () => void }) {
+function SuggestionItem({ eventId, suggestion, label, canAct, onChanged }: { eventId: string; suggestion: Suggestion; label?: string; canAct: boolean; onChanged: () => void }) {
   const [accept] = useMutation<{ acceptSuggestion: MutationResult }>(ACCEPT_SUGGESTION);
   const [dismiss] = useMutation<{ dismissSuggestion: MutationResult }>(DISMISS_SUGGESTION);
   const [bib, setBib] = useState("");
@@ -64,7 +64,7 @@ function SuggestionItem({ eventId, suggestion, canAct, onChanged }: { eventId: s
 
   return (
     <ListItem data-testid="suggestion" divider sx={{ display: "block", px: 0 }}>
-      <Typography variant="body2">{suggestion.message}</Typography>
+      <Typography variant="body2">{label ?? suggestion.message}</Typography>
       {canAct && (
         <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
           {needsBib && (

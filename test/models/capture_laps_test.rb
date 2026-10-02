@@ -28,4 +28,29 @@ class CaptureLapsTest < ActiveSupport::TestCase
     assert_nil lap(Capture.record!(device: @tablet, at_ms: 70_000, bib: "999"))
     assert_nil lap(Capture.record!(device: @tablet, at_ms: 70_000, bib: nil))
   end
+
+  # Riders 101–103 lap in about 60 s; flags compare a lap with the race's
+  # typical lap: the median of the race's other laps, lap 1 excluded.
+  def lap_at(bib, *times) = times.map { Capture.record!(device: @tablet, at_ms: 10_000 + it * 1000, bib:) }
+
+  test "a roughly double lap is a suspected missed lap; other long laps and very short laps are flagged too" do
+    register(race: @race, bib: "102")
+    register(race: @race, bib: "103")
+    lap_at("102", 65, 125, 185)
+    lap_at("103", 70, 130, 190)
+    normal, missed, long, short = lap_at("101", 60, 120, 240, 340, 355).last(4)
+    laps = CaptureLaps.new(@event)
+    info = ->(c) { laps.info(c).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] } }
+    assert_equal [2, 60_000, 60_000, nil], info.(normal)
+    assert_equal [3, 120_000, 60_000, "missed"], info.(missed)
+    assert_equal [4, 100_000, 60_000, "long"], info.(long)
+    assert_equal [5, 15_000, 60_000, "short"], info.(short)
+  end
+
+  test "no flag on lap 1 or before the race has three laps to compare" do
+    first, second = lap_at("101", 200, 400)
+    laps = CaptureLaps.new(@event)
+    assert_equal [1, 200_000, nil, nil], laps.info(first).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
+    assert_equal [2, 200_000, nil, nil], laps.info(second).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
+  end
 end

@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@apollo/client/react";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -6,10 +7,11 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { formatClock } from "../format";
-import { CAPTURE_SCREEN, RECORD_CAPTURE, type CaptureScreenData, type RecordCaptureResult } from "../queries";
+import { formatClock, formatElapsed } from "../format";
+import { CAPTURE_SCREEN, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
 import { isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -91,9 +93,10 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
               <Typography sx={{ fontWeight: "bold", width: 80 }}>{c.bib ?? "—"}</Typography>
               <Typography sx={{ width: 70 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
-              <Typography color={c.bib && riders.has(c.bib) ? "text.primary" : "warning.main"}>
+              <Typography sx={{ flex: 1 }} color={c.bib && riders.has(c.bib) ? "text.primary" : "warning.main"}>
                 {c.bib ? (riders.get(c.bib) ?? "unknown bib") : "no bib"}
               </Typography>
+              <LapWarning capture={c} />
             </ListItem>
           ))}
           {event.myCaptures.length === 0 && (
@@ -104,5 +107,24 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
         </List>
       </Paper>
     </Box>
+  );
+}
+
+const FLAG: Record<LapFlag, { label: string; hint: string }> = {
+  missed: { label: "Missed lap?", hint: "About double the typical lap: a crossing may not have been recorded" },
+  long: { label: "Long lap", hint: "Much longer than the typical lap: a mechanical, or a missed crossing?" },
+  short: { label: "Short lap", hint: "Much shorter than the typical lap: a double tap or wrong bib?" },
+};
+
+function LapWarning({ capture }: { capture: CaptureRow }) {
+  if (!capture.lapFlag || capture.lapMs == null || capture.typicalLapMs == null) return null;
+  const { label, hint } = FLAG[capture.lapFlag];
+  return (
+    <Tooltip title={hint}>
+      <Typography data-testid="lap-warning" color="warning.main" sx={{ display: "flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}>
+        <WarningAmberIcon fontSize="small" />
+        {label} {formatElapsed(capture.lapMs)} (typical {formatElapsed(capture.typicalLapMs)})
+      </Typography>
+    </Tooltip>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortRaces } from "./races";
+import { sortRaces, unassignedLabel } from "./races";
 
 describe("sortRaces", () => {
   it("orders by scheduled start time, then race name; unscheduled races last", () => {
@@ -35,5 +35,19 @@ describe("cohortLapWarnings", () => {
     const warnings = cohortLapWarnings([race("A", 1, 5), race("B", 1, 4), race("C", 1, 3, false), race("D", 2, 9)]);
     expect(warnings).toEqual(["A and B finish together but expect different laps (5, 4)"]);
     expect(cohortLapWarnings([race("A", 1, 5), race("B", 1, 5)])).toEqual([]);
+  });
+});
+
+describe("unassignedLabel", () => {
+  const at = (h: number, m: number, sec: number) => new Date(2026, 9, 18, h, m, sec).getTime();
+  const starts = [at(10, 0, 0), at(10, 0, 30), at(11, 0, 0)];
+
+  it("shows time of day and elapsed since the latest start before the crossing", () => {
+    expect(unassignedLabel({ bib: null, atMs: at(10, 23, 30) }, starts)).toBe("No bib · 10:23:30 · +23:00.0");
+    expect(unassignedLabel({ bib: "400", atMs: at(11, 5, 0) }, starts)).toBe("Unknown rider: bib 400 · 11:05:00 · +5:00.0");
+  });
+
+  it("omits elapsed before any start", () => {
+    expect(unassignedLabel({ bib: null, atMs: at(9, 0, 0) }, starts)).toBe("No bib · 09:00:00");
   });
 });

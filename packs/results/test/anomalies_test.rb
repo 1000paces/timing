@@ -22,6 +22,12 @@ class AnomaliesTest < Minitest::Test
     assert_equal :suspected_missed_crossing, find(out, "missed:3:c-3-3:c-3-4").kind
   end
 
+  def test_unassigned_messages_name_the_problem_not_the_capture_id
+    out = compute("crossings:\n  1: [300]\n  9: [400]\nunassigned: [500]\n", bibs: [1], laps: 5)
+    messages = out.suggestions.select { it.kind == :unassigned_capture }.map(&:message)
+    assert_equal ["Unknown rider: bib 9", "No bib"], messages
+  end
+
   def test_accepting_the_suggestion_fixes_laps_and_clears_it
     yaml = MISSED + "unassigned: [935]\nrulings:\n  - {kind: assign_bib, capture_id: u-1, bib: 2}\n"
     out = compute(yaml, laps: 5)

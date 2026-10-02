@@ -45,7 +45,9 @@ class RecordCaptureTest < ActionDispatch::IntegrationTest
     sign_in(@timer, "1111")
     laps = 2.times.map { gql(RECORD, eventId: @event.id, bib: "101").dig("data", "recordCapture", "capture", "lap") }
     assert_equal [1, 2], laps
-    assert_equal [2, 1], gql("query($id: ID!) { event(id: $id) { myCaptures { lap } } }", id: @event.id).dig("data", "event", "myCaptures").map { it["lap"] }
+    rows = gql("query($id: ID!) { event(id: $id) { myCaptures { lap lapMs typicalLapMs lapFlag } } }", id: @event.id).dig("data", "event", "myCaptures")
+    assert_equal [2, 1], rows.map { it["lap"] }
+    assert rows.all? { it["lapMs"].is_a?(Integer) && it["typicalLapMs"].nil? && it["lapFlag"].nil? }
   end
 
   test "recording requires sign in" do

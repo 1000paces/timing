@@ -169,7 +169,7 @@ module Results
 
     def unassigned_suggestions
       @resolved.unassigned.map do |u|
-        message = u.bib ? "Capture #{u.capture_id} has unregistered bib #{u.bib}" : "Capture #{u.capture_id} has no bib"
+        message = u.bib ? "Unknown rider: bib #{u.bib}" : "No bib"
         Suggestion.new(key: "unassigned:#{u.capture_id}", kind: :unassigned_capture, bib: u.bib, race_id: nil, message:,
                        fix: { "kind" => "assign_bib", "capture_id" => u.capture_id, "bib" => nil })
       end
