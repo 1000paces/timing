@@ -36,7 +36,7 @@ class TimingTest < ActiveSupport::TestCase
   end
 
   test "rulings validate kind and required payload keys" do
-    assert rule(event: @event, kind: "set_lap_count", start_group_id: "g1", laps: 5).persisted?
+    assert rule(event: @event, kind: "set_lap_count", race_id: "r1", laps: 5).persisted?
     refute Ruling.new(event: @event, kind: "set_lap_count", payload: { "laps" => 5 }).valid?
     refute Ruling.new(event: @event, kind: "teleport", payload: {}).valid?
   end
@@ -44,12 +44,12 @@ class TimingTest < ActiveSupport::TestCase
   test "rulings reject wrongly typed payload values" do
     invalid = ->(kind, **payload) { Ruling.new(event: @event, kind:, payload: payload.transform_keys(&:to_s)).tap(&:valid?) }
     [
-      ["set_lap_count", { start_group_id: "g1", laps: "3" }],
-      ["set_lap_count", { start_group_id: "g1", laps: 0 }],
-      ["set_lap_count", { start_group_id: "g1", laps: -2 }],
+      ["set_lap_count", { race_id: "r1", laps: "3" }],
+      ["set_lap_count", { race_id: "r1", laps: 0 }],
+      ["set_lap_count", { race_id: "r1", laps: -2 }],
       ["set_race_start", { race_id: "r1", at_ms: "5" }],
-      ["set_group_start", { start_group_id: "g1", at_ms: nil }],
-      ["set_group_start", { start_group_id: "", at_ms: 5 }],
+      ["set_race_start", { race_id: "r1", at_ms: nil }],
+      ["set_race_start", { race_id: "", at_ms: 5 }],
       ["assign_bib", { capture_id: "c1", bib: "" }],
       ["assign_bib", { capture_id: "c1", bib: 5 }],
       ["void_capture", { capture_id: 7 }],
@@ -62,7 +62,7 @@ class TimingTest < ActiveSupport::TestCase
   end
 
   test "rulings accept well typed payload values" do
-    assert rule(event: @event, kind: "set_lap_count", start_group_id: "g1", laps: 1).persisted?
+    assert rule(event: @event, kind: "set_lap_count", race_id: "r1", laps: 1).persisted?
     assert rule(event: @event, kind: "set_race_start", race_id: "r1", at_ms: 5).persisted?
     assert rule(event: @event, kind: "assign_bib", capture_id: "c1", bib: "9").persisted?
   end

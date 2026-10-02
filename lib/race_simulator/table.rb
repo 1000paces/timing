@@ -4,7 +4,7 @@ module RaceSimulator
     module_function
 
     def render(report)
-      races = report.event.races.includes(:category).index_by(&:id)
+      races = report.event.races.index_by(&:id)
       lines = []
       lines << "STALE (#{report.error})" if report.stale
       report.output.races.each do |result|

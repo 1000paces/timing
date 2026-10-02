@@ -3,8 +3,8 @@ require "csv"
 # Imports registrations from a CSV export. Rows are independent: a bad row is
 # reported and skipped, the rest still import.
 class RegistrationImport
-  FIELDS = %w[first_name last_name gender birth_date ability_level team license_number bib category].freeze
-  REQUIRED = %w[first_name last_name gender bib category].freeze
+  FIELDS = %w[first_name last_name gender birth_date ability_level team license_number bib race].freeze
+  REQUIRED = %w[first_name last_name gender bib race].freeze
   RIDER_FIELDS = %w[first_name last_name gender ability_level team license_number].freeze
 
   RowMessage = Data.define(:row, :message)
@@ -24,7 +24,7 @@ class RegistrationImport
     missing = REQUIRED.reject { table.headers.include?(@mapping[it]) }
     return Result.new(created: 0, errors: missing.map { RowMessage.new(row: 1, message: "missing column #{it}") }, warnings: []) if missing.any?
 
-    races = @event.races.includes(:category).index_by { it.category.name.downcase }
+    races = @event.races.index_by { it.name.downcase }
     created = 0
     errors = []
     warnings = []
@@ -32,8 +32,8 @@ class RegistrationImport
       next if row.fields.all?(&:blank?)
 
       value = ->(field) { row[@mapping[field]]&.strip.presence }
-      race = races[value.("category").to_s.downcase]
-      next errors << RowMessage.new(row: number, message: "unknown category #{value.('category')}") unless race
+      race = races[value.("race").to_s.downcase]
+      next errors << RowMessage.new(row: number, message: "unknown race #{value.('race')}") unless race
 
       attrs = RIDER_FIELDS.to_h { [it, value.(it)] }
       if (raw_date = value.("birth_date"))

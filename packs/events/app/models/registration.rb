@@ -12,8 +12,8 @@ class Registration < ApplicationRecord
   validates :bib, presence: true, uniqueness: { scope: :event_id }
   validate :race_in_same_event
 
-  # Warnings, not errors: officials may let riders race up a category.
-  def eligibility_warnings = Eligibility.warnings(rider:, category: race.category, event:)
+  # Warnings, not errors: officials may let riders race up.
+  def eligibility_warnings = Eligibility.warnings(rider:, race:, event:)
 
   private
 

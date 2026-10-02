@@ -6,7 +6,7 @@ class StandingsServiceTest < ActiveSupport::TestCase
     @event = create_event
     race = create_race(event: @event)
     register(race:, bib: "1")
-    rule(event: @event, kind: "set_group_start", start_group_id: race.start_group_id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: race.id, at_ms: 0)
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: "1")
   end
 
