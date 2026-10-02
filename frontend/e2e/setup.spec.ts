@@ -49,6 +49,18 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await expect(page.getByRole("row").filter({ hasText: "Novice Open" })).toContainText("Started");
 
+  // Editing a started race without touching its start keeps the recorded start.
+  await page.getByRole("tab", { name: "Setup" }).click();
+  const novice = page.getByRole("row").filter({ hasText: "Novice Open" });
+  const startedCell = novice.getByRole("cell").nth(5);
+  await expect(startedCell).not.toHaveText("—");
+  const recorded = await startedCell.textContent();
+  await novice.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("dialog").getByLabel("Expected duration (minutes)").fill("40");
+  await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
+  await expect(novice).toContainText("40 min");
+  await expect(startedCell).toHaveText(recorded!);
+
   // Review Focus 1/5: laps set on one finish-with-leader race apply to its cohort only.
   await page.getByRole("tab", { name: "Race" }).click();
   await region(page, "Cat 3 Masters 35+ Men").getByLabel("Laps").fill("2");

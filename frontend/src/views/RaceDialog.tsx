@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
-import { fromLocalInput, toLocalInput } from "../format";
+import { fromLocalInput, startCorrection, toLocalInput } from "../format";
 import { CREATE_RACE, SET_RACE_START, UPDATE_RACE, type MutationResult, type RaceInfo } from "../queries";
 import { defaultRaceName } from "../races";
 
@@ -37,7 +37,7 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
   const [minutes, setMinutes] = useState(race?.expectedDurationMs ? String(race.expectedDurationMs / 60_000) : "");
   const [laps, setLaps] = useState(race?.expectedLaps?.toString() ?? "");
   const [fwl, setFwl] = useState(race?.finishWithLeaderOverride == null ? "inherit" : race.finishWithLeaderOverride ? "on" : "off");
-  const [start, setStart] = useState(toLocalInput(startAtMs));
+  const [start, setStart] = useState(toLocalInput(startAtMs, { seconds: true }));
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -62,8 +62,8 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
         ? (await updateRace({ variables: { id: race.id, ...fields } })).data?.updateRace
         : (await createRace({ variables: { eventId, ...fields } })).data?.createRace;
       const problems = result?.errors ?? [];
-      const startMs = fromLocalInput(start);
-      if (!problems.length && race && canSetStart && startMs != null && startMs !== startAtMs) {
+      const startMs = startCorrection(start, startAtMs);
+      if (!problems.length && race && canSetStart && startMs != null) {
         problems.push(...((await setRaceStart({ variables: { raceId: race.id, atMs: startMs } })).data?.setRaceStart.errors ?? []));
       }
       if (problems.length) setErrors(problems);
@@ -110,7 +110,7 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
           </Stack>
           {race && canSetStart && (
             <TextField label="Start time" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)}
-              helperText="Set by the Start screen; enter it here only to correct it" slotProps={{ inputLabel: { shrink: true } }} />
+              helperText="Set by the Start screen; enter it here only to correct it" slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }} />
           )}
           {errors.map((e) => (
             <Alert key={e} severity="error">{e}</Alert>
