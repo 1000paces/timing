@@ -40,3 +40,9 @@ plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
+
+# Hub HTTPS (spec §8): bin/hub sets HUB_TLS=1 after running hub:certs.
+if ENV["HUB_TLS"] == "1"
+  certs = File.expand_path("../storage/certs", __dir__)
+  ssl_bind "0.0.0.0", ENV.fetch("HUB_TLS_PORT", "3443"), key: "#{certs}/server.key", cert: "#{certs}/server.crt"
+end

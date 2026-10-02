@@ -1,5 +1,6 @@
 require_relative "boot"
 require_relative "../lib/timing_mode"
+require_relative "../lib/hub_tls_gate"
 $LOAD_PATH.unshift File.expand_path("../packs/results/lib", __dir__)
 require "results"
 
@@ -29,7 +30,7 @@ module Timing
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets tasks timing_mode.rb hub_tls_gate.rb])
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -48,5 +49,6 @@ module Timing
                                         secure: ENV["HUB_TLS"] == "1"
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options
+    config.middleware.insert_before 0, HubTlsGate
   end
 end

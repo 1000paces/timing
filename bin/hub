@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Starts the venue hub: HTTPS on HUB_TLS_PORT (default 3443) with the hub's own
+# certificate, plain HTTP on PORT (default 3000) for device onboarding only.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export TIMING_MODE=hub HUB_TLS=1
+bin/rails db:prepare
+bin/rails hub:certs
+# `rails server -b/-p` would discard the TLS bind from config/puma.rb, so run puma directly.
+exec bundle exec puma -C config/puma.rb

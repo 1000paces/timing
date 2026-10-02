@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   resource :session, only: %i[create show destroy]
   post "devices/pair", to: "devices#pair"
   post "graphql", to: "graphql#execute"
+  get "onboarding", to: "onboarding#show"
+  get "onboarding/ca.crt", to: "onboarding#ca"
   mount ActionCable.server => "/cable"
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
