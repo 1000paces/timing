@@ -1,4 +1,12 @@
 import { useMutation } from "@apollo/client/react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { ACCEPT_SUGGESTION, DISMISS_SUGGESTION, type MutationResult, type Suggestion } from "../queries";
 
@@ -6,15 +14,17 @@ type Props = { eventId: string; suggestions: Suggestion[]; canAct: boolean; onCh
 
 export function ReviewQueue({ eventId, suggestions, canAct, onChanged }: Props) {
   return (
-    <aside className="panel queue">
-      <h2>Review queue ({suggestions.length})</h2>
-      {suggestions.length === 0 && <p className="muted">Nothing to review.</p>}
-      <ul>
+    <Paper component="aside" sx={{ p: 2, position: "sticky", top: 16 }}>
+      <Typography variant="h6" component="h2">
+        Review queue ({suggestions.length})
+      </Typography>
+      {suggestions.length === 0 && <Typography color="text.secondary">Nothing to review.</Typography>}
+      <List disablePadding>
         {suggestions.map((s) => (
           <SuggestionItem key={s.key} eventId={eventId} suggestion={s} canAct={canAct} onChanged={onChanged} />
         ))}
-      </ul>
-    </aside>
+      </List>
+    </Paper>
   );
 }
 
@@ -53,19 +63,29 @@ function SuggestionItem({ eventId, suggestion, canAct, onChanged }: { eventId: s
     });
 
   return (
-    <li data-testid="suggestion">
-      <div>{suggestion.message}</div>
+    <ListItem data-testid="suggestion" divider sx={{ display: "block", px: 0 }}>
+      <Typography variant="body2">{suggestion.message}</Typography>
       {canAct && (
-        <div className="actions">
-          {needsBib && <input aria-label="Bib" placeholder="Bib" value={bib} onChange={(e) => setBib(e.target.value)} style={{ width: 70 }} />}
-          {!needsCrossing && (
-            <button onClick={onAccept} disabled={busy || (needsBib && !bib.trim())}>Accept</button>
+        <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
+          {needsBib && (
+            <TextField label="Bib" size="small" value={bib} onChange={(e) => setBib(e.target.value)} sx={{ width: 90 }} />
           )}
-          <button onClick={onDismiss} disabled={busy}>Dismiss</button>
-          {needsCrossing && <span className="muted">needs a crossing — not available yet</span>}
-        </div>
+          {!needsCrossing && (
+            <Button size="small" variant="contained" onClick={onAccept} disabled={busy || (needsBib && !bib.trim())}>
+              Accept
+            </Button>
+          )}
+          <Button size="small" onClick={onDismiss} disabled={busy}>
+            Dismiss
+          </Button>
+          {needsCrossing && (
+            <Typography variant="caption" color="text.secondary">
+              needs a crossing — not available yet
+            </Typography>
+          )}
+        </Stack>
       )}
-      {error && <div className="error">{error}</div>}
-    </li>
+      {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
+    </ListItem>
   );
 }

@@ -1,3 +1,10 @@
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useState, type FormEvent } from "react";
 import { signIn, type Official } from "../session";
 
@@ -21,18 +28,26 @@ export function SignIn({ onSignedIn }: { onSignedIn: (official: Official) => voi
   }
 
   return (
-    <form className="signin" onSubmit={submit}>
-      <h1>Timing console</h1>
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-      </label>
-      <label>
-        PIN
-        <input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value)} />
-      </label>
-      <button type="submit" disabled={busy || !name || !pin}>Sign in</button>
-      {error && <p className="error">{error}</p>}
-    </form>
+    <Box sx={{ display: "grid", placeItems: "center", minHeight: "100vh" }}>
+      <Paper component="form" onSubmit={submit} sx={{ p: 4, width: 320 }}>
+        <Stack spacing={2}>
+          <Typography variant="h5" component="h1">
+            Timing console
+          </Typography>
+          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <TextField
+            label="PIN"
+            type="password"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            slotProps={{ htmlInput: { inputMode: "numeric" } }}
+          />
+          <Button type="submit" variant="contained" disabled={busy || !name || !pin}>
+            Sign in
+          </Button>
+          {error && <Alert severity="error">{error}</Alert>}
+        </Stack>
+      </Paper>
+    </Box>
   );
 }

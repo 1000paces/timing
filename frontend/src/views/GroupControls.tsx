@@ -1,4 +1,10 @@
 import { useMutation } from "@apollo/client/react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useRef, useState, type FormEvent } from "react";
 import { formatClock } from "../format";
 import { FIRE_START, SET_LAP_COUNT, type MutationResult } from "../queries";
@@ -56,26 +62,38 @@ export function GroupControls({ groupId, started, startedAtMs, lapCount, canAct,
   }
 
   return (
-    <div className="panel controls">
-      {started ? (
-        <strong>Started at {startedAtMs ? formatClock(startedAtMs) : "—"}</strong>
-      ) : started === null ? (
-        <span className="muted">Checking start…</span>
-      ) : canAct ? (
-        <button className="go" onClick={go} disabled={firing}>GO</button>
-      ) : (
-        <span className="muted">Not started</span>
-      )}
-      <span>Lap count: {lapCount ?? "not set"}</span>
-      {canAct && (
-        <form onSubmit={submitLaps} className="controls">
-          <label>
-            Laps <input type="number" min={1} value={laps} onChange={(e) => setLaps(e.target.value)} style={{ width: 64 }} />
-          </label>
-          <button type="submit" disabled={!laps}>Set laps</button>
-        </form>
-      )}
-      {error && <span className="error">{error}</span>}
-    </div>
+    <Paper sx={{ p: 2, mb: 2 }}>
+      <Stack direction="row" spacing={3} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+        {started ? (
+          <Typography variant="h6">Started at {startedAtMs ? formatClock(startedAtMs) : "—"}</Typography>
+        ) : started === null ? (
+          <Typography color="text.secondary">Checking start…</Typography>
+        ) : canAct ? (
+          <Button variant="contained" color="success" size="large" onClick={go} disabled={firing} sx={{ px: 5, fontSize: 20, fontWeight: 700 }}>
+            GO
+          </Button>
+        ) : (
+          <Typography color="text.secondary">Not started</Typography>
+        )}
+        <Typography>Lap count: {lapCount ?? "not set"}</Typography>
+        {canAct && (
+          <Stack component="form" direction="row" spacing={1} onSubmit={submitLaps} sx={{ alignItems: "center" }}>
+            <TextField
+              label="Laps"
+              type="number"
+              size="small"
+              value={laps}
+              onChange={(e) => setLaps(e.target.value)}
+              slotProps={{ htmlInput: { min: 1 } }}
+              sx={{ width: 96 }}
+            />
+            <Button type="submit" variant="outlined" disabled={!laps}>
+              Set laps
+            </Button>
+          </Stack>
+        )}
+      </Stack>
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+    </Paper>
   );
 }

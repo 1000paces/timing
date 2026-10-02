@@ -1,4 +1,10 @@
 import { useQuery } from "@apollo/client/react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import LinearProgress from "@mui/material/LinearProgress";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect } from "react";
 import { EVENT, RULINGS, STANDINGS, type EventData, type RulingsData, type StandingsData } from "../queries";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
@@ -29,8 +35,10 @@ export function RaceScreen({ eventId, groupId, official, onSignedOut }: Props) {
 
   const groups = event.data?.event.startGroups ?? [];
   const group = groups.find((g) => g.id === groupId) ?? groups[0];
-  if (!event.data) return <p className="page muted">{event.error ? event.error.message : "Loading…"}</p>;
-  if (!group) return <p className="page muted">This event has no start groups.</p>;
+  if (!event.data) {
+    return <Box sx={{ p: 3 }}>{event.error ? <Alert severity="error">{event.error.message}</Alert> : <LinearProgress />}</Box>;
+  }
+  if (!group) return <Typography sx={{ p: 3 }} color="text.secondary">This event has no start groups.</Typography>;
 
   const raceIds = new Set(group.races.map((r) => r.id));
   const report = standings.data?.standings;
@@ -43,18 +51,20 @@ export function RaceScreen({ eventId, groupId, official, onSignedOut }: Props) {
   const canAct = roleCanAct(official.role);
 
   return (
-    <div className="race-screen">
-      <main>
-        <h1>{event.data.event.name}</h1>
-        <nav className="groups">
+    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 2, p: 2, alignItems: "start" }}>
+      <Box component="main">
+        <Typography variant="h4" component="h1" gutterBottom>
+          {event.data.event.name}
+        </Typography>
+        <Tabs value={group.id} sx={{ mb: 2 }}>
           {groups.map((g) => (
-            <a key={g.id} href={eventHref(eventId, g.id)} className={g.id === group.id ? "current" : ""}>
-              {g.name}
-            </a>
+            <Tab key={g.id} value={g.id} label={g.name} component="a" href={eventHref(eventId, g.id)} />
           ))}
-        </nav>
-        {(standings.error || rulings.error) && <p className="error">{(standings.error ?? rulings.error)!.message}</p>}
-        {report?.stale && <p className="warning">Standings are out of date: {report.error}</p>}
+        </Tabs>
+        {(standings.error || rulings.error) && (
+          <Alert severity="error" sx={{ mb: 2 }}>{(standings.error ?? rulings.error)!.message}</Alert>
+        )}
+        {report?.stale && <Alert severity="warning" sx={{ mb: 2 }}>Standings are out of date: {report.error}</Alert>}
         <GroupControls
           key={group.id}
           groupId={group.id}
@@ -67,8 +77,8 @@ export function RaceScreen({ eventId, groupId, official, onSignedOut }: Props) {
         {races.map((race) => (
           <Standings key={race.race.id} race={race} />
         ))}
-      </main>
+      </Box>
       <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} canAct={canAct} onChanged={refresh} />
-    </div>
+    </Box>
   );
 }

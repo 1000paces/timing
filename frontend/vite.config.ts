@@ -6,7 +6,8 @@ const rails = "http://localhost:3000";
 export default defineConfig({
   base: "/console/",
   plugins: [react()],
-  build: { outDir: "../public/console", emptyOutDir: true },
+  // MUI makes one ~700 kB bundle; fine for a console loaded once over the LAN.
+  build: { outDir: "../public/console", emptyOutDir: true, chunkSizeWarningLimit: 1000 },
   server: {
     port: 5173,
     proxy: {

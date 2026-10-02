@@ -1,4 +1,12 @@
 import { useQuery } from "@apollo/client/react";
+import Alert from "@mui/material/Alert";
+import Container from "@mui/material/Container";
+import LinearProgress from "@mui/material/LinearProgress";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import { EVENTS, type EventsData } from "../queries";
 import { isSignedOutError } from "../roles";
@@ -11,20 +19,30 @@ export function Events({ onSignedOut }: { onSignedOut: () => void }) {
   }, [error, onSignedOut]);
 
   return (
-    <div className="page">
-      <h1>Events</h1>
-      {loading && <p className="muted">Loading…</p>}
-      {error && <p className="error">{error.message}</p>}
-      <ul>
-        {data?.events.map((event) => (
-          <li key={event.id}>
-            <a href={eventHref(event.id)}>
-              {event.name} — {event.date}
-            </a>
-          </li>
-        ))}
-      </ul>
-      {data && data.events.length === 0 && <p className="muted">No events yet.</p>}
-    </div>
+    <Container maxWidth="md" sx={{ py: 3 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Events
+      </Typography>
+      {loading && <LinearProgress />}
+      {error && <Alert severity="error">{error.message}</Alert>}
+      {data && (
+        <Paper>
+          <List>
+            {data.events.map((event) => (
+              <ListItem key={event.id}>
+                <Link href={eventHref(event.id)} underline="hover">
+                  {event.name} — {event.date}
+                </Link>
+              </ListItem>
+            ))}
+            {data.events.length === 0 && (
+              <ListItem>
+                <Typography color="text.secondary">No events yet.</Typography>
+              </ListItem>
+            )}
+          </List>
+        </Paper>
+      )}
+    </Container>
   );
 }
