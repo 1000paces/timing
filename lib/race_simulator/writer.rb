@@ -1,6 +1,5 @@
 module RaceSimulator
-  # Records the simulation as a "Simulator" device would. Its hash chain is a
-  # placeholder: simulator entries never go through device sync verification.
+  # Records the simulation as a "Simulator" device would.
   class Writer
     def initialize(event:, device_name: "Simulator")
       @event = event
@@ -19,12 +18,6 @@ module RaceSimulator
       Ruling.create!(event: @event, kind: "set_lap_count", payload: { "race_id" => race.id, "laps" => laps })
     end
 
-    def capture(at_ms:, bib:)
-      last = DeviceEntry.where(device:).order(:device_seq).last
-      prev = last&.entry_hash || Digest::SHA256.hexdigest(device.id)
-      id = SecureRandom.uuid_v7
-      Capture.create!(id:, event: @event, device:, device_seq: (last&.device_seq || 0) + 1, captured_at_ms: at_ms,
-                      clock_offset_ms: 0, bib:, prev_hash: prev, entry_hash: Digest::SHA256.hexdigest("#{prev}|#{id}|#{at_ms}|#{bib}"))
-    end
+    def capture(at_ms:, bib:) = Capture.record!(device:, at_ms:, bib:)
   end
 end

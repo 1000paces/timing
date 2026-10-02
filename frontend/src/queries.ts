@@ -165,3 +165,32 @@ export type UnstartRaceResult = { unstartRace: MutationResult };
 export const UNSTART_RACE = gql`
   mutation UnstartRace($raceId: ID!) { unstartRace(raceId: $raceId) { errors } }
 `;
+
+export type CaptureRow = { id: string; bib: string | null; capturedAtMs: number };
+export type CaptureScreenData = {
+  event: {
+    id: string;
+    name: string;
+    races: { id: string; name: string }[];
+    registrations: { bib: string; raceId: string; rider: { firstName: string; lastName: string } }[];
+    myCaptures: CaptureRow[];
+  };
+};
+export const CAPTURE_SCREEN = gql`
+  query CaptureScreen($id: ID!) {
+    event(id: $id) {
+      id name
+      races { id name }
+      registrations { bib raceId rider { firstName lastName } }
+      myCaptures { id bib capturedAtMs }
+    }
+  }
+`;
+export type RecordCaptureResult = { recordCapture: MutationResult & { capture: CaptureRow | null } };
+export const RECORD_CAPTURE = gql`
+  mutation RecordCapture($eventId: ID!, $bib: String) {
+    recordCapture(eventId: $eventId, bib: $bib) {
+      capture { id bib capturedAtMs } errors
+    }
+  }
+`;
