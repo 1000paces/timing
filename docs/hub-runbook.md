@@ -27,6 +27,17 @@ bin/hub
 - `bin/hub` currently runs in the development environment, not production. See `docs/TODO.md`, "Run the venue hub in production mode".
 - Keep `storage/` backed up: it holds the database and the certificate authority. A new CA means re-trusting every tablet.
 
+## Ops console
+
+- At the venue: `bin/hub` builds the console the first time and serves it at
+  `https://<hub address>:3443/console/`. After pulling new code, rebuild with
+  `bin/rails console:build`.
+- In development: `bin/console-dev`, then open `http://localhost:5173/console/`.
+  Simulated races (`bin/simulate-race`) show up within 5 seconds — the console
+  also polls, because in development live pushes only reach the server process
+  that made the change.
+- Browser tests: `cd frontend && npm run e2e` (uses its own database, `storage/e2e.sqlite3`).
+
 ## Watch a simulated race
 
 ```bash
