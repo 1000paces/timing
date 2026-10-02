@@ -5,7 +5,7 @@ import { linkTo, raceHref, setupHref, startsHref } from "../route";
 
 type Screen = "setup" | "starts" | "race";
 
-// Event title plus the Setup | Start | Race tabs. Setup is for admins.
+// Event title plus the Setup | Starts | Results tabs. Setup is for admins.
 export function EventNav({ eventId, eventName, current, admin }: { eventId: string; eventName: string; current: Screen; admin: boolean }) {
   return (
     <>
@@ -14,8 +14,8 @@ export function EventNav({ eventId, eventName, current, admin }: { eventId: stri
       </Typography>
       <Tabs value={current} sx={{ mb: 2 }}>
         {admin && <Tab value="setup" label="Setup" component="a" {...linkTo(setupHref(eventId))} />}
-        <Tab value="starts" label="Start" component="a" {...linkTo(startsHref(eventId))} />
-        <Tab value="race" label="Race" component="a" {...linkTo(raceHref(eventId))} />
+        <Tab value="starts" label="Starts" component="a" {...linkTo(startsHref(eventId))} />
+        <Tab value="race" label="Results" component="a" {...linkTo(raceHref(eventId))} />
       </Tabs>
     </>
   );

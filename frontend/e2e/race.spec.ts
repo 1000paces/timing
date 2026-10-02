@@ -60,7 +60,7 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await expect(row("Women Open")).toContainText("Started");
 
   // Race screen: lap count, then the race itself.
-  await page.getByRole("tab", { name: "Race" }).click();
+  await page.getByRole("tab", { name: "Results" }).click();
   // The demo races all finish with the leader and share a scheduled start, so
   // one lap count covers all three.
   const masters35 = page.getByRole("region", { name: "Masters 35+ Men" });
@@ -75,7 +75,7 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
 
   const missed = page.getByTestId("suggestion").filter({ hasText: "missed crossing" });
   await expect(missed.first()).toBeVisible({ timeout: 20_000 });
-  await timer.getByRole("tab", { name: "Race" }).click();
+  await timer.getByRole("tab", { name: "Results" }).click();
   await expect(timer.getByTestId("suggestion").first()).toBeVisible({ timeout: 20_000 });
   await expect(timer.getByRole("button", { name: "Accept" })).toHaveCount(0);
   await expect(timer.getByRole("button", { name: "Dismiss" })).toHaveCount(0);

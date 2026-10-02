@@ -42,7 +42,7 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await expect(page.getByRole("dialog").getByText("Name Cat 3 Masters 35+ Men is already used in this event")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
 
-  await page.getByRole("tab", { name: "Start" }).click();
+  await page.getByRole("tab", { name: "Starts" }).click();
   for (const name of ["Cat 3 Masters 35+ Men", "Women Open", "Novice Open"]) {
     await page.getByRole("checkbox", { name: `Select ${name}` }).check();
   }
@@ -62,7 +62,7 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await expect(startedCell).toHaveText(recorded!);
 
   // Review Focus 1/5: laps set on one finish-with-leader race apply to its cohort only.
-  await page.getByRole("tab", { name: "Race" }).click();
+  await page.getByRole("tab", { name: "Results" }).click();
   await region(page, "Cat 3 Masters 35+ Men").getByLabel("Laps").fill("2");
   await region(page, "Cat 3 Masters 35+ Men").getByRole("button", { name: "Set laps" }).click();
   await expect(region(page, "Cat 3 Masters 35+ Men")).toContainText("2 laps");
