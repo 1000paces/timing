@@ -5,8 +5,8 @@ class Race < ApplicationRecord
   belongs_to :event
   has_many :registrations, dependent: :restrict_with_error
 
-  attribute :gender, :string, default: nil
-  attribute :scheduled_at_ms, :integer, default: nil
+  attribute :gender, default: nil
+  attribute :scheduled_at_ms, default: nil # keep the bigint column type; no 0 default
 
   before_validation do
     %i[category age_group name_override].each { self[it] = self[it].to_s.strip.presence }

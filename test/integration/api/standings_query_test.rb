@@ -16,11 +16,10 @@ class StandingsQueryTest < ActionDispatch::IntegrationTest
   setup do
     sign_in(create_official(role: "timer", pin: "1111"), "1111")
     @event = create_event
-    group = create_start_group(event: @event, finish_rule: { "type" => "fixed_laps", "laps" => 2 })
-    race = create_race(event: @event, start_group: group)
+    race = create_race(event: @event, expected_laps: 2)
     register(race:, bib: "1", rider: create_rider(first_name: "Ann", last_name: "Lee"))
     register(race:, bib: "2", rider: create_rider(first_name: "Bo", last_name: "Yu"))
-    rule(event: @event, kind: "set_group_start", start_group_id: group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: race.id, at_ms: 0)
     device = create_device(event: @event)
     [[1, "1", 300_000], [2, "2", 320_000], [3, "1", 600_000], [4, "2", 640_000], [5, nil, 700_000]].each do |seq, bib, at|
       record_capture(device:, seq:, at_ms: at, bib:, id: "cap-#{seq}")

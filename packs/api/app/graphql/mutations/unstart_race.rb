@@ -5,7 +5,7 @@ module Mutations
 
     def resolve(race_id:)
       require_official!("chief")
-      race = Race.includes(:category).find(race_id)
+      race = Race.find(race_id)
       event = race.event
       event.with_lock do
         report = StandingsService.report(event)

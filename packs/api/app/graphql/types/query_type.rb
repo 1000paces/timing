@@ -5,7 +5,7 @@ module Types
     field :event, EventType, null: false do
       argument :id, ID
     end
-    field :categories, [CategoryType], null: false
+    field :disciplines, [DisciplineType], null: false, description: "Disciplines, sub-disciplines and finish-with-leader defaults"
     field :officials, [OfficialType], null: false
     field :standings, StandingsReportType, null: false do
       argument :event_id, ID
@@ -54,9 +54,9 @@ module Types
       Device.where(event_id:).order(:paired_at_ms, :id)
     end
 
-    def categories
+    def disciplines
       require_official!
-      Category.order(:name)
+      Disciplines::TABLE
     end
   end
 end

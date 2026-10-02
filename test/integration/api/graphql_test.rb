@@ -16,15 +16,12 @@ class GraphqlTest < ActionDispatch::IntegrationTest
   test "event query returns setup, with millisecond values as JSON numbers" do
     sign_in(create_official(pin: "2468"), "2468")
     event = create_event
-    group = create_start_group(event:, scheduled_at_ms: 1_791_000_000_000)
-    create_race(event:, start_group: group)
+    create_race(event:, scheduled_at_ms: 1_791_000_000_000, expected_duration_ms: 2_700_000)
     data = gql(<<~GQL, id: event.id).dig("data", "event")
-      query($id: ID!) { event(id: $id) { name startGroups { scheduledAtMs finishRule races { name } } } }
+      query($id: ID!) { event(id: $id) { name discipline races { name scheduledAtMs expectedDurationMs } } }
     GQL
-    group_data = data["startGroups"].first
-    assert_equal 1_791_000_000_000, group_data["scheduledAtMs"]
-    assert_equal({ "type" => "fixed_laps", "laps" => 3 }, group_data["finishRule"])
-    assert_equal [{ "name" => "Cat 3 Men" }], group_data["races"]
+    assert_equal "cyclocross", data["discipline"]
+    assert_equal [{ "name" => "Cat 3 Men", "scheduledAtMs" => 1_791_000_000_000, "expectedDurationMs" => 2_700_000 }], data["races"]
   end
 
   test "a missing record is a GraphQL error, not a server error" do

@@ -1,15 +1,13 @@
 module Mutations
   class CreateRace < BaseMutation
+    include RaceFields
     argument :event_id, ID
-    argument :category_id, ID
-    argument :start_group_id, ID
+    argument :gender, String
+    argument :scheduled_at_ms, Types::Millis
 
-    field :race, Types::RaceType
-
-    def resolve(event_id:, category_id:, start_group_id:)
+    def resolve(event_id:, **attrs)
       require_official!("admin")
-      persist(Race.new(event: Event.find(event_id), category: Category.find(category_id),
-                       start_group: StartGroup.find(start_group_id)), :race)
+      persist(Event.find(event_id).races.new(attrs), :race)
     end
   end
 end
