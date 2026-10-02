@@ -8,6 +8,12 @@ class LocalCaTest < ActiveSupport::TestCase
 
   teardown { FileUtils.remove_entry(@dir) }
 
+  test "default_hosts covers the machine hostname, its .local name and localhost" do
+    hosts = LocalCa.default_hosts
+    assert_includes hosts, "#{Socket.gethostname.split('.').first}.local"
+    assert_includes hosts, "localhost"
+  end
+
   def verify(cert_path)
     store = OpenSSL::X509::Store.new
     store.add_cert(OpenSSL::X509::Certificate.new(File.read(@ca.root_cert_path)))
