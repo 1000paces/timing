@@ -4,8 +4,8 @@ module RaceSimulator
   RiderTruth = Data.define(:bib, :race_id, :crossings_ms, :untagged)
 
   def self.specs_for(start_group)
-    start_group.races.includes(:registrations).order(:start_offset_ms, :id).map do |race|
-      RaceSpec.new(race_id: race.id, offset_ms: race.start_offset_ms, bibs: race.registrations.map(&:bib).sort)
+    start_group.races.includes(:registrations).order(:id).map do |race|
+      RaceSpec.new(race_id: race.id, offset_ms: 0, bibs: race.registrations.map(&:bib).sort)
     end
   end
 

@@ -5,7 +5,6 @@ class Race < ApplicationRecord
   belongs_to :start_group
   has_many :registrations, dependent: :restrict_with_error
 
-  validates :start_offset_ms, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :start_group_in_same_event
 
   delegate :name, to: :category

@@ -6,6 +6,6 @@ module Types
     field :finish_rule, GraphQL::Types::JSON, null: false
     field :races, [RaceType], null: false
 
-    def races = object.races.includes(:category).order(:start_offset_ms, :id)
+    def races = object.races.includes(:category).order(:id)
   end
 end

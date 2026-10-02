@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Rails API on :3000 plus the Vite dev server on :5173.
+# Open http://localhost:5173/console/ (hot reload).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export TIMING_ALLOWED_ORIGINS="http://localhost:5173"
+bin/rails server -p 3000 &
+rails_pid=$!
+trap 'kill $rails_pid' EXIT
+(cd frontend && npm run dev)
