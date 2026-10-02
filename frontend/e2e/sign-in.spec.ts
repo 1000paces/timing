@@ -22,7 +22,7 @@ test("chief signs in, sees events, signs out", async ({ page }) => {
 });
 
 // Review Focus 3
-test.fixme("a timer sees the race screen without action buttons", async ({ page }) => {
+test("a timer sees the race screen without action buttons", async ({ page }) => {
   await signIn(page, "E2E Timer", "1357");
   await page.getByRole("link", { name: /E2E CX/ }).click();
   await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();

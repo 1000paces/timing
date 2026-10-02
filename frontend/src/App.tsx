@@ -3,6 +3,7 @@ import { client } from "./api";
 import { useRoute } from "./route";
 import { currentOfficial, signOut, type Official } from "./session";
 import { Events } from "./views/Events";
+import { RaceScreen } from "./views/RaceScreen";
 import { SignIn } from "./views/SignIn";
 
 export function App() {
@@ -37,7 +38,9 @@ export function App() {
         <button onClick={handleSignOut}>Sign out</button>
       </header>
       {route.view === "events" && <Events onSignedOut={signedOut} />}
-      {route.view === "event" && <p className="page muted">Race screen comes in the next task.</p>}
+      {route.view === "event" && (
+        <RaceScreen eventId={route.eventId} groupId={route.groupId} official={official} onSignedOut={signedOut} />
+      )}
     </div>
   );
 }
