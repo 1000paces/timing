@@ -11,6 +11,10 @@ module Types
       argument :event_id, ID
     end
 
+    field :rulings, [RulingType], null: false, description: "Newest first" do
+      argument :event_id, ID
+    end
+
     def me = context[:current_official]
 
     def events
@@ -31,6 +35,14 @@ module Types
     def standings(event_id:)
       require_official!
       StandingsService.report(Event.find(event_id))
+    end
+
+    def rulings(event_id:)
+      require_official!
+      rulings = Ruling.where(event_id:).order(created_at_ms: :desc, id: :desc).to_a
+      engine_rulings = rulings.map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
+      context[:cancelled_ruling_ids] = Results::ActiveRulings.new(engine_rulings).cancelled_ids
+      rulings
     end
 
     def categories

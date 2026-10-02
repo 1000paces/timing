@@ -337,7 +337,7 @@ sorted keys, no whitespace. Provides tamper evidence and a cheap checksum for
 - **Subscriptions** via ActionCable using **Solid Cable** (no Redis on the hub):
   `standingsUpdated(raceId)`, `crossingRecorded(startGroupId)`,
   `reviewQueueChanged(eventId)`, `deviceStatusChanged(eventId)`.
-- Mutations map 1:1 to ruling kinds plus setup CRUD.
+- Mutations: setup CRUD and CSV import (admin); start control `fireStart` (hub time), `setRaceStart`, `setLapCount`; `recordRuling(kind, payload)` for log rulings (assign/void/insert/flag/pull/DNF/DNS/DSQ); `revertRuling`; `acceptSuggestion` (applies a suggestion's fix, with any blank the official fills in) and `dismissSuggestion`; `publishResults` (the hub computes the digest). The hub sets each ruling's time and official; clients can't.
 - TypeScript types generated with GraphQL Code Generator into `packages/graphql`.
 
 ---
