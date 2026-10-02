@@ -166,7 +166,7 @@ export const UNSTART_RACE = gql`
   mutation UnstartRace($raceId: ID!) { unstartRace(raceId: $raceId) { errors } }
 `;
 
-export type CaptureRow = { id: string; bib: string | null; capturedAtMs: number };
+export type CaptureRow = { id: string; bib: string | null; capturedAtMs: number; lap: number | null };
 export type CaptureScreenData = {
   event: {
     id: string;
@@ -182,7 +182,7 @@ export const CAPTURE_SCREEN = gql`
       id name
       races { id name }
       registrations { bib raceId rider { firstName lastName } }
-      myCaptures { id bib capturedAtMs }
+      myCaptures { id bib capturedAtMs lap }
     }
   }
 `;
@@ -190,7 +190,7 @@ export type RecordCaptureResult = { recordCapture: MutationResult & { capture: C
 export const RECORD_CAPTURE = gql`
   mutation RecordCapture($eventId: ID!, $bib: String) {
     recordCapture(eventId: $eventId, bib: $bib) {
-      capture { id bib capturedAtMs } errors
+      capture { id bib capturedAtMs lap } errors
     }
   }
 `;

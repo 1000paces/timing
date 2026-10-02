@@ -2,7 +2,7 @@ require "test_helper"
 
 class RecordCaptureTest < ActionDispatch::IntegrationTest
   RECORD = <<~GQL
-    mutation($eventId: ID!, $bib: String) { recordCapture(eventId: $eventId, bib: $bib) { capture { id bib capturedAtMs } errors } }
+    mutation($eventId: ID!, $bib: String) { recordCapture(eventId: $eventId, bib: $bib) { capture { id bib capturedAtMs lap } errors } }
   GQL
   RECENT = <<~GQL
     query($id: ID!) { event(id: $id) { myCaptures { bib capturedAtMs } } }
@@ -36,6 +36,16 @@ class RecordCaptureTest < ActionDispatch::IntegrationTest
     gql(RECORD, eventId: @event.id, bib: "101")
     gql(RECORD, eventId: @event.id, bib: "102")
     assert_equal %w[102 101], gql(RECENT, id: @event.id).dig("data", "event", "myCaptures").map { it["bib"] }
+  end
+
+  test "each capture carries its lap in a started race" do
+    race = create_race(event: @event)
+    register(race:, bib: "101")
+    Ruling.create!(event: @event, kind: "set_race_start", payload: { "race_id" => race.id, "at_ms" => 0 })
+    sign_in(@timer, "1111")
+    laps = 2.times.map { gql(RECORD, eventId: @event.id, bib: "101").dig("data", "recordCapture", "capture", "lap") }
+    assert_equal [1, 2], laps
+    assert_equal [2, 1], gql("query($id: ID!) { event(id: $id) { myCaptures { lap } } }", id: @event.id).dig("data", "event", "myCaptures").map { it["lap"] }
   end
 
   test "recording requires sign in" do
