@@ -17,11 +17,11 @@ class RaceDayTest < ActionDispatch::IntegrationTest
 
   def standings = gql(STANDINGS, id: @event.id).dig("data", "standings")
 
-  def perfect_rows(group, truths, gun)
-    rulings = [
-      Results::Ruling.new(id: "gun", kind: "set_group_start", payload: { "start_group_id" => group.id, "at_ms" => gun }, created_at_ms: 0),
-      Results::Ruling.new(id: "laps", kind: "set_lap_count", payload: { "start_group_id" => group.id, "laps" => 5 }, created_at_ms: 1)
-    ]
+  def perfect_rows(races, truths, gun)
+    rulings = races.flat_map do |race|
+      [Results::Ruling.new(id: "start-#{race.id}", kind: "set_race_start", payload: { "race_id" => race.id, "at_ms" => gun }, created_at_ms: 0),
+       Results::Ruling.new(id: "laps-#{race.id}", kind: "set_lap_count", payload: { "race_id" => race.id, "laps" => 5 }, created_at_ms: 1)]
+    end
     captures = truths.flat_map do |t|
       t.crossings_ms.each_with_index.map do |ms, i|
         Results::Capture.new(id: "#{t.bib}-#{i}", device_id: "d", device_seq: 0, captured_at_ms: gun + ms, clock_offset_ms: 0, bib: t.bib)
@@ -36,14 +36,14 @@ class RaceDayTest < ActionDispatch::IntegrationTest
   test "untagged taps fixed from the review queue give the same published standings as perfect timing" do
     sign_in(create_official(role: "chief", pin: "2468"), "2468")
     @event = RaceSimulator::Demo.create!(riders_per_race: 8)
-    group = @event.start_groups.first
+    races = @event.races.to_a
 
-    gun = gql("mutation($id: ID!) { fireStart(startGroupId: $id) { ruling { payload } errors } }", id: group.id)
-            .dig("data", "fireStart", "ruling", "payload", "at_ms")
-    assert_empty gql("mutation($id: ID!) { setLapCount(startGroupId: $id, laps: 5) { errors } }", id: group.id)
+    started = gql("mutation($ids: [ID!]!) { startRaces(raceIds: $ids) { rulings { payload } errors } }", ids: races.map(&:id))
+    gun = started.dig("data", "startRaces", "rulings").first.dig("payload", "at_ms")
+    assert_empty gql("mutation($id: ID!) { setLapCount(raceId: $id, laps: 5) { errors } }", id: races.first.id)
                    .dig("data", "setLapCount", "errors")
 
-    truths = RaceSimulator::Generator.new(races: RaceSimulator.specs_for(group), laps: 5, seed: 7, untagged_rate: 0.5).call
+    truths = RaceSimulator::Generator.new(races: RaceSimulator.specs_for(@event.races), laps: 5, seed: 7, untagged_rate: 0.5).call
     untagged = truths.sum { it.untagged.size }
     assert_operator untagged, :>=, 3
     RaceSimulator::Runner.new(writer: RaceSimulator::Writer.new(event: @event), gun_at_ms: gun, truths:).call
@@ -57,7 +57,7 @@ class RaceDayTest < ActionDispatch::IntegrationTest
     end
     assert_empty standings["suggestions"]
 
-    expected = perfect_rows(group, truths, gun)
+    expected = perfect_rows(races, truths, gun)
     standings["races"].each do |race|
       actual = race["rows"].map { [it["place"], it["bib"], it["status"], it["laps"], it["elapsedMs"]] }
       assert_equal expected.fetch(race.dig("race", "id")), actual

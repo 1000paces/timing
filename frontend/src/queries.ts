@@ -1,26 +1,107 @@
 import { gql } from "@apollo/client";
 
-export type EventSummary = { id: string; name: string; date: string };
+export type EventSummary = { id: string; name: string; date: string; location: string | null };
 export type EventsData = { events: EventSummary[] };
 
 export const EVENTS = gql`
   query Events {
-    events { id name date }
+    events { id name date location }
   }
 `;
 
-export type RaceInfo = { id: string; name: string };
-export type StartGroupInfo = { id: string; name: string; scheduledAtMs: number | null; finishRule: { type: string }; races: RaceInfo[] };
-export type EventData = { event: { id: string; name: string; startGroups: StartGroupInfo[] } };
+export type RaceInfo = {
+  id: string;
+  name: string;
+  defaultName: string;
+  nameOverride: string | null;
+  category: string | null;
+  ageGroup: string | null;
+  ageMin: number | null;
+  ageMax: number | null;
+  gender: string;
+  scheduledAtMs: number;
+  expectedDurationMs: number | null;
+  expectedLaps: number | null;
+  finishWithLeader: boolean;
+  finishWithLeaderOverride: boolean | null;
+};
+export type EventInfo = {
+  id: string;
+  name: string;
+  date: string;
+  location: string | null;
+  discipline: string;
+  subDiscipline: string | null;
+  finishWithLeader: boolean;
+  races: RaceInfo[];
+};
+export type EventData = { event: EventInfo };
+
+const RACE_FIELDS = `id name defaultName nameOverride category ageGroup ageMin ageMax gender scheduledAtMs expectedDurationMs
+  expectedLaps finishWithLeader finishWithLeaderOverride`;
 
 export const EVENT = gql`
   query Event($id: ID!) {
     event(id: $id) {
-      id
-      name
-      startGroups { id name scheduledAtMs finishRule races { id name } }
+      id name date location discipline subDiscipline finishWithLeader
+      races { ${RACE_FIELDS} }
     }
   }
+`;
+
+export type Discipline = { id: string; label: string; finishWithLeader: boolean; subDisciplines: { id: string; label: string; finishWithLeader: boolean }[] };
+export type DisciplinesData = { disciplines: Discipline[] };
+export const DISCIPLINES = gql`
+  query Disciplines { disciplines { id label finishWithLeader subDisciplines { id label finishWithLeader } } }
+`;
+
+export type EventInput = { name: string; date: string; location: string | null; discipline: string; subDiscipline: string | null; finishWithLeader: boolean };
+export const CREATE_EVENT = gql`
+  mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String, $finishWithLeader: Boolean) {
+    createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline, finishWithLeader: $finishWithLeader) {
+      event { id } errors
+    }
+  }
+`;
+export const UPDATE_EVENT = gql`
+  mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String, $finishWithLeader: Boolean) {
+    updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline, finishWithLeader: $finishWithLeader) {
+      event { id } errors
+    }
+  }
+`;
+
+export type RaceInput = {
+  category: string | null;
+  ageGroup: string | null;
+  ageMin: number | null;
+  ageMax: number | null;
+  gender: string;
+  nameOverride: string | null;
+  scheduledAtMs: number;
+  expectedDurationMs: number | null;
+  expectedLaps: number | null;
+  finishWithLeader: boolean | null;
+};
+const RACE_ARGS = `$category: String, $ageGroup: String, $ageMin: Int, $ageMax: Int, $nameOverride: String, $expectedDurationMs: Millis,
+  $expectedLaps: Int, $finishWithLeader: Boolean`;
+const RACE_VALUES = `category: $category, ageGroup: $ageGroup, ageMin: $ageMin, ageMax: $ageMax, nameOverride: $nameOverride,
+  expectedDurationMs: $expectedDurationMs, expectedLaps: $expectedLaps, finishWithLeader: $finishWithLeader`;
+export const CREATE_RACE = gql`
+  mutation CreateRace($eventId: ID!, $gender: String!, $scheduledAtMs: Millis!, ${RACE_ARGS}) {
+    createRace(eventId: $eventId, gender: $gender, scheduledAtMs: $scheduledAtMs, ${RACE_VALUES}) { race { id } errors }
+  }
+`;
+export const UPDATE_RACE = gql`
+  mutation UpdateRace($id: ID!, $gender: String, $scheduledAtMs: Millis, ${RACE_ARGS}) {
+    updateRace(id: $id, gender: $gender, scheduledAtMs: $scheduledAtMs, ${RACE_VALUES}) { race { id } errors }
+  }
+`;
+export const DELETE_RACE = gql`
+  mutation DeleteRace($id: ID!) { deleteRace(id: $id) { errors } }
+`;
+export const SET_RACE_START = gql`
+  mutation SetRaceStart($raceId: ID!, $atMs: Millis) { setRaceStart(raceId: $raceId, atMs: $atMs) { errors } }
 `;
 
 export type Row = {
@@ -65,7 +146,7 @@ export const STANDINGS = gql`
 export type MutationResult = { errors: string[] };
 
 export const SET_LAP_COUNT = gql`
-  mutation SetLapCount($startGroupId: ID!, $laps: Int!) { setLapCount(startGroupId: $startGroupId, laps: $laps) { errors } }
+  mutation SetLapCount($raceId: ID!, $laps: Int!) { setLapCount(raceId: $raceId, laps: $laps) { errors } }
 `;
 export const ACCEPT_SUGGESTION = gql`
   mutation AcceptSuggestion($eventId: ID!, $key: String!, $bib: String) {

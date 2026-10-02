@@ -58,11 +58,11 @@ module Results
       end
     end
 
-    def initialize(input, resolved, scored_groups)
+    def initialize(input, resolved, scored_cohorts)
       @input = input
       @config = input.config
       @resolved = resolved
-      @groups = scored_groups
+      @cohorts = scored_cohorts
     end
 
     def call
@@ -75,8 +75,8 @@ module Results
     private
 
     def lap_suggestions
-      @groups.flat_map do |group|
-        group.riders.group_by { it.entrant.race_id }.flat_map do |race_id, riders|
+      @cohorts.flat_map do |cohort|
+        cohort.riders.group_by { it.entrant.race_id }.flat_map do |race_id, riders|
           laps = RaceLaps.new(riders)
           riders.flat_map { |r| rider_lap_suggestions(r.entrant.bib, race_id, laps) }
         end
@@ -127,8 +127,8 @@ module Results
     end
 
     def lapping_suggestions
-      @groups.reject(&:finish_open_at).flat_map do |group|
-        racing = group.riders.select { it.status == :racing && it.counted.any? }
+      @cohorts.reject(&:finish_open_at).flat_map do |cohort|
+        racing = cohort.riders.select { it.status == :racing && it.counted.any? }
         leader = racing.min_by { [-it.counted.size, it.counted.last.at_ms, it.counted.last.ref] }
         next [] unless leader
         lead_ref = lap_ref(leader)
@@ -155,7 +155,7 @@ module Results
       return nil unless gap_next >= 1 && gap_next.floor > gap_now.floor
       bib = rider.entrant.bib
       Suggestion.new(key: "lapped:#{bib}:#{rider.counted.size}", kind: :about_to_be_lapped, bib:, race_id: rider.entrant.race_id,
-                     message: "Bib #{bib} will likely be lapped by the group leader before their next crossing",
+                     message: "Bib #{bib} will likely be lapped by the leader before their next crossing",
                      fix: { "kind" => "flag_finish", "bib" => bib })
     end
 

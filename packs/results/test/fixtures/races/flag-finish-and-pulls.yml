@@ -1,9 +1,7 @@
 # Bib 2 is shown the checkered flag early (before the leader finishes) to avoid
 # being lapped. Bibs 3 and 4 are pulled; same laps, so pull order decides.
-start_groups:
-  - {id: g1, finish_rule: {type: fixed_laps, laps: 4}, gun: 0}
 races:
-  - {id: r1, group: g1}
+  - {id: r1, laps: 4, start: 0}
 entrants:
   - {bib: 1, race: r1}
   - {bib: 2, race: r1}

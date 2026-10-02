@@ -5,8 +5,10 @@ class ResultsSnapshot
 
   def self.for(event, now_ms:)
     Results::Input.new(
-      start_groups: event.start_groups.map { Results::StartGroupDef.new(id: it.id, finish_rule: it.finish_rule) },
-      races: event.races.map { Results::RaceDef.new(id: it.id, start_group_id: it.start_group_id) },
+      races: event.races.map do
+        Results::RaceDef.new(id: it.id, scheduled_at_ms: it.scheduled_at_ms, finish_with_leader: it.effective_finish_with_leader,
+                             expected_laps: it.expected_laps)
+      end,
       entrants: event.registrations.includes(:rider).map { Results::Entrant.new(bib: it.bib, race_id: it.race_id, name: it.rider.full_name) },
       captures: Capture.where(event:).map do
         Results::Capture.new(id: it.id, device_id: it.device_id, device_seq: it.device_seq, captured_at_ms: it.captured_at_ms,

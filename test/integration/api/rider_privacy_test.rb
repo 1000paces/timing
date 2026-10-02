@@ -7,8 +7,7 @@ class RiderPrivacyTest < ActionDispatch::IntegrationTest
 
   setup do
     @event = create_event
-    category = create_category(age_min: 40)
-    race = create_race(event: @event, category:)
+    race = create_race(event: @event, age_group: "Masters 40+", age_min: 40)
     register(race:, bib: "7", rider: create_rider(birth_date: Date.new(2000, 1, 1), license_number: "LIC-123"))
   end
 

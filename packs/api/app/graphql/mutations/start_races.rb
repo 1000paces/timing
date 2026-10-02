@@ -9,7 +9,7 @@ module Mutations
       official = require_official!("chief")
       ids = race_ids.uniq
       return refuse("Select at least one race") if ids.empty?
-      races = Race.includes(:category).where(id: ids).to_a
+      races = Race.where(id: ids).to_a
       raise GraphQL::ExecutionError, "Not found" if races.size != ids.size
       return refuse("Races must belong to one event") if races.map(&:event_id).uniq.size > 1
 

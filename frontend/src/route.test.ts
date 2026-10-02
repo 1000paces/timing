@@ -15,14 +15,21 @@ describe("parseRoute", () => {
   });
 
   it("reads the race screen with an optional start group", () => {
-    expect(parseRoute(`/console/event/${ID}`)).toEqual({ view: "race", eventId: ID, groupId: null });
-    expect(parseRoute(`/console/event/${ID}/groups/g2`)).toEqual({ view: "race", eventId: ID, groupId: "g2" });
+    expect(parseRoute(`/console/event/${ID}`)).toEqual({ view: "race", eventId: ID });
   });
 
   it("round-trips through the href builders", () => {
     expect(eventsHref()).toBe("/console/");
     expect(startsHref(ID)).toBe(`/console/event/${ID}/starts`);
-    expect(parseRoute(raceHref("a b", "c/d"))).toEqual({ view: "race", eventId: "a b", groupId: "c/d" });
+    expect(parseRoute(raceHref("a b"))).toEqual({ view: "race", eventId: "a b" });
     expect(raceHref(ID)).toBe(`/console/event/${ID}`);
+  });
+});
+
+describe("setup route", () => {
+  it("reads and builds the setup screen address", async () => {
+    const { setupHref } = await import("./route");
+    expect(parseRoute(`/console/event/${ID}/setup`)).toEqual({ view: "setup", eventId: ID });
+    expect(setupHref(ID)).toBe(`/console/event/${ID}/setup`);
   });
 });

@@ -3,7 +3,7 @@
 # console for Playwright. Recreated from scratch on every run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-export RAILS_ENV=test TIMING_DB=sqlite3 TIMING_SQLITE_PATH=storage/e2e.sqlite3
+export RAILS_ENV=test TIMING_DB=sqlite3 TIMING_SQLITE_PATH=storage/e2e.sqlite3 TIMING_SIGN_IN_LIMIT=50
 rm -f storage/e2e.sqlite3*
 bin/rails db:schema:load >/dev/null
 bin/rails runner frontend/e2e/seed.rb

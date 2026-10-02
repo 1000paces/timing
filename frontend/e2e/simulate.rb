@@ -2,11 +2,11 @@
 # recorded (races may have started in separate waves). Some taps have no bib,
 # so the review queue has work to do.
 event = Event.find_by!(name: "E2E CX")
-group = event.start_groups.first
+races = event.races
 starts = StandingsService.report(event).output.races.to_h { [it.race_id, it.start_at_ms] }
-abort "not every race has started" if starts.values_at(*group.races.map(&:id)).any?(&:nil?)
+abort "not every race has started" if starts.values_at(*races.map(&:id)).any?(&:nil?)
 gun = starts.values.compact.min
-specs = RaceSimulator.specs_for(group).map { it.with(offset_ms: starts.fetch(it.race_id) - gun) }
+specs = RaceSimulator.specs_for(races).map { it.with(offset_ms: starts.fetch(it.race_id) - gun) }
 truths = RaceSimulator::Generator.new(races: specs, laps: 3, seed: Integer(ENV.fetch("SEED", "7")), untagged_rate: 0.5).call
 untagged = truths.sum { it.untagged.size }
 abort "seed produced no bib-less taps; pick another SEED" if untagged.zero?

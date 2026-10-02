@@ -31,3 +31,33 @@ describe("formatScheduled", () => {
     expect(formatScheduled(sixPm)).not.toMatch(/:\d\d:\d\d/);
   });
 });
+
+import { fromLocalInput, startCorrection, toLocalInput } from "./format";
+
+describe("local date-time inputs", () => {
+  it("round-trips through the browser's datetime-local format", () => {
+    const sixPm = new Date(2026, 9, 18, 18, 0, 0).getTime();
+    expect(toLocalInput(sixPm)).toBe("2026-10-18T18:00");
+    expect(fromLocalInput("2026-10-18T18:00")).toBe(sixPm);
+    expect(fromLocalInput("")).toBeNull();
+    expect(toLocalInput(null)).toBe("");
+  });
+});
+
+describe("start time corrections", () => {
+  const recorded = new Date(2026, 9, 18, 18, 0, 23, 481).getTime();
+
+  it("shows the recorded start to the second", () => {
+    expect(toLocalInput(recorded, { seconds: true })).toBe("2026-10-18T18:00:23");
+  });
+
+  it("leaves an untouched start alone, even though the field drops milliseconds", () => {
+    expect(startCorrection(toLocalInput(recorded, { seconds: true }), recorded)).toBeNull();
+  });
+
+  it("returns the new start when the field was changed", () => {
+    expect(startCorrection("2026-10-18T18:00:30", recorded)).toBe(new Date(2026, 9, 18, 18, 0, 30).getTime());
+    expect(startCorrection("2026-10-18T18:01", null)).toBe(new Date(2026, 9, 18, 18, 1).getTime());
+    expect(startCorrection("", recorded)).toBeNull();
+  });
+});

@@ -2,16 +2,17 @@ require "digest"
 require "json"
 
 module Results
-  # Spec §4.2: finish logic is decided per start group; scoring is per race.
-  class GroupScorer
+  # Finish logic is decided per cohort (finish-with-leader races sharing a
+  # scheduled start, or a single race); scoring is per race.
+  class CohortScorer
     STATUS_KINDS = %w[dnf dns dsq].freeze
 
     RiderState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at)
-    Scored = Data.define(:group, :lap_count, :finish_open_at, :riders, :race_results)
+    Scored = Data.define(:races, :lap_count, :finish_open_at, :riders, :race_results)
 
-    def initialize(input, group, resolved)
+    def initialize(input, races, resolved)
       @input = input
-      @group = group
+      @races = races.sort_by(&:id)
       @resolved = resolved
       rulings = resolved.rulings
       @rulings = rulings
@@ -21,7 +22,7 @@ module Results
     end
 
     def call
-      races = @input.races.select { it.start_group_id == @group.id }.sort_by(&:id)
+      races = @races
       starts = race_starts(races)
       race_ids = races.map(&:id)
       entrants = @input.entrants.select { race_ids.include?(it.race_id) }
@@ -39,7 +40,7 @@ module Results
         RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
                        start_at_ms: starts[race.id])
       end
-      Scored.new(group: @group, lap_count:, finish_open_at:, riders:, race_results:)
+      Scored.new(races:, lap_count:, finish_open_at:, riders:, race_results:)
     end
 
     private
@@ -49,18 +50,20 @@ module Results
       Digest::SHA256.hexdigest(JSON.generate([lap_count, rows.map { [it.place, it.bib, it.status.to_s, it.laps, it.elapsed_ms, it.lap_times_ms] }]))
     end
 
+    # The latest lap count set for any race in the cohort; else the races'
+    # expected laps if they agree; else not set.
     def resolve_lap_count
-      override = @rulings.latest_by("set_lap_count") { it.payload["start_group_id"] }[@group.id]
-      return override.payload.fetch("laps") if override
-      rule = @group.finish_rule
-      rule["laps"] if rule["type"] == "fixed_laps"
+      ids = @races.map(&:id)
+      latest = @rulings.of("set_lap_count").select { ids.include?(it.payload["race_id"]) }.last
+      return latest.payload.fetch("laps") if latest
+      expected = @races.map(&:expected_laps).uniq
+      expected.first if expected.size == 1
     end
 
+    # Each race starts at its own latest set_race_start (waves are started by hand).
     def race_starts(races)
-      gun = @rulings.latest_by("set_group_start") { it.payload["start_group_id"] }[@group.id]&.payload&.fetch("at_ms")
-      overrides = @rulings.latest_by("set_race_start") { it.payload["race_id"] }
-      # Each race starts at its own start (waves are started by hand), else the group gun.
-      races.to_h { |r| [r.id, overrides[r.id]&.payload&.fetch("at_ms") || gun] }
+      starts = @rulings.latest_by("set_race_start") { it.payload["race_id"] }
+      races.to_h { |r| [r.id, starts[r.id]&.payload&.fetch("at_ms")] }
     end
 
     def post_start(entrant, start)

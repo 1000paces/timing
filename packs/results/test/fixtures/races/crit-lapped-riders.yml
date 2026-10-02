@@ -1,10 +1,8 @@
 # 6-lap crit. Riders lapped 1x, 2x, 3x finish on their first crossing after the
 # leader finishes. Bib 3 crosses before bib 2 but has fewer laps. Bib 1's cool-down
 # crossing at 700 is ignored.
-start_groups:
-  - {id: g1, finish_rule: {type: fixed_laps, laps: 6}, gun: 0}
 races:
-  - {id: r1, group: g1}
+  - {id: r1, laps: 6, start: 0}
 entrants:
   - {bib: 1, race: r1}
   - {bib: 2, race: r1}

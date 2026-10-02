@@ -1,7 +1,7 @@
 module Results
   # --- Input: setup ---
-  StartGroupDef = Data.define(:id, :finish_rule) # finish_rule: {"type"=>"fixed_laps","laps"=>n} | {"type"=>"timed","target_duration_ms"=>d}
-  RaceDef = Data.define(:id, :start_group_id)
+  # finish_with_leader: the race's effective setting (its own override, else the event's).
+  RaceDef = Data.define(:id, :scheduled_at_ms, :finish_with_leader, :expected_laps)
   Entrant = Data.define(:bib, :race_id, :name)
 
   # --- Input: race log ---
@@ -13,8 +13,8 @@ module Results
   Config::DEFAULT = Config.new(debounce_ms: 10_000, missed_low: 1.7, missed_high: 2.3, neighbor_low: 0.7,
                                neighbor_high: 1.3, short_ratio: 0.5, match_window_ratio: 0.15)
 
-  Input = Data.define(:start_groups, :races, :entrants, :captures, :bib_assignments, :rulings, :now_ms, :config) do
-    def initialize(start_groups:, races:, entrants:, captures:, bib_assignments: [], rulings: [], now_ms: 0, config: Config::DEFAULT)
+  Input = Data.define(:races, :entrants, :captures, :bib_assignments, :rulings, :now_ms, :config) do
+    def initialize(races:, entrants:, captures:, bib_assignments: [], rulings: [], now_ms: 0, config: Config::DEFAULT)
       super
     end
   end

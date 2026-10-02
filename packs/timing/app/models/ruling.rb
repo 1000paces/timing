@@ -4,9 +4,8 @@ class Ruling < ApplicationRecord
 
   # kind => payload keys that must be present
   KINDS = {
-    "set_group_start" => %w[start_group_id at_ms],
     "set_race_start" => %w[race_id at_ms],
-    "set_lap_count" => %w[start_group_id laps],
+    "set_lap_count" => %w[race_id laps],
     "assign_bib" => %w[capture_id bib],
     "void_capture" => %w[capture_id],
     "insert_capture" => %w[bib at_ms],
@@ -23,7 +22,7 @@ class Ruling < ApplicationRecord
   # Kinds whose bib must be registered in the ruling's event. assign_bib may
   # target an unregistered bib (shown as unassigned on purpose).
   REGISTERED_BIB_KINDS = %w[insert_capture flag_finish pull dnf dns dsq].freeze
-  ID_KEYS = %w[start_group_id race_id capture_id ruling_id suggestion_key result_digest].freeze
+  ID_KEYS = %w[race_id capture_id ruling_id suggestion_key result_digest].freeze
 
   belongs_to :event
 

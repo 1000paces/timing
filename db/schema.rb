@@ -10,17 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_000001) do
-  create_table "categories", id: :string, force: :cascade do |t|
-    t.string "name", null: false
-    t.json "ability_levels", default: [], null: false
-    t.integer "age_min"
-    t.integer "age_max"
-    t.string "gender", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
   create_table "device_entries", id: :string, force: :cascade do |t|
     t.string "type", null: false
     t.string "event_id", null: false
@@ -54,11 +44,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000001) do
   create_table "events", id: :string, force: :cascade do |t|
     t.string "name", null: false
     t.date "date", null: false
-    t.string "venue"
+    t.string "location"
     t.string "timezone", default: "UTC", null: false
     t.string "age_rule", default: "racing_age_dec31", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "discipline", default: "cyclocross", null: false
+    t.string "sub_discipline"
+    t.boolean "finish_with_leader", default: true, null: false
   end
 
   create_table "officials", id: :string, force: :cascade do |t|
@@ -85,13 +78,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000001) do
 
   create_table "races", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
-    t.string "category_id", null: false
-    t.string "start_group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["category_id"], name: "index_races_on_category_id"
+    t.string "category"
+    t.string "age_group"
+    t.integer "age_min"
+    t.integer "age_max"
+    t.string "gender", default: "open", null: false
+    t.string "name_override"
+    t.bigint "scheduled_at_ms", default: 0, null: false
+    t.bigint "expected_duration_ms"
+    t.integer "expected_laps"
+    t.boolean "finish_with_leader"
     t.index ["event_id"], name: "index_races_on_event_id"
-    t.index ["start_group_id"], name: "index_races_on_start_group_id"
   end
 
   create_table "registrations", id: :string, force: :cascade do |t|
@@ -131,27 +130,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000001) do
     t.index ["event_id"], name: "index_rulings_on_event_id"
   end
 
-  create_table "start_groups", id: :string, force: :cascade do |t|
-    t.string "event_id", null: false
-    t.string "name", null: false
-    t.bigint "scheduled_at_ms"
-    t.json "finish_rule", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["event_id"], name: "index_start_groups_on_event_id"
-  end
-
   add_foreign_key "device_entries", "device_entries", column: "capture_id"
   add_foreign_key "device_entries", "devices"
   add_foreign_key "device_entries", "events"
   add_foreign_key "devices", "events"
   add_foreign_key "pairing_tokens", "events"
-  add_foreign_key "races", "categories"
   add_foreign_key "races", "events"
-  add_foreign_key "races", "start_groups"
   add_foreign_key "registrations", "events"
   add_foreign_key "registrations", "races"
   add_foreign_key "registrations", "riders"
   add_foreign_key "rulings", "events"
-  add_foreign_key "start_groups", "events"
 end

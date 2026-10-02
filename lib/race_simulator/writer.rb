@@ -11,12 +11,12 @@ module RaceSimulator
       @device ||= Device.find_by(event: @event, name: @device_name) || Device.pair!(event: @event, name: @device_name).first
     end
 
-    def fire_gun(start_group, at_ms:)
-      Ruling.create!(event: @event, kind: "set_group_start", payload: { "start_group_id" => start_group.id, "at_ms" => at_ms })
+    def start_races(races, at_ms:)
+      races.each { Ruling.create!(event: @event, kind: "set_race_start", payload: { "race_id" => it.id, "at_ms" => at_ms }) }
     end
 
-    def set_lap_count(start_group, laps)
-      Ruling.create!(event: @event, kind: "set_lap_count", payload: { "start_group_id" => start_group.id, "laps" => laps })
+    def set_lap_count(race, laps)
+      Ruling.create!(event: @event, kind: "set_lap_count", payload: { "race_id" => race.id, "laps" => laps })
     end
 
     def capture(at_ms:, bib:)

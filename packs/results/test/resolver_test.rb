@@ -97,10 +97,10 @@ class ResolverTest < Minitest::Test
 
   def test_latest_by_uses_chronological_order_not_input_order
     rulings = Results::ActiveRulings.new([
-      Results::Ruling.new(id: "late", kind: "set_lap_count", payload: { "start_group_id" => "g1", "laps" => 5 }, created_at_ms: 900),
-      Results::Ruling.new(id: "early", kind: "set_lap_count", payload: { "start_group_id" => "g1", "laps" => 6 }, created_at_ms: 600)
+      Results::Ruling.new(id: "late", kind: "set_lap_count", payload: { "race_id" => "r1", "laps" => 5 }, created_at_ms: 900),
+      Results::Ruling.new(id: "early", kind: "set_lap_count", payload: { "race_id" => "r1", "laps" => 6 }, created_at_ms: 600)
     ])
-    assert_equal "late", rulings.latest_by("set_lap_count") { it.payload["start_group_id"] }["g1"].id
+    assert_equal "late", rulings.latest_by("set_lap_count") { it.payload["race_id"] }["r1"].id
   end
 
   def test_cancelled_ids_lists_reverted_rulings_including_reverted_reverts

@@ -15,7 +15,7 @@ class OrderIndependenceTest < Minitest::Test
 
   def scramble(input, rng)
     with_dups = ->(list) { (list + list.select { rng.rand < 0.3 }).shuffle(random: rng) }
-    input.with(start_groups: input.start_groups.shuffle(random: rng), races: input.races.shuffle(random: rng),
+    input.with(races: input.races.shuffle(random: rng),
                entrants: input.entrants.shuffle(random: rng), captures: with_dups.(input.captures),
                bib_assignments: with_dups.(input.bib_assignments), rulings: with_dups.(input.rulings))
   end

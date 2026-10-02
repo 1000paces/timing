@@ -11,13 +11,13 @@ class EventBroadcastTest < ActiveSupport::TestCase
 
   test "new captures, rulings and registrations announce the event changed" do
     assert_broadcasts(@stream, 1) { record_capture(device: create_device(event: @event), seq: 1, at_ms: 1, bib: "1") }
-    assert_broadcasts(@stream, 1) { rule(event: @event, kind: "set_lap_count", start_group_id: @race.start_group_id, laps: 3) }
+    assert_broadcasts(@stream, 1) { rule(event: @event, kind: "set_lap_count", race_id: @race.id, laps: 3) }
     assert_broadcasts(@stream, 1) { register(race: @race, bib: "7") }
   end
 
   test "setup edits announce too" do
-    assert_broadcasts(@stream, 1) { @race.start_group.update!(name: "10:05") }
-    assert_broadcasts(@stream, 1) { @race.update!(category: create_category(name: "Juniors", gender: "M", ability_levels: [])) }
+    assert_broadcasts(@stream, 1) { @race.update!(category: "Juniors") }
+    assert_broadcasts(@stream, 1) { @race.update!(expected_laps: 5) }
   end
 
   test "message shape" do
@@ -32,7 +32,7 @@ class EventBroadcastTest < ActiveSupport::TestCase
     server.define_singleton_method(:broadcast) { |*| raise "cable down" }
     begin
       assert_difference -> { Ruling.count }, 1 do
-        rule(event: @event, kind: "set_lap_count", start_group_id: @race.start_group_id, laps: 3)
+        rule(event: @event, kind: "set_lap_count", race_id: @race.id, laps: 3)
       end
       assert_nil EventBroadcast.changed(@event.id)
     ensure

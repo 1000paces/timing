@@ -8,7 +8,7 @@ module Types
     field :error, String
 
     def races
-      by_id = object.event.races.includes(:category).index_by(&:id)
+      by_id = object.event.races.index_by(&:id)
       object.output.races.filter_map { |result| (race = by_id[result.race_id]) && { result:, race: } }
     end
 

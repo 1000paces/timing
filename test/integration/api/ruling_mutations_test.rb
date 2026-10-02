@@ -12,24 +12,29 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
     @chief = create_official(name: "Chief Pat", role: "chief", pin: "2468")
     sign_in(@chief, "2468")
     @event = create_event
-    @group = create_start_group(event: @event, finish_rule: { "type" => "fixed_laps", "laps" => 5 })
-    @race = create_race(event: @event, start_group: @group)
+    @race = create_race(event: @event, expected_laps: 5)
     %w[1 2 3].each { register(race: @race, bib: it) }
   end
 
-  test "fireStart records the gun at hub time with the signed-in official" do
+  test "setRaceStart defaults to hub time and records the signed-in official" do
     before = Clock.now_ms
-    result = mutate("fireStart", "$id: ID!", "startGroupId: $id", id: @group.id)
+    result = mutate("setRaceStart", "$id: ID!", "raceId: $id", id: @race.id)
     assert_empty result["errors"]
     ruling = Ruling.find(result["ruling"]["id"])
-    assert_equal "set_group_start", ruling.kind
+    assert_equal "set_race_start", ruling.kind
     assert_operator ruling.payload["at_ms"], :>=, before
     assert_equal @chief.id, ruling.official_id
   end
 
-  test "setLapCount and setRaceStart" do
-    assert_equal({ "start_group_id" => @group.id, "laps" => 3 },
-                 mutate("setLapCount", "$id: ID!", "startGroupId: $id, laps: 3", id: @group.id).dig("ruling", "payload"))
+  # Review Focus 5
+  test "setLapCount applies to the race's whole cohort; setRaceStart takes a time" do
+    partner = create_race(event: @event, category: "Cat 4")
+    alone = create_race(event: @event, category: "Novice", finish_with_leader: false)
+    body = gql("mutation($id: ID!) { setLapCount(raceId: $id, laps: 3) { rulings { payload } errors } }", id: @race.id)
+    payloads = body.dig("data", "setLapCount", "rulings").map { it["payload"] }
+    assert_equal [@race.id, partner.id].sort, payloads.map { it["race_id"] }.sort
+    assert_equal [3], payloads.map { it["laps"] }.uniq
+    refute_includes payloads.map { it["race_id"] }, alone.id
     assert_equal 5_000, mutate("setRaceStart", "$id: ID!", "raceId: $id, atMs: 5000", id: @race.id).dig("ruling", "payload", "at_ms")
   end
 
@@ -51,7 +56,7 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
   end
 
   test "acceptSuggestion applies the fix; a handled suggestion can't be accepted twice" do
-    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     device = create_device(event: @event)
     seq = 0
     { "1" => [300, 600, 900, 1200, 1500], "2" => [310, 620, 1240, 1550], "3" => [305, 610, 915, 1220, 1525] }.each do |bib, times|
@@ -72,7 +77,7 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
   end
 
   test "suggestions that need a blank filled say so until it is provided" do
-    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")
     missing = mutate("acceptSuggestion", "$id: ID!", 'eventId: $id, key: "unassigned:loose"', id: @event.id)
     assert_equal ["Provide bib to accept this suggestion"], missing["errors"]
@@ -81,14 +86,14 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
   end
 
   test "dismissSuggestion hides it" do
-    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")
     mutate("dismissSuggestion", "$id: ID!", 'eventId: $id, key: "unassigned:loose"', id: @event.id)
     refute_includes suggestion_keys, "unassigned:loose"
   end
 
   test "publishResults records the race's current digest" do
-    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     result = mutate("publishResults", "$id: ID!", "raceId: $id", id: @race.id)
     assert_empty result["errors"]
     pub = gql("query($id: ID!) { standings(eventId: $id) { races { publication } } }", id: @event.id)
@@ -102,12 +107,12 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
   test "timers can't record rulings" do
     delete "/session"
     sign_in(create_official(role: "timer", pin: "1111"), "1111")
-    body = gql("mutation($id: ID!) { fireStart(startGroupId: $id) { errors } }", id: @group.id)
+    body = gql("mutation($id: ID!) { setRaceStart(raceId: $id) { errors } }", id: @race.id)
     assert_equal "Requires the chief role", body["errors"].first["message"]
   end
 
   test "stale standings refuse accept and publish and record nothing" do
-    rule(event: @event, kind: "set_group_start", start_group_id: @group.id, at_ms: 0)
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")
     original = StandingsService.method(:report)
     StandingsService.define_singleton_method(:report) do |event, **|
@@ -129,7 +134,7 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
 
   test "signed-out callers are told to sign in before any lookup" do
     delete "/session"
-    body = gql("mutation { fireStart(startGroupId: \"nope\") { errors } }")
+    body = gql("mutation { setRaceStart(raceId: \"nope\") { errors } }")
     assert_equal "Sign in required", body["errors"].first["message"]
   end
 end

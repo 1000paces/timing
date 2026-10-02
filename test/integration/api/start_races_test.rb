@@ -9,10 +9,9 @@ class StartRacesTest < ActionDispatch::IntegrationTest
     StandingsService::LAST_GOOD.clear
     sign_in(create_official(role: "chief", pin: "2468"), "2468")
     @event = create_event
-    group = create_start_group(event: @event)
-    @a = create_race(event: @event, start_group: group)
-    @b = create_race(event: @event, start_group: group, category: create_category(name: "Women Open", gender: "F", ability_levels: []))
-    @c = create_race(event: @event, start_group: group, category: create_category(name: "Juniors", gender: "M", ability_levels: []))
+    @a = create_race(event: @event)
+    @b = create_race(event: @event, category: nil, gender: "women", name_override: "Women Open")
+    @c = create_race(event: @event, category: "Juniors")
   end
 
   def start_at(race) = gql(STARTS, id: @event.id).dig("data", "standings", "races").find { it.dig("race", "id") == race.id }["startAtMs"]

@@ -1,8 +1,8 @@
 module ResultsTestHelpers
-  # Setup section for a single start group g1 with one race r1.
-  def setup_yaml(bibs: [1, 2, 3], finish_rule: "{type: fixed_laps, laps: 3}", gun: 0)
-    group = "  - {id: g1, finish_rule: #{finish_rule}#{gun.nil? ? '' : ", gun: #{gun}"}}"
-    lines = ["start_groups:", group, "races:", "  - {id: r1, group: g1}", "entrants:"]
+  # Setup section for one race r1 (expected laps, start time, finish with leader).
+  def setup_yaml(bibs: [1, 2, 3], laps: 3, start: 0, fwl: true)
+    attrs = ["id: r1", ("laps: #{laps}" if laps), ("start: #{start}" unless start.nil?), "fwl: #{fwl}"].compact
+    lines = ["races:", "  - {#{attrs.join(', ')}}", "entrants:"]
     lines += bibs.map { "  - {bib: #{it}, race: r1}" }
     lines.join("\n") + "\n"
   end

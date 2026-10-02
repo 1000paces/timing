@@ -1,8 +1,6 @@
 # An official inserted a crossing for bib 2, then reverted it.
-start_groups:
-  - {id: g1, finish_rule: {type: fixed_laps, laps: 2}, gun: 0}
 races:
-  - {id: r1, group: g1}
+  - {id: r1, laps: 2, start: 0}
 entrants:
   - {bib: 1, race: r1}
   - {bib: 2, race: r1}
