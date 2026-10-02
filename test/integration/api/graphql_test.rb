@@ -45,4 +45,13 @@ class GraphqlTest < ActionDispatch::IntegrationTest
     assert body["errors"].present?
     assert_match(/depth/i, body["errors"].first["message"])
   end
+
+  test "non-object variables are a 400, not a 500" do
+    sign_in(create_official(pin: "2468"), "2468")
+    post "/graphql", params: { query: "{ me { name } }", variables: [1, 2] }.to_json, headers: ApiHelpers::JSON_HEADERS
+    assert_response :bad_request
+    assert_equal "variables must be a JSON object", JSON.parse(response.body)["errors"].first["message"]
+    post "/graphql", params: { query: "{ me { name } }", variables: "[1,2]" }.to_json, headers: ApiHelpers::JSON_HEADERS
+    assert_response :bad_request
+  end
 end
