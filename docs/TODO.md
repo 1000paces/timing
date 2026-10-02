@@ -133,3 +133,19 @@ Items deliberately deferred. Each has enough context to pick up cold.
   from the payload (and add a model check that it matches `device.event_id`).
 - Consider storing each raw device entry so hash chains can be re-verified later.
 - Normalize empty-string bibs to nil on captures.
+
+### Event & race setup (review minors, 2026-10-02)
+- Warn in Setup when moving a race into a cohort (new scheduled start or finish
+  with leader switched on) changes that cohort's lap count — the newest
+  `set_lap_count` in the cohort wins.
+- `deleteRace` should refuse when standings are stale, as `startRaces` /
+  `unstartRace` do.
+- A blank or unknown discipline should give its own error, not "Sub discipline
+  is not part of …".
+- `unstart_race.rb` still says "whole start group" in an unreachable branch.
+- New event dialog pre-fills the UTC date (tomorrow on US evenings); use the local date.
+- Honour `TIMING_SIGN_IN_LIMIT` only in the test environment (or cap it).
+- Non-admins who type a `/setup` URL see the form (saves are refused); show a notice.
+- Date/time fields use the browser's time zone, not the event's `timezone`.
+- Browser test for "a finish-with-leader-off race finishes on its own leader"
+  (engine tests cover it; the e2e only checks lap counts per cohort).
