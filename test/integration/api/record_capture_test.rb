@@ -50,6 +50,28 @@ class RecordCaptureTest < ActionDispatch::IntegrationTest
     assert rows.all? { it["lapMs"].is_a?(Integer) && it["typicalLapMs"].nil? && it["lapFlag"].nil? }
   end
 
+  DELETE = <<~GQL
+    mutation($id: ID!) { deleteCapture(captureId: $id) { errors } }
+  GQL
+
+  test "a timer deletes their own capture: it is voided, leaves myCaptures and stops counting" do
+    sign_in(@timer, "1111")
+    keep = gql(RECORD, eventId: @event.id, bib: "101").dig("data", "recordCapture", "capture", "id")
+    mistake = gql(RECORD, eventId: @event.id, bib: "102").dig("data", "recordCapture", "capture", "id")
+    assert_equal [], gql(DELETE, id: mistake).dig("data", "deleteCapture", "errors")
+    ruling = Ruling.find_by!(kind: "void_capture")
+    assert_equal [mistake, @timer.id], [ruling.payload["capture_id"], ruling.official_id]
+    assert_equal [keep], gql(RECENT.sub("bib capturedAtMs", "id"), id: @event.id).dig("data", "event", "myCaptures").map { it["id"] }
+    assert_equal ["That capture is already deleted"], gql(DELETE, id: mistake).dig("data", "deleteCapture", "errors")
+  end
+
+  test "an official can't delete another device's capture" do
+    tablet = Capture.record!(device: create_device(event: @event), at_ms: 1_000, bib: "101")
+    sign_in(@timer, "1111")
+    assert_equal ["You can only delete your own captures"], gql(DELETE, id: tablet.id).dig("data", "deleteCapture", "errors")
+    assert_equal 0, Ruling.count
+  end
+
   test "recording requires sign in" do
     body = gql(RECORD, eventId: @event.id, bib: "101")
     assert_equal "Sign in required", body["errors"].first["message"]

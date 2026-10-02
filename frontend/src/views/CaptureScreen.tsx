@@ -1,7 +1,13 @@
 import { useMutation, useQuery } from "@apollo/client/react";
+import DeleteIcon from "@mui/icons-material/Delete";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -11,7 +17,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatClock, formatElapsed } from "../format";
-import { CAPTURE_SCREEN, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
+import { CAPTURE_SCREEN, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
 import { isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -24,6 +30,8 @@ type Props = { eventId: string; official: Official; onSignedOut: () => void };
 export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
   const screen = useQuery<CaptureScreenData>(CAPTURE_SCREEN, { variables: { id: eventId }, fetchPolicy: "cache-and-network" });
   const [recordCapture] = useMutation<RecordCaptureResult>(RECORD_CAPTURE);
+  const [deleteCapture] = useMutation<{ deleteCapture: { errors: string[] } }>(DELETE_CAPTURE);
+  const [deleting, setDeleting] = useState<CaptureRow | null>(null);
   const [bib, setBib] = useState("");
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -69,8 +77,20 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
       });
   }
 
+  function confirmDelete(capture: CaptureRow) {
+    setDeleting(null);
+    input.current?.focus();
+    deleteCapture({ variables: { captureId: capture.id } })
+      .then(({ data }) => {
+        const errors = data?.deleteCapture.errors ?? [];
+        setError(errors.length ? errors.join("; ") : null);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(refresh);
+  }
+
   return (
-    <Box sx={{ p: 2, maxWidth: 640 }}>
+    <Box sx={{ p: 2, maxWidth: 720 }}>
       <EventNav eventId={eventId} eventName={event.name} current="capture" admin={official.role === "admin"} />
       <form onSubmit={submit}>
         <TextField
@@ -97,6 +117,9 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
                 {c.bib ? (riders.get(c.bib) ?? "unknown bib") : "no bib"}
               </Typography>
               <LapWarning capture={c} />
+              <IconButton aria-label="Delete capture" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleting(c)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
             </ListItem>
           ))}
           {event.myCaptures.length === 0 && (
@@ -106,6 +129,17 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           )}
         </List>
       </Paper>
+      <Dialog open={deleting != null} onClose={() => setDeleting(null)}>
+        <DialogTitle>
+          Delete {deleting?.bib ? `bib ${deleting.bib}` : "the no-bib crossing"} at {deleting ? formatClock(deleting.capturedAtMs) : ""}?
+        </DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setDeleting(null)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => deleting && confirmDelete(deleting)}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

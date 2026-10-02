@@ -1,6 +1,7 @@
 # A crossing's lap as the capture screen shows it: how many captures that bib
 # has (from every device) since its race's current start, up to and including
-# this one. Raw taps, no debounce or rulings — Results has the official count.
+# this one. Raw taps, no debounce; voided (deleted) captures don't count.
+# Results has the official count.
 #
 # Each lap after the first is compared with the race's typical lap (the median
 # of its other laps after lap 1): roughly double is a suspected missed lap,
@@ -13,11 +14,20 @@ class CaptureLaps
   SHORT_BELOW = 0.5
   MIN_LAPS = 3
 
+  # Captures voided by an active void_capture ruling (reverts applied).
+  def self.voided_ids(event)
+    rulings = Ruling.where(event:, kind: %w[void_capture revert])
+                    .map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
+    Results::ActiveRulings.new(rulings).of("void_capture").to_set { it.payload["capture_id"] }
+  end
+
   def initialize(event)
+    @voided = self.class.voided_ids(event)
     starts = StandingsService.report(event).output.races.to_h { [it.race_id, it.start_at_ms] }
     race_by_bib = event.registrations.pluck(:bib, :race_id).to_h
     @start_by_bib = race_by_bib.transform_values { starts[it] }.compact
-    captures = Capture.where(event:, bib: @start_by_bib.keys).order(:captured_at_ms, :id).pluck(:bib, :captured_at_ms, :id)
+    captures = Capture.where(event:, bib: @start_by_bib.keys).where.not(id: @voided.to_a).order(:captured_at_ms, :id)
+                      .pluck(:bib, :captured_at_ms, :id)
     @info = {}
     laps_by_race = Hash.new { |h, k| h[k] = [] }
     captures.group_by(&:first).each do |bib, rows|
@@ -33,6 +43,8 @@ class CaptureLaps
   end
 
   def lap(capture) = info(capture).lap
+
+  def voided?(capture) = @voided.include?(capture.id)
 
   def info(capture)
     race_id, lap, lap_ms = @info[capture.id]

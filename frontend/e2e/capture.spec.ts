@@ -40,6 +40,14 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await expect(rows.nth(4).getByTestId("lap-warning")).toContainText("Long lap");
   await expect(rows.nth(4).getByTestId("lap-warning")).toContainText("typical 1:00.0");
 
+  // Deleting the earlier 101 crossing (after a confirm) renumbers the later one.
+  await rows.nth(4).getByRole("button", { name: "Delete capture" }).click();
+  const confirm = page.getByRole("dialog");
+  await expect(confirm).toContainText("Delete bib 101 at");
+  await confirm.getByRole("button", { name: "Delete" }).click();
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(1)).toContainText("Lap 3");
+
   // The bib-less crossing waits in the review queue on the Results tab.
   await page.getByRole("tab", { name: "Results" }).click();
   const queue = page.getByTestId("suggestion");

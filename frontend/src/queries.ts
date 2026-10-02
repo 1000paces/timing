@@ -197,3 +197,6 @@ export const RECORD_CAPTURE = gql`
     }
   }
 `;
+export const DELETE_CAPTURE = gql`
+  mutation DeleteCapture($captureId: ID!) { deleteCapture(captureId: $captureId) { errors } }
+`;

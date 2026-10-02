@@ -53,4 +53,16 @@ class CaptureLapsTest < ActiveSupport::TestCase
     assert_equal [1, 200_000, nil, nil], laps.info(first).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
     assert_equal [2, 200_000, nil, nil], laps.info(second).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
   end
+
+  test "a voided capture doesn't count; reverting the void restores it" do
+    first = Capture.record!(device: @tablet, at_ms: 70_000, bib: "101")
+    extra = Capture.record!(device: @tablet, at_ms: 71_000, bib: "101")
+    later = Capture.record!(device: @tablet, at_ms: 130_000, bib: "101")
+    void = Ruling.create!(event: @event, kind: "void_capture", payload: { "capture_id" => extra.id })
+    laps = CaptureLaps.new(@event)
+    assert_equal [1, nil, 2], [first, extra, later].map { laps.lap(it) }
+    assert laps.voided?(extra)
+    Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => void.id })
+    assert_equal 3, CaptureLaps.new(@event).lap(later)
+  end
 end
