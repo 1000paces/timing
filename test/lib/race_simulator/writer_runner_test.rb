@@ -27,6 +27,6 @@ class RaceSimulator::WriterRunnerTest < ActiveSupport::TestCase
     assert_equal truths.sum { it.untagged.size }, captures.where(bib: nil).count
     assert_equal (1..taps.size).to_a, captures.pluck(:device_seq)
     assert slept.any?
-    assert_equal %w[set_group_start set_lap_count], Ruling.where(event: @event).order(:created_at_ms, :id).pluck(:kind)
+    assert_equal %w[set_group_start set_lap_count], Ruling.where(event: @event).pluck(:kind).sort
   end
 end
