@@ -122,8 +122,9 @@ export type RaceStandings = {
   rows: Row[];
 };
 export type Suggestion = { key: string; kind: string; bib: string | null; message: string; needs: string[] };
+export type Unassigned = { captureId: string; atMs: number; bib: string | null };
 export type StandingsData = {
-  standings: { stale: boolean; error: string | null; races: RaceStandings[]; suggestions: Suggestion[] };
+  standings: { stale: boolean; error: string | null; races: RaceStandings[]; suggestions: Suggestion[]; unassigned: Unassigned[] };
 };
 
 export const STANDINGS = gql`
@@ -139,6 +140,7 @@ export const STANDINGS = gql`
         rows { place bib name status laps elapsedMs gapLapsDown gapMs }
       }
       suggestions { key kind bib message needs }
+      unassigned { captureId atMs bib }
     }
   }
 `;
@@ -164,4 +166,37 @@ export const START_RACES = gql`
 export type UnstartRaceResult = { unstartRace: MutationResult };
 export const UNSTART_RACE = gql`
   mutation UnstartRace($raceId: ID!) { unstartRace(raceId: $raceId) { errors } }
+`;
+
+export type LapFlag = "missed" | "long" | "short";
+export type CaptureRow = { id: string; bib: string | null; capturedAtMs: number; lap: number | null; lapMs: number | null; typicalLapMs: number | null; lapFlag: LapFlag | null };
+export type CaptureScreenData = {
+  event: {
+    id: string;
+    name: string;
+    races: { id: string; name: string }[];
+    registrations: { bib: string; raceId: string; rider: { firstName: string; lastName: string } }[];
+    myCaptures: CaptureRow[];
+  };
+};
+export const CAPTURE_SCREEN = gql`
+  query CaptureScreen($id: ID!) {
+    event(id: $id) {
+      id name
+      races { id name }
+      registrations { bib raceId rider { firstName lastName } }
+      myCaptures { id bib capturedAtMs lap lapMs typicalLapMs lapFlag }
+    }
+  }
+`;
+export type RecordCaptureResult = { recordCapture: MutationResult & { capture: CaptureRow | null } };
+export const RECORD_CAPTURE = gql`
+  mutation RecordCapture($eventId: ID!, $bib: String) {
+    recordCapture(eventId: $eventId, bib: $bib) {
+      capture { id bib capturedAtMs lap lapMs typicalLapMs lapFlag } errors
+    }
+  }
+`;
+export const DELETE_CAPTURE = gql`
+  mutation DeleteCapture($captureId: ID!) { deleteCapture(captureId: $captureId) { errors } }
 `;

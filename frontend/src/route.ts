@@ -5,6 +5,7 @@ export type Route =
   | { view: "events" }
   | { view: "setup"; eventId: string }
   | { view: "starts"; eventId: string }
+  | { view: "capture"; eventId: string }
   | { view: "race"; eventId: string };
 
 const BASE = "/console";
@@ -15,6 +16,7 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === "event" && parts[1]) {
     if (parts[2] === "starts") return { view: "starts", eventId: parts[1] };
     if (parts[2] === "setup") return { view: "setup", eventId: parts[1] };
+    if (parts[2] === "capture") return { view: "capture", eventId: parts[1] };
     return { view: "race", eventId: parts[1] };
   }
   return { view: "events" };
@@ -22,6 +24,7 @@ export function parseRoute(pathname: string): Route {
 
 export const eventsHref = () => `${BASE}/`;
 export const setupHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/setup`;
+export const captureHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/capture`;
 export const startsHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}/starts`;
 export const raceHref = (eventId: string) => `${BASE}/event/${encodeURIComponent(eventId)}`;
 

@@ -1,11 +1,11 @@
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
-import { linkTo, raceHref, setupHref, startsHref } from "../route";
+import { captureHref, linkTo, raceHref, setupHref, startsHref } from "../route";
 
-type Screen = "setup" | "starts" | "race";
+type Screen = "setup" | "starts" | "capture" | "race";
 
-// Event title plus the Setup | Starts | Results tabs. Setup is for admins.
+// Event title plus the Setup | Starts | Capture | Results tabs. Setup is for admins.
 export function EventNav({ eventId, eventName, current, admin }: { eventId: string; eventName: string; current: Screen; admin: boolean }) {
   return (
     <>
@@ -15,6 +15,7 @@ export function EventNav({ eventId, eventName, current, admin }: { eventId: stri
       <Tabs value={current} sx={{ mb: 2 }}>
         {admin && <Tab value="setup" label="Setup" component="a" {...linkTo(setupHref(eventId))} />}
         <Tab value="starts" label="Starts" component="a" {...linkTo(startsHref(eventId))} />
+        <Tab value="capture" label="Capture" component="a" {...linkTo(captureHref(eventId))} />
         <Tab value="race" label="Results" component="a" {...linkTo(raceHref(eventId))} />
       </Tabs>
     </>

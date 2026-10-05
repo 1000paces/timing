@@ -33,3 +33,11 @@ describe("setup route", () => {
     expect(setupHref(ID)).toBe(`/console/event/${ID}/setup`);
   });
 });
+
+describe("capture route", () => {
+  it("reads and builds the capture screen address", async () => {
+    const { captureHref } = await import("./route");
+    expect(parseRoute(`/console/event/${ID}/capture`)).toEqual({ view: "capture", eventId: ID });
+    expect(captureHref(ID)).toBe(`/console/event/${ID}/capture`);
+  });
+});

@@ -10,6 +10,7 @@ import { client } from "./api";
 import { ColorModeToggle } from "./ColorModeToggle";
 import { eventsHref, linkTo, useRoute } from "./route";
 import { currentOfficial, signOut, type Official } from "./session";
+import { CaptureScreen } from "./views/CaptureScreen";
 import { Events } from "./views/Events";
 import { RaceScreen } from "./views/RaceScreen";
 import { SetupScreen } from "./views/SetupScreen";
@@ -62,6 +63,7 @@ export function App() {
       </AppBar>
       {route.view === "events" && <Events official={official} onSignedOut={signedOut} />}
       {route.view === "starts" && <StartScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
+      {route.view === "capture" && <CaptureScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "setup" && <SetupScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "race" && <RaceScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
     </>
