@@ -117,7 +117,9 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   return (
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
+        <FilterWithChips chips={filter.terms.map((t) => ({ key: t, label: t }))}
+          onDelete={(term) => setFilterPart({ terms: filter.terms.filter((t) => t !== term) })}>
         <Autocomplete
           multiple
           freeSolo
@@ -127,11 +129,15 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
           onChange={(_, terms) => setFilterPart({ terms: terms.map((t) => t.trim()).filter(Boolean) })}
           inputValue={typing}
           onInputChange={(_, text) => setTyping(text)}
-          sx={{ minWidth: 240 }}
+          renderValue={() => null}
+          sx={{ width: 260 }}
           renderInput={(params) => (
-            <TextField {...params} label="Search" placeholder={filter.terms.length ? "" : "Name, bib, team, license — Enter adds"} />
+            <TextField {...params} label="Search" placeholder="Name, bib, team, license — Enter adds" />
           )}
         />
+        </FilterWithChips>
+        <FilterWithChips chips={filter.raceIds.flatMap((id) => (racesById.has(id) ? [{ key: id, label: racesById.get(id)!.name }] : []))}
+          onDelete={(id) => setFilterPart({ raceIds: filter.raceIds.filter((r) => r !== id) })}>
         <Autocomplete
           multiple
           size="small"
@@ -140,9 +146,12 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
           isOptionEqualToValue={(a, b) => a.id === b.id}
           value={filter.raceIds.flatMap((id) => racesById.get(id) ?? [])}
           onChange={(_, races) => setFilterPart({ raceIds: races.map((r) => r.id) })}
-          sx={{ minWidth: 240 }}
-          renderInput={(params) => <TextField {...params} label="Race" placeholder={filter.raceIds.length ? "" : "All races"} />}
+          renderValue={() => null}
+          disableCloseOnSelect
+          sx={{ width: 260 }}
+          renderInput={(params) => <TextField {...params} label="Race" placeholder={filter.raceIds.length ? "Add a race" : "All races"} />}
         />
+        </FilterWithChips>
         <FormControlLabel control={<Checkbox checked={filter.needsBib} onChange={(e) => setFilterPart({ needsBib: e.target.checked })} />} label="Needs bib" />
         <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
         {filtering && <Button size="small" onClick={() => { setFilter(NO_FILTER); setTyping(""); }}>Clear filters</Button>}
@@ -291,5 +300,24 @@ function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string
       }}
       onBlur={() => setValue(reg.bib ?? "")}
       slotProps={{ htmlInput: { "aria-label": `Bib for ${name}`, inputMode: "numeric", style: { textAlign: "center" } } }} sx={{ width: 90 }} />
+  );
+}
+
+// A filter control with its chosen values as chips underneath, so the control
+// keeps its size however many values are picked.
+function FilterWithChips({ chips, onDelete, children }: {
+  chips: { key: string; label: string }[];
+  onDelete: (key: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Stack spacing={0.5}>
+      {children}
+      {chips.length > 0 && (
+        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, maxWidth: 260 }}>
+          {chips.map((c) => <Chip key={c.key} size="small" label={c.label} onDelete={() => onDelete(c.key)} />)}
+        </Stack>
+      )}
+    </Stack>
   );
 }

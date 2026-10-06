@@ -275,7 +275,7 @@ export const REMOVE_REGISTRATION = gql`
 `;
 export type AssignBibsResult = { assignBibs: { assigned: { bib: string; name: string; raceName: string }[]; unfilled: string[]; errors: string[] } };
 export const ASSIGN_BIBS = gql`
-  mutation AssignBibs($eventId: ID!) { assignBibs(eventId: $eventId) { assigned { bib name raceName } unfilled errors } }
+  mutation AssignBibs($eventId: ID!, $raceId: ID) { assignBibs(eventId: $eventId, raceId: $raceId) { assigned { bib name raceName } unfilled errors } }
 `;
 export type ImportCategory = { value: string; count: number; raceId: string | null; skip: boolean };
 export type AnalyzeImportResult = {

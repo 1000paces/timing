@@ -4,10 +4,12 @@
 class BibAssigner
   Result = Data.define(:assigned, :unfilled) # assigned: [[registration, bib]], unfilled: [message]
 
-  def self.call(event) = new(event).call
+  # races: limit to these races (default: every race in the event).
+  def self.call(event, races: nil) = new(event, races).call
 
-  def initialize(event)
+  def initialize(event, races)
     @event = event
+    @races = races || event.races.to_a
   end
 
   def call
@@ -15,7 +17,7 @@ class BibAssigner
     unfilled = []
     Registration.transaction do
       used = @event.registrations.where.not(bib: nil).pluck(:bib).to_set { it.to_i }
-      @event.races.sort_by { [it.scheduled_at_ms, it.name] }.each do |race|
+      @races.sort_by { [it.scheduled_at_ms, it.name] }.each do |race|
         waiting = race.registrations.where(bib: nil).joins(:racer).order("racers.last_name", "racers.first_name", :id).to_a
         next if waiting.empty?
 

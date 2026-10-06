@@ -43,9 +43,16 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Bob Ray")).not.toContainText("needs bib");
   await expect(counts(page)).toHaveText("5 registered · 0 checked in · 4 need a bib");
 
-  // Assign bibs: Cat 3 Men from 100–199, everyone else from the event's 1–99.
+  // Assign bibs for one race from Setup: Cat 3 Men from its 100–199.
+  await page.getByRole("tab", { name: "Setup" }).click();
+  await page.getByRole("button", { name: "Assign bibs for Cat 3 Men" }).click();
+  await expect(page.getByText("Cat 3 Men: assigned 1 bib")).toBeVisible();
+  await page.getByRole("tab", { name: "Registration" }).click();
+  await expect(counts(page)).toHaveText("5 registered · 0 checked in · 3 need a bib");
+
+  // Then the rest of the event from the Registration toolbar, from the event's 1–99.
   await page.getByRole("button", { name: "Assign bibs" }).click();
-  await expect(page.getByText("Assigned 4 bibs")).toBeVisible();
+  await expect(page.getByText("Assigned 3 bibs")).toBeVisible();
   await expect(row(page, "Di Eve").getByLabel("Bib for Di Eve")).toHaveValue("100");
   await expect(row(page, "Di Eve").getByLabel("Bib for Di Eve")).toHaveCSS("text-align", "center");
   await expect(row(page, "Di Eve").getByRole("button", { name: "Edit Di Eve" })).toBeVisible();

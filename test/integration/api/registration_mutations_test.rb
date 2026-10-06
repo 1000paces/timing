@@ -89,6 +89,17 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
                    "unfilled" => ["Masters Men: 1 racer still needs a bib — no bib range"], "errors" => [] }, data(body, "assignBibs"))
   end
 
+  test "assignBibs with a race fills only that race" do
+    as("chief")
+    register(race: @cat3, bib: nil)
+    register(race: @masters, bib: nil)
+    @event.update!(bib_from: 1, bib_to: 9)
+    body = gql("mutation($id: ID!, $raceId: ID) { assignBibs(eventId: $id, raceId: $raceId) { assigned { bib raceName } unfilled } }",
+               id: @event.id, raceId: @masters.id)
+    assert_equal({ "assigned" => [{ "bib" => "1", "raceName" => "Masters Men" }], "unfilled" => [] }, data(body, "assignBibs"))
+    assert_nil @cat3.registrations.sole.bib
+  end
+
   test "bib ranges are set on events and races by admins" do
     as("admin")
     body = gql("mutation($id: ID!) { updateEvent(id: $id, bibFrom: 500, bibTo: 599) { event { bibFrom bibTo } errors } }", id: @event.id)

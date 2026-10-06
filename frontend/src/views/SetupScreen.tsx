@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Button from "@mui/material/Button";
@@ -16,15 +17,18 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { formatClock, formatScheduled } from "../format";
 import {
+  ASSIGN_BIBS,
   DELETE_RACE,
   DISCIPLINES,
   EVENT,
   STANDINGS,
   UPDATE_EVENT,
+  type AssignBibsResult,
   type DisciplinesData,
   type EventData,
   type EventInput,
@@ -49,6 +53,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
   const standings = useQuery<StandingsData>(STANDINGS, { variables: { eventId }, fetchPolicy: "network-only" });
   const [updateEvent] = useMutation<{ updateEvent: MutationResult }>(UPDATE_EVENT);
   const [deleteRace] = useMutation<{ deleteRace: MutationResult }>(DELETE_RACE);
+  const [assignBibs] = useMutation<AssignBibsResult>(ASSIGN_BIBS);
   const [details, setDetails] = useState<EventInput | null>(null);
   const [editing, setEditing] = useState<RaceInfo | "new" | null>(null);
   const [deleting, setDeleting] = useState<RaceInfo | null>(null);
@@ -97,6 +102,19 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
       setMessage({ severity: "error", text: (e as Error).message });
     }
     refetch();
+  }
+
+  async function assignRaceBibs(race: RaceInfo) {
+    setMessage(null);
+    try {
+      const result = (await assignBibs({ variables: { eventId, raceId: race.id } })).data?.assignBibs;
+      if (!result) return;
+      const n = result.assigned.length;
+      const lines = [...result.errors, `${race.name}: ${n === 0 ? "no bibs to assign" : `assigned ${n} bib${n === 1 ? "" : "s"}`}`, ...result.unfilled];
+      setMessage({ severity: result.errors.length || result.unfilled.length ? "error" : "success", text: lines.join(" · ") });
+    } catch (e) {
+      setMessage({ severity: "error", text: (e as Error).message });
+    }
   }
 
   const warnings = cohortLapWarnings(data.races);
@@ -154,6 +172,11 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
                       </TableCell>
                       <TableCell>{started ? formatClock(started) : "—"}</TableCell>
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                        <Tooltip title="Assign bibs">
+                          <IconButton size="small" aria-label={`Assign bibs for ${race.name}`} onClick={() => void assignRaceBibs(race)}>
+                            <ConfirmationNumberIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                         <IconButton size="small" aria-label={`Edit ${race.name}`} onClick={() => setEditing(race)}>
                           <EditIcon fontSize="small" />
                         </IconButton>

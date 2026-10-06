@@ -56,4 +56,13 @@ class BibAssignerTest < ActiveSupport::TestCase
     reg.undo_check_in!
     refute reg.reload.checked_in?
   end
+
+  test "can fill one race only" do
+    @event.update!(bib_from: 1, bib_to: 50)
+    entry(@early, "Amy", "Adams")
+    entry(@late, "Bo", "Brown")
+    result = BibAssigner.call(@event, races: [@late])
+    assert_equal({ "Adams" => nil, "Brown" => "1" }, bibs)
+    assert_equal [%w[Brown 1]], result.assigned.map { |reg, bib| [reg.racer.last_name, bib] }
+  end
 end
