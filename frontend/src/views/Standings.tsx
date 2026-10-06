@@ -22,7 +22,7 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell sx={num}>#</TableCell>
+            <TableCell sx={num}>Place</TableCell>
             <TableCell align="center">Bib</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Status</TableCell>
