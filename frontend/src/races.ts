@@ -44,3 +44,10 @@ export function unassignedLabel(item: { bib: string | null; atMs: number }, star
   if (Number.isFinite(start)) parts.push(`+${formatElapsed(item.atMs - start)}`);
   return parts.join(" · ");
 }
+
+const STATUS_LABEL: Record<string, string> = { FINISHED: "Finished", RACING: "Racing", PULLED: "Pulled" };
+
+// Racing statuses in title case; official ones (DNF, DNS, DSQ) stay upper case.
+export function statusLabel(status: string): string {
+  return STATUS_LABEL[status] ?? status;
+}

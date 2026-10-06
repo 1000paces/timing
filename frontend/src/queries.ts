@@ -306,3 +306,8 @@ export const IMPORT_REGISTRATIONS = gql`
     }
   }
 `;
+export const SET_RACER_STATUS = gql`
+  mutation SetRacerStatus($eventId: ID!, $bib: String!, $status: RacerStatusChange!) {
+    setRacerStatus(eventId: $eventId, bib: $bib, status: $status) { errors }
+  }
+`;

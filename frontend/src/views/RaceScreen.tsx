@@ -12,6 +12,7 @@ import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { RaceControls } from "./RaceControls";
 import { ReviewQueue } from "./ReviewQueue";
+import { RacerStatusMenu } from "./RacerStatusMenu";
 import { Standings } from "./Standings";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
@@ -52,6 +53,7 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
             key={race.race.id}
             race={race}
             controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} canAct={canAct} onChanged={refresh} />}
+            rowActions={canAct ? (row) => <RacerStatusMenu eventId={eventId} row={row} onChanged={refresh} /> : undefined}
           />
         ))}
       </Box>

@@ -91,5 +91,15 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await expect(page.getByTestId("suggestion")).toHaveCount(0, { timeout: 20_000 });
   const statuses = page.getByTestId("racer-status");
   await expect(statuses).toHaveCount(12);
-  await expect(statuses.filter({ hasNotText: "finished" })).toHaveCount(0);
+  await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
+
+  // A chief marks a racer DNF from the Results row menu, then clears it.
+  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  await page.getByRole("menuitem", { name: "Mark DNF" }).click();
+  const dnfRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DNF" }) });
+  await expect(dnfRow).toHaveCount(1);
+  await dnfRow.getByRole("button", { name: /^Status actions for / }).click();
+  await page.getByRole("menuitem", { name: "Clear DNF" }).click();
+  await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(0);
+  await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
 });

@@ -13,6 +13,7 @@ module Types
     field :set_checked_in, mutation: Mutations::SetCheckedIn
     field :remove_registration, mutation: Mutations::RemoveRegistration
     field :assign_bibs, mutation: Mutations::AssignBibs
+    field :set_racer_status, mutation: Mutations::SetRacerStatus
     field :set_race_start, mutation: Mutations::SetRaceStart
     field :set_lap_count, mutation: Mutations::SetLapCount
     field :record_ruling, mutation: Mutations::RecordRuling

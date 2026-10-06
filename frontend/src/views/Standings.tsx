@@ -7,12 +7,14 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { formatElapsed, formatGap } from "../format";
 import type { ReactNode } from "react";
-import type { RaceStandings } from "../queries";
+import type { RaceStandings, Row } from "../queries";
+import { statusLabel } from "../races";
 
 const STATE_LABEL: Record<string, string> = { NOT_STARTED: "not started", IN_PROGRESS: "in progress", FINISH_OPEN: "finish open" };
 const num = { textAlign: "right", fontVariantNumeric: "tabular-nums" } as const;
 
-export function Standings({ race, controls }: { race: RaceStandings; controls?: ReactNode }) {
+// rowActions: per-racer actions (chief and above), shown in an Actions column.
+export function Standings({ race, controls, rowActions }: { race: RaceStandings; controls?: ReactNode; rowActions?: (row: Row) => ReactNode }) {
   return (
     <Paper component="section" aria-label={race.race.name} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3" gutterBottom>
@@ -29,6 +31,7 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
             <TableCell sx={num}>Laps</TableCell>
             <TableCell sx={num}>Time</TableCell>
             <TableCell sx={num}>Gap</TableCell>
+            {rowActions && <TableCell align="right">Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -37,10 +40,11 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
               <TableCell sx={num}>{row.place ?? "–"}</TableCell>
               <TableCell align="center">{row.bib}</TableCell>
               <TableCell>{row.name}</TableCell>
-              <TableCell data-testid="racer-status">{row.status.toLowerCase()}</TableCell>
+              <TableCell data-testid="racer-status">{statusLabel(row.status)}</TableCell>
               <TableCell sx={num}>{row.laps}</TableCell>
               <TableCell sx={num}>{formatElapsed(row.elapsedMs)}</TableCell>
               <TableCell sx={num}>{formatGap(row.gapLapsDown, row.gapMs)}</TableCell>
+              {rowActions && <TableCell align="right">{rowActions(row)}</TableCell>}
             </TableRow>
           ))}
         </TableBody>

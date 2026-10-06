@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortRaces, unassignedLabel } from "./races";
+import { sortRaces, statusLabel, unassignedLabel } from "./races";
 
 describe("sortRaces", () => {
   it("orders by scheduled start time, then race name; unscheduled races last", () => {
@@ -49,5 +49,11 @@ describe("unassignedLabel", () => {
 
   it("omits elapsed before any start", () => {
     expect(unassignedLabel({ bib: null, atMs: at(9, 0, 0) }, starts)).toBe("No bib · 09:00:00");
+  });
+});
+
+describe("statusLabel", () => {
+  it("capitalises racing statuses and keeps official ones upper case", () => {
+    expect(["FINISHED", "RACING", "PULLED", "DNF", "DNS", "DSQ"].map(statusLabel)).toEqual(["Finished", "Racing", "Pulled", "DNF", "DNS", "DSQ"]);
   });
 });
