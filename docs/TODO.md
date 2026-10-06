@@ -149,3 +149,12 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Date/time fields use the browser's time zone, not the event's `timezone`.
 - Browser test for "a finish-with-leader-off race finishes on its own leader"
   (engine tests cover it; the e2e only checks lap counts per cohort).
+
+### Registration (out of scope for the first slice, 2026-10-06)
+- Starts tab: show "N of M checked in" per race before starting a wave.
+- Suggest DNS in the review queue for riders who never checked in and have no captures.
+- Assign bibs only to checked-in riders (option).
+- Import BikeReg's public "Who's Registered" list format.
+- Registration export (CSV).
+- Presets for other registration sources (USAC, RaceRoster, …) beyond the recognised header names.
+- Chip / tag numbers on registrations (for chip timing).
