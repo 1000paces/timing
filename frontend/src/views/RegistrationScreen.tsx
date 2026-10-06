@@ -1,4 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client/react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -9,6 +11,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -124,7 +127,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Bib</TableCell>
+              <TableCell align="center">Bib</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Gender</TableCell>
               <TableCell>Age</TableCell>
@@ -187,9 +190,11 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
   }
   return (
     <TableRow data-testid="registration" hover>
-      <TableCell sx={{ whiteSpace: "nowrap" }}>
-        {canAct ? <BibField reg={reg} name={name} onChanged={onChanged} /> : reg.bib}
-        {!reg.bib && <Chip size="small" color="warning" label="needs bib" sx={{ ml: 1 }} />}
+      <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "center" }}>
+          {canAct ? <BibField reg={reg} name={name} onChanged={onChanged} /> : reg.bib}
+          {!reg.bib && <Chip size="small" color="warning" label="needs bib" />}
+        </Stack>
       </TableCell>
       <TableCell>
         {name}
@@ -210,8 +215,12 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
         {canAct && (
           <>
-            <Button size="small" onClick={onEdit}>Edit</Button>
-            <Button size="small" color="error" onClick={onRemove}>Remove</Button>
+            <IconButton size="small" aria-label={`Edit ${name}`} onClick={onEdit}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" color="error" aria-label={`Remove ${name}`} onClick={onRemove}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
           </>
         )}
       </TableCell>
@@ -246,6 +255,6 @@ function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string
         if (e.key === "Escape") setValue(reg.bib ?? "");
       }}
       onBlur={() => setValue(reg.bib ?? "")}
-      slotProps={{ htmlInput: { "aria-label": `Bib for ${name}`, inputMode: "numeric" } }} sx={{ width: 90 }} />
+      slotProps={{ htmlInput: { "aria-label": `Bib for ${name}`, inputMode: "numeric", style: { textAlign: "center" } } }} sx={{ width: 90 }} />
   );
 }

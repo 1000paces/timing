@@ -119,8 +119,10 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, suggestedNam
             </TextField>
           </Stack>
           <Stack direction="row" spacing={2}>
-            <TextField label="First bib" type="number" value={bibFrom} onChange={(e) => setBibFrom(e.target.value)} fullWidth />
+            <TextField label="First bib" type="number" value={bibFrom} onChange={(e) => setBibFrom(e.target.value)} fullWidth
+              slotProps={{ htmlInput: { style: { textAlign: "center" } } }} />
             <TextField label="Last bib" type="number" value={bibTo} onChange={(e) => setBibTo(e.target.value)} fullWidth
+              slotProps={{ htmlInput: { style: { textAlign: "center" } } }}
               helperText="Optional; races without a range use the event's" />
           </Stack>
           {race && canSetStart && (

@@ -56,8 +56,10 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
       {bibRange && (
         <Stack direction="row" spacing={2}>
           <TextField label="Event first bib" type="number" value={value.bibFrom ?? ""} fullWidth
+            slotProps={{ htmlInput: { style: { textAlign: "center" } } }}
             onChange={(e) => set({ bibFrom: e.target.value ? Number(e.target.value) : null })} />
           <TextField label="Event last bib" type="number" value={value.bibTo ?? ""} fullWidth
+            slotProps={{ htmlInput: { style: { textAlign: "center" } } }}
             onChange={(e) => set({ bibTo: e.target.value ? Number(e.target.value) : null })} helperText="For races without their own range" />
         </Stack>
       )}

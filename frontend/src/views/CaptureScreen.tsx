@@ -102,7 +102,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           fullWidth
           autoComplete="off"
           helperText="Enter records the crossing now; leave blank for a rider whose bib you missed"
-          slotProps={{ htmlInput: { inputMode: "numeric", style: { fontSize: 40 } } }}
+          slotProps={{ htmlInput: { inputMode: "numeric", style: { fontSize: 40, textAlign: "center" } } }}
         />
       </form>
       {error && <Alert severity="error" sx={{ mt: 2 }} onClose={() => setError(null)}>{error}</Alert>}
@@ -111,7 +111,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           {event.myCaptures.map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
-              <Typography sx={{ fontWeight: "bold", width: 80 }}>{c.bib ?? "—"}</Typography>
+              <Typography sx={{ fontWeight: "bold", width: 80, textAlign: "center" }}>{c.bib ?? "—"}</Typography>
               <Typography sx={{ width: 70 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
               <Typography sx={{ flex: 1 }} color={c.bib && riders.has(c.bib) ? "text.primary" : "warning.main"}>
                 {c.bib ? (riders.get(c.bib) ?? "unknown bib") : "no bib"}

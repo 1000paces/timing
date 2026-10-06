@@ -1,10 +1,13 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
@@ -125,6 +128,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
                   <TableCell>Scheduled</TableCell>
                   <TableCell>Gender</TableCell>
                   <TableCell>Laps / duration</TableCell>
+                  <TableCell align="center">Bib range</TableCell>
                   <TableCell>Finish with leader</TableCell>
                   <TableCell>Started</TableCell>
                   <TableCell />
@@ -143,14 +147,19 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
                           .filter(Boolean)
                           .join(" · ") || "—"}
                       </TableCell>
+                      <TableCell align="center">{race.bibFrom != null && race.bibTo != null ? `${race.bibFrom}–${race.bibTo}` : "—"}</TableCell>
                       <TableCell>
                         {race.finishWithLeader ? "On" : "Off"}
                         {race.finishWithLeaderOverride == null && <Typography component="span" variant="caption" color="text.secondary"> (event)</Typography>}
                       </TableCell>
                       <TableCell>{started ? formatClock(started) : "—"}</TableCell>
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                        <Button size="small" onClick={() => setEditing(race)}>Edit</Button>
-                        <Button size="small" color="error" onClick={() => setDeleting(race)}>Delete</Button>
+                        <IconButton size="small" aria-label={`Edit ${race.name}`} onClick={() => setEditing(race)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" aria-label={`Delete ${race.name}`} onClick={() => setDeleting(race)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   );

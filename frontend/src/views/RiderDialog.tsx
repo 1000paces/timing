@@ -88,7 +88,7 @@ export function RiderDialog({ races, registration, onClose }: Props) {
               children: races.map((r) => <option key={r.id} value={r.id}>{r.name}</option>) })}
           </Stack>
           <Stack direction="row" spacing={2}>
-            {field("bib", "Bib", { helperText: "Optional; give one out later" })}
+            {field("bib", "Bib", { helperText: "Optional; give one out later", slotProps: { htmlInput: { style: { textAlign: "center" } } } })}
             {field("age", "Age", { type: "number" })}
             {field("birthDate", "Birth date", { type: "date", slotProps: { inputLabel: { shrink: true } } })}
           </Stack>

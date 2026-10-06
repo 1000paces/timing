@@ -23,7 +23,7 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
         <TableHead>
           <TableRow>
             <TableCell sx={num}>#</TableCell>
-            <TableCell>Bib</TableCell>
+            <TableCell align="center">Bib</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Status</TableCell>
             <TableCell sx={num}>Laps</TableCell>
@@ -35,7 +35,7 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
           {race.rows.map((row) => (
             <TableRow key={row.bib} hover>
               <TableCell sx={num}>{row.place ?? "–"}</TableCell>
-              <TableCell>{row.bib}</TableCell>
+              <TableCell align="center">{row.bib}</TableCell>
               <TableCell>{row.name}</TableCell>
               <TableCell data-testid="rider-status">{row.status.toLowerCase()}</TableCell>
               <TableCell sx={num}>{row.laps}</TableCell>
