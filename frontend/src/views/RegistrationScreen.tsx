@@ -138,15 +138,12 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   return (
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 2 }}>
-        <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
-          {countsLabel(countRegistrations(rows), event.registrations.length)}
-        </Typography>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "center", justifyContent: "flex-end", mb: 2 }}>
         {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
         {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
         {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
       </Stack>
-      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2, "& > :last-child": { ml: "auto" } }}>
         <FilterWithChips chips={filter.terms.map((t) => ({ key: t, label: t }))}
           onDelete={(term) => setFilterPart({ terms: filter.terms.filter((t) => t !== term) })}>
         <Autocomplete
@@ -186,6 +183,11 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <FormControlLabel control={<Checkbox checked={filter.needsBib} onChange={(e) => setFilterPart({ needsBib: e.target.checked })} />} label="Needs bib" />
         <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
         {filtering && <Button size="small" onClick={() => { setFilter(NO_FILTER); setTyping(""); }}>Clear filters</Button>}
+        </Stack>
+        <Stack sx={{ justifyContent: "center", minHeight: 40 }}>
+          <Typography data-testid="registration-counts" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+            {countsLabel(countRegistrations(rows), event.registrations.length)}
+          </Typography>
         </Stack>
       </Stack>
       {notice && (
