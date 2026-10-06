@@ -76,11 +76,11 @@ export function ImportDialog({ eventId, races, refetchRaces, onClose }: Props) {
     else setChoices({ ...choices, [value]: choice });
   }
 
+  // Every category is sent, so one left on "Choose…" is reported as unmapped
+  // rather than falling back to the hub's suggestion.
   const categoryPayload = () =>
     Object.fromEntries(
-      Object.entries(choices)
-        .filter(([, choice]) => choice)
-        .map(([value, choice]) => [value, choice === "skip" ? { skip: true } : { raceId: choice }]),
+      Object.entries(choices).map(([value, choice]) => [value, choice === "skip" ? { skip: true } : choice ? { raceId: choice } : {}]),
     );
 
   async function run(dryRun: boolean) {

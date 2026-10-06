@@ -220,6 +220,7 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
 }
 
 // Type a bib and press Enter; a taken bib shows the hub's error under the field.
+// Leaving the field (or Escape) without Enter puts the saved bib back.
 function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string; onChanged: () => void }) {
   const [updateBib] = useMutation<{ updateRegistration: RegistrationResult }>(UPDATE_BIB);
   const [value, setValue] = useState(reg.bib ?? "");
@@ -240,7 +241,11 @@ function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string
 
   return (
     <TextField size="small" value={value} onChange={(e) => setValue(e.target.value)} error={error != null} helperText={error}
-      onKeyDown={(e) => { if (e.key === "Enter") void save(); }} onBlur={() => void save()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") void save();
+        if (e.key === "Escape") setValue(reg.bib ?? "");
+      }}
+      onBlur={() => setValue(reg.bib ?? "")}
       slotProps={{ htmlInput: { "aria-label": `Bib for ${name}`, inputMode: "numeric" } }} sx={{ width: 90 }} />
   );
 }

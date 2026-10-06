@@ -40,7 +40,8 @@ class RegistrationImport
   def initialize(event, csv, mapping)
     @event = event
     @table = CSV.parse(csv.delete_prefix("﻿"), headers: true, header_converters: ->(header) { header.to_s.strip })
-    @mapping = auto_mapping.merge(mapping.to_h.transform_keys(&:to_s).compact_blank)
+    # A field the official set to blank is unmapped, even if a header would match.
+    @mapping = auto_mapping.merge(mapping.to_h.transform_keys(&:to_s)).compact_blank
   end
 
   def analyze
@@ -99,7 +100,7 @@ class RegistrationImport
     counts = { created: 0, updated: 0, skipped: 0 }
     errors = []
     warnings = []
-    touched = []
+    touched = {} # registration id => row that updated it
     seen = {}
     rows.each do |row, number|
       category = value(row, "category")
@@ -116,16 +117,20 @@ class RegistrationImport
       end
       seen[key] = number
 
+      if (earlier = RiderRegistrar.match_in_event(@event, attrs)&.then { touched[it.id] })
+        next errors << RowMessage.new(row: number, message: "#{attrs['first_name']} #{attrs['last_name']} appears more than once in this file (row #{earlier})")
+      end
+
       registration = RiderRegistrar.upsert(event: @event, race: target, attrs: attrs.merge("external_category" => category), source: "import")
       if registration.errors.any? || !registration.persisted?
         registration.errors.full_messages.each { errors << RowMessage.new(row: number, message: it) }
         next
       end
-      touched << registration.id
+      touched[registration.id] = number
       counts[registration.previously_new_record? ? :created : :updated] += 1
       registration.eligibility_warnings.each { warnings << RowMessage.new(row: number, message: it) }
     end
-    Result.new(**counts, errors:, warnings:, not_in_file: not_in_file(touched))
+    Result.new(**counts, errors:, warnings:, not_in_file: not_in_file(touched.keys))
   end
 
   # Returns [attrs, nil] or [nil, problem].

@@ -138,4 +138,27 @@ class RegistrationImportTest < ActiveSupport::TestCase
     assert_equal [[4, "category Masters 50+ Men Cat 1/2/3 is not mapped to a race"]], result.errors.map { [it.row, it.message] }
     refute CategoryMapping.exists?(race_id: stranger.id)
   end
+
+  # Final review, Important 1
+  test "the same name twice in one file is a row error even when only one row has a license" do
+    csv = "first_name,last_name,gender,license_number,race\nCy,Dee,M,,Cat 3 Men\nCy,Dee,M,555,Masters 50+ Men\n"
+    result = RegistrationImport.call(event: @event, csv:)
+    assert_equal [[3, "Cy Dee appears more than once in this file (row 2)"]], result.errors.map { [it.row, it.message] }
+    assert_equal @cat3, @event.registrations.sole.race
+  end
+
+  test "two different licensed riders with the same name are both registered" do
+    csv = "first_name,last_name,gender,license_number,race\nJo,Smith,M,111,Cat 3 Men\nJo,Smith,M,222,Masters 50+ Men\n"
+    result = RegistrationImport.call(event: @event, csv:)
+    assert_equal [2, 0, []], [result.created, result.updated, result.errors]
+    assert_equal({ "111" => @cat3.id, "222" => @masters.id }, @event.registrations.joins(:rider).pluck("riders.license_number", :race_id).to_h)
+  end
+
+  # Final review, Important 2
+  test "a column or category explicitly left blank is not used" do
+    csv = "first_name,last_name,gender,bib,race\nAnn,Lee,F,7,Women Open\nBob,Ray,M,8,Cat 3 Men\n"
+    result = RegistrationImport.call(event: @event, csv:, mapping: { "bib" => "" }, categories: { "Cat 3 Men" => { "race_id" => nil } })
+    assert_equal [[3, "category Cat 3 Men is not mapped to a race"]], result.errors.map { [it.row, it.message] }
+    assert_nil @event.registrations.sole.bib
+  end
 end

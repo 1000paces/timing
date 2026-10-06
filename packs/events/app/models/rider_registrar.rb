@@ -29,7 +29,7 @@ class RiderRegistrar
   def self.upsert(event:, race:, attrs:, source:)
     attrs = attrs.to_h.transform_keys(&:to_sym)
     rider_attrs = attrs.except(*REGISTRATION_KEYS)
-    existing = find_in_event(event, rider_attrs)
+    existing = match_in_event(event, rider_attrs)
     unless existing
       return register(race:, bib: attrs[:bib], rider_attrs:, source:, age: attrs[:age], external_category: attrs[:external_category])
     end
@@ -47,14 +47,20 @@ class RiderRegistrar
     existing
   end
 
-  def self.find_in_event(event, attrs)
+  # The rider's registration in this event: by license, else by name — but a
+  # name match whose rider holds a different license is someone else.
+  def self.match_in_event(event, attrs)
+    attrs = attrs.to_h.transform_keys(&:to_sym)
     scope = event.registrations.joins(:rider).includes(:rider)
     license = attrs[:license_number].presence
-    (license && scope.find_by(riders: { license_number: license })) ||
-      scope.where("LOWER(riders.first_name) = ? AND LOWER(riders.last_name) = ?",
-                  attrs[:first_name].to_s.strip.downcase, attrs[:last_name].to_s.strip.downcase).first
+    by_license = license && scope.find_by(riders: { license_number: license })
+    return by_license if by_license
+
+    by_name = scope.where("LOWER(riders.first_name) = ? AND LOWER(riders.last_name) = ?",
+                          attrs[:first_name].to_s.strip.downcase, attrs[:last_name].to_s.strip.downcase)
+    by_name = by_name.where(riders: { license_number: [nil, ""] }) if license
+    by_name.first
   end
-  private_class_method :find_in_event
 
   def self.identity_mismatch?(rider, attrs)
     %i[first_name last_name gender].any? do |field|
