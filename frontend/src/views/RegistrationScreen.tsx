@@ -3,6 +3,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -34,7 +35,16 @@ import {
   type RegistrationResult,
   type RegistrationScreenData,
 } from "../queries";
-import { countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationFilter, type RegistrationRow } from "../registration";
+import {
+  NO_FILTER,
+  countRegistrations,
+  countsLabel,
+  filterFromSearch,
+  filterRegistrations,
+  filterToSearch,
+  type RegistrationFilter,
+  type RegistrationRow,
+} from "../registration";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -51,6 +61,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   const [removeRegistration] = useMutation<{ removeRegistration: { errors: string[] } }>(REMOVE_REGISTRATION);
   const [filter, setFilter] = useState<RegistrationFilter>(() => filterFromSearch(window.location.search));
   const setFilterPart = (part: Partial<RegistrationFilter>) => setFilter((current) => ({ ...current, ...part }));
+  const [typing, setTyping] = useState(""); // search text not yet added as a chip; filters as you type
   // Replace (not push) so typing in Search doesn't fill the Back button's history.
   useEffect(() => {
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${filterToSearch(filter)}`);
@@ -73,7 +84,9 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   if (!event) {
     return <Box sx={{ p: 3 }}>{screen.error ? <Alert severity="error">{screen.error.message}</Alert> : <LinearProgress />}</Box>;
   }
-  const rows = filterRegistrations(event.registrations, filter);
+  const rows = filterRegistrations(event.registrations, { ...filter, terms: [...filter.terms, typing] });
+  const filtering = filter.terms.length > 0 || filter.raceIds.length > 0 || filter.needsBib || filter.notCheckedIn || typing.trim() !== "";
+  const racesById = new Map(event.races.map((r) => [r.id, r]));
 
   async function onAssignBibs() {
     try {
@@ -105,16 +118,36 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
       <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
-        <TextField label="Search" size="small" value={filter.search} onChange={(e) => setFilterPart({ search: e.target.value })} placeholder="Name, bib, team, license" />
-        <TextField select label="Race" size="small" value={filter.raceId ?? ""} onChange={(e) => setFilterPart({ raceId: e.target.value || null })} sx={{ minWidth: 180 }}
-          slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}>
-          <option value="">All races</option>
-          {event.races.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-        </TextField>
+        <Autocomplete
+          multiple
+          freeSolo
+          size="small"
+          options={[] as string[]}
+          value={filter.terms}
+          onChange={(_, terms) => setFilterPart({ terms: terms.map((t) => t.trim()).filter(Boolean) })}
+          inputValue={typing}
+          onInputChange={(_, text) => setTyping(text)}
+          sx={{ minWidth: 240 }}
+          renderInput={(params) => (
+            <TextField {...params} label="Search" placeholder={filter.terms.length ? "" : "Name, bib, team, license — Enter adds"} />
+          )}
+        />
+        <Autocomplete
+          multiple
+          size="small"
+          options={event.races}
+          getOptionLabel={(r) => r.name}
+          isOptionEqualToValue={(a, b) => a.id === b.id}
+          value={filter.raceIds.flatMap((id) => racesById.get(id) ?? [])}
+          onChange={(_, races) => setFilterPart({ raceIds: races.map((r) => r.id) })}
+          sx={{ minWidth: 240 }}
+          renderInput={(params) => <TextField {...params} label="Race" placeholder={filter.raceIds.length ? "" : "All races"} />}
+        />
         <FormControlLabel control={<Checkbox checked={filter.needsBib} onChange={(e) => setFilterPart({ needsBib: e.target.checked })} />} label="Needs bib" />
         <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
+        {filtering && <Button size="small" onClick={() => { setFilter(NO_FILTER); setTyping(""); }}>Clear filters</Button>}
         <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
-          {countsLabel(event.registrationCounts)}
+          {countsLabel(countRegistrations(rows), event.registrations.length)}
         </Typography>
         {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
         {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}

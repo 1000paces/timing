@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
+import { countRegistrations, countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
 
 const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   id: "r",
@@ -17,20 +17,28 @@ describe("filterRegistrations", () => {
   const ann = row({ id: "1", bib: "101", racer: { ...row({}).racer, team: "Velo" } });
   const bob = row({ id: "2", checkedInAtMs: 5, race: { id: "masters", name: "Masters" }, racer: { ...row({}).racer, firstName: "Bob", lastName: "Ray", licenseNumber: "L77" } });
   const all = [ann, bob];
-  const none = { search: "", raceId: null, needsBib: false, notCheckedIn: false };
+  const none = { terms: [], raceIds: [], needsBib: false, notCheckedIn: false };
 
   it("searches name, bib, team and license, ignoring case", () => {
-    expect(filterRegistrations(all, { ...none, search: "ray" })).toEqual([bob]);
-    expect(filterRegistrations(all, { ...none, search: "101" })).toEqual([ann]);
-    expect(filterRegistrations(all, { ...none, search: "velo" })).toEqual([ann]);
-    expect(filterRegistrations(all, { ...none, search: "l77" })).toEqual([bob]);
-    expect(filterRegistrations(all, { ...none, search: "ann lee" })).toEqual([ann]);
+    expect(filterRegistrations(all, { ...none, terms: ["ray"] })).toEqual([bob]);
+    expect(filterRegistrations(all, { ...none, terms: ["101"] })).toEqual([ann]);
+    expect(filterRegistrations(all, { ...none, terms: ["velo"] })).toEqual([ann]);
+    expect(filterRegistrations(all, { ...none, terms: ["l77"] })).toEqual([bob]);
+    expect(filterRegistrations(all, { ...none, terms: ["ann lee"] })).toEqual([ann]);
   });
 
-  it("filters by race, missing bib and not checked in", () => {
-    expect(filterRegistrations(all, { ...none, raceId: "masters" })).toEqual([bob]);
+  it("several search terms match any of them; blank terms are ignored", () => {
+    expect(filterRegistrations(all, { ...none, terms: ["ray", "101"] })).toEqual([ann, bob]);
+    expect(filterRegistrations(all, { ...none, terms: ["ray", "nobody"] })).toEqual([bob]);
+    expect(filterRegistrations(all, { ...none, terms: ["  "] })).toEqual(all);
+  });
+
+  it("filters by any of several races, missing bib and not checked in", () => {
+    expect(filterRegistrations(all, { ...none, raceIds: ["masters"] })).toEqual([bob]);
+    expect(filterRegistrations(all, { ...none, raceIds: ["masters", "cat3"] })).toEqual(all);
     expect(filterRegistrations(all, { ...none, needsBib: true })).toEqual([bob]);
     expect(filterRegistrations(all, { ...none, notCheckedIn: true })).toEqual([ann]);
+    expect(filterRegistrations(all, { ...none, terms: ["ray"], raceIds: ["cat3"] })).toEqual([]);
   });
 });
 
@@ -39,18 +47,28 @@ describe("countsLabel", () => {
     expect(countsLabel({ registered: 168, checkedIn: 142, needsBib: 6 })).toBe("168 registered · 142 checked in · 6 need a bib");
     expect(countsLabel({ registered: 1, checkedIn: 0, needsBib: 1 })).toBe("1 registered · 0 checked in · 1 needs a bib");
   });
+
+  it("describes the filtered rows, out of the event's total, when a filter is on", () => {
+    expect(countsLabel({ registered: 5, checkedIn: 2, needsBib: 1 }, 31)).toBe("5 of 31 registered · 2 checked in · 1 needs a bib");
+    expect(countsLabel({ registered: 31, checkedIn: 4, needsBib: 0 }, 31)).toBe("31 registered · 4 checked in · 0 need a bib");
+  });
+
+  it("counts rows", () => {
+    const rows = [row({ id: "1", bib: "1", checkedInAtMs: 5 }), row({ id: "2" }), row({ id: "3", bib: "3" })];
+    expect(countRegistrations(rows)).toEqual({ registered: 3, checkedIn: 1, needsBib: 1 });
+  });
 });
 
 describe("filters in the page address", () => {
   it("round-trips through the query string", () => {
-    const filter = { search: "lee ann", raceId: "r-1", needsBib: true, notCheckedIn: false };
+    const filter = { terms: ["lee ann", "101"], raceIds: ["r-1", "r-2"], needsBib: true, notCheckedIn: false };
     const search = filterToSearch(filter);
-    expect(search).toBe("?q=lee+ann&race=r-1&needsBib=1");
+    expect(search).toBe("?q=lee+ann&q=101&race=r-1&race=r-2&needsBib=1");
     expect(filterFromSearch(search)).toEqual(filter);
   });
 
   it("defaults to no filters", () => {
-    expect(filterFromSearch("")).toEqual({ search: "", raceId: null, needsBib: false, notCheckedIn: false });
-    expect(filterToSearch({ search: "  ", raceId: null, needsBib: false, notCheckedIn: false })).toBe("");
+    expect(filterFromSearch("")).toEqual({ terms: [], raceIds: [], needsBib: false, notCheckedIn: false });
+    expect(filterToSearch({ terms: ["  "], raceIds: [], needsBib: false, notCheckedIn: false })).toBe("");
   });
 });

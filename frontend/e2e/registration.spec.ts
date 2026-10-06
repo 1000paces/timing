@@ -53,16 +53,28 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Ann Lee").getByLabel("Bib for Ann Lee")).not.toHaveValue("");
   await expect(counts(page)).toHaveText("5 registered · 0 checked in · 0 need a bib");
 
-  // Filters survive a page refresh.
-  await page.getByLabel("Search").fill("eve");
-  await page.getByRole("checkbox", { name: "Not checked in" }).check();
+  // Search and race take several values, shown as chips, and survive a refresh.
+  const search = page.getByLabel("Search");
+  await search.fill("eve");
+  await search.press("Enter");
+  await search.fill("gee");
+  await search.press("Enter");
+  await expect(page.getByRole("button", { name: "eve", exact: true })).toBeVisible();
+  await expect(page.getByTestId("registration")).toHaveCount(2);
+  await page.getByLabel("Race").click();
+  await page.getByRole("option", { name: "Women Open" }).click();
+  await page.keyboard.press("Escape");
   await expect(page.getByTestId("registration")).toHaveCount(1);
+  await page.getByRole("checkbox", { name: "Not checked in" }).check();
+  await expect(counts(page)).toHaveText("1 of 5 registered · 0 checked in · 0 need a bib");
   await page.reload();
-  await expect(page.getByLabel("Search")).toHaveValue("eve");
+  await expect(page.getByRole("button", { name: "gee", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Women Open", exact: true })).toBeVisible();
   await expect(page.getByRole("checkbox", { name: "Not checked in" })).toBeChecked();
   await expect(page.getByTestId("registration")).toHaveCount(1);
-  await page.getByLabel("Search").fill("");
-  await page.getByRole("checkbox", { name: "Not checked in" }).uncheck();
+  await expect(page.getByTestId("registration")).toContainText("Flo Gee");
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.getByTestId("registration")).toHaveCount(5);
 
   // Day-of as a chief: a walk-up without a bib, a check-in, then a bib typed in the row.
   await page.getByRole("button", { name: "Sign out" }).click();
