@@ -120,15 +120,27 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await row(page, "Ann Lee").getByRole("checkbox", { name: "Checked in Ann Lee" }).check();
   await expectStats(page, "6 racers", "2 of 6 checked in", "1 needs a bib");
 
-  // A half-typed bib is not saved when you click away; only Enter saves.
+  // Tab saves a bib like Enter; a duplicate shows the hub's error and keeps what
+  // was typed until it's fixed, and Escape puts the saved bib back.
   const diBib = row(page, "Di Eve").getByLabel("Bib for Di Eve");
-  await diBib.fill("9");
-  await page.getByLabel("Search").click();
+  await diBib.fill("12");
+  await diBib.press("Tab");
+  await expect(row(page, "Di Eve")).toContainText("Bib has already been taken");
+  await expect(diBib).toHaveValue("12");
+  await diBib.press("Escape");
   await expect(diBib).toHaveValue("100");
+  await expect(row(page, "Di Eve")).not.toContainText("Bib has already been taken");
+  await diBib.fill("101");
+  await diBib.press("Tab");
+  await expect(row(page, "Di Eve")).not.toContainText("already");
+  await page.reload();
+  await expect(row(page, "Di Eve").getByLabel("Bib for Di Eve")).toHaveValue("101");
 
   const bib = row(page, "Walk Up").getByLabel("Bib for Walk Up");
   await bib.fill("150");
   await bib.press("Enter");
   await expect(row(page, "Walk Up")).not.toContainText("needs bib");
+  // Checked in with a bib: the bib is locked.
+  await expect(row(page, "Walk Up").getByLabel("Bib for Walk Up")).toBeDisabled();
   await expectStats(page, "6 racers", "2 of 6 checked in", "0 need a bib");
 });

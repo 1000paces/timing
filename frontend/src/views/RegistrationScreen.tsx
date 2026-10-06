@@ -26,7 +26,7 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ASSIGN_BIBS,
   REGISTRATION_SCREEN,
@@ -299,35 +299,48 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
   );
 }
 
-// Type a bib and press Enter; a taken bib shows the hub's error under the field.
-// Leaving the field (or Escape) without Enter puts the saved bib back.
+// Type a bib and press Enter or Tab to save; a taken bib shows the hub's error
+// under the field and keeps what was typed. Escape puts the saved bib back.
+// A checked-in racer's bib is locked once set.
 function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string; onChanged: () => void }) {
   const [updateBib] = useMutation<{ updateRegistration: RegistrationResult }>(UPDATE_BIB);
   const [value, setValue] = useState(reg.bib ?? "");
   const [error, setError] = useState<string | null>(null);
+  const saving = useRef<string | null>(null); // the bib being sent, so Enter then Tab doesn't send it twice
   useEffect(() => setValue(reg.bib ?? ""), [reg.bib]);
+  const locked = reg.checkedInAtMs != null && reg.bib != null;
 
   async function save() {
     const bib = value.trim() || null;
-    if (bib === reg.bib) return;
+    if (bib === reg.bib || bib === saving.current) return;
+    saving.current = bib;
     try {
       const errors = (await updateBib({ variables: { id: reg.id, bib } })).data?.updateRegistration.errors ?? [];
       setError(errors.length ? errors.join("; ") : null);
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      saving.current = null;
     }
     onChanged();
   }
 
-  return (
+  function revert() {
+    setValue(reg.bib ?? "");
+    setError(null);
+  }
+
+  const field = (
     <TextField size="small" value={value} onChange={(e) => setValue(e.target.value)} error={error != null} helperText={error}
+      disabled={locked}
       onKeyDown={(e) => {
         if (e.key === "Enter") void save();
-        if (e.key === "Escape") setValue(reg.bib ?? "");
+        if (e.key === "Escape") revert();
       }}
-      onBlur={() => setValue(reg.bib ?? "")}
+      onBlur={() => void save()}
       slotProps={{ htmlInput: { "aria-label": `Bib for ${name}`, inputMode: "numeric", style: { textAlign: "center" } } }} sx={{ width: 90 }} />
   );
+  return locked ? <Tooltip title="Checked in: undo check-in to change the bib"><span>{field}</span></Tooltip> : field;
 }
 
 // A filter control with its chosen values as chips underneath, so the control

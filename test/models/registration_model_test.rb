@@ -72,4 +72,14 @@ class RegistrationModelTest < ActiveSupport::TestCase
     assert_match(/below minimum 35/, Registration.create!(race: masters, racer:, age: 30).eligibility_warnings.first)
     assert_empty Registration.create!(race: masters, racer: create_racer(birth_date: nil), age: 40).eligibility_warnings
   end
+
+  test "a checked-in racer's bib is locked once set" do
+    reg = register(race: @race, bib: nil)
+    reg.check_in!(at_ms: 1)
+    assert reg.update(bib: "5"), "a checked-in racer without a bib can be given one"
+    refute reg.update(bib: "6")
+    assert_includes reg.errors.full_messages, "Bib can't change once the racer is checked in (undo check-in first)"
+    reg.reload.undo_check_in!
+    assert reg.update(bib: "6")
+  end
 end
