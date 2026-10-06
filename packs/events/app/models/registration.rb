@@ -21,6 +21,10 @@ class Registration < ApplicationRecord
 
   def checked_in? = checked_in_at_ms.present?
 
+  def check_in!(at_ms:) = update!(checked_in_at_ms: at_ms)
+
+  def undo_check_in! = update!(checked_in_at_ms: nil)
+
   private
 
   def race_in_same_event
