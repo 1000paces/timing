@@ -7,6 +7,8 @@ module Types
     field :birth_date, GraphQL::Types::ISO8601Date
     field :license_number, String
     field :team, String
+    field :city, String
+    field :state, String
 
     # Spec §8: timers are capture-only; PII resolves to null for them.
     def birth_date = chief? ? object.birth_date : nil

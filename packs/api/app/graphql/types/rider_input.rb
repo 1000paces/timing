@@ -6,5 +6,7 @@ module Types
     argument :birth_date, GraphQL::Types::ISO8601Date, required: false
     argument :license_number, String, required: false
     argument :team, String, required: false
+    argument :city, String, required: false
+    argument :state, String, required: false
   end
 end

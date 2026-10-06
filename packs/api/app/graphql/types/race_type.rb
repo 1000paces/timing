@@ -14,6 +14,8 @@ module Types
     field :expected_laps, Integer
     field :finish_with_leader, Boolean, null: false, description: "Effective: the override, else the event's"
     field :finish_with_leader_override, Boolean
+    field :bib_from, Integer
+    field :bib_to, Integer
 
     def finish_with_leader = object.effective_finish_with_leader
     def finish_with_leader_override = object.finish_with_leader

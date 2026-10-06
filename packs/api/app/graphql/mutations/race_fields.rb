@@ -10,6 +10,8 @@ module Mutations
       mutation.argument :expected_duration_ms, Types::Millis, required: false
       mutation.argument :expected_laps, Integer, required: false
       mutation.argument :finish_with_leader, GraphQL::Types::Boolean, required: false, description: "Null inherits the event's setting"
+      mutation.argument :bib_from, Integer, required: false
+      mutation.argument :bib_to, Integer, required: false
       mutation.field :race, Types::RaceType
     end
   end
