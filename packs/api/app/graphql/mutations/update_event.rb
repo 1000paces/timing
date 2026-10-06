@@ -7,6 +7,7 @@ module Mutations
     argument :discipline, String, required: false
     argument :sub_discipline, String, required: false
     argument :finish_with_leader, Boolean, required: false
+    argument :age_next_year, Boolean, required: false
     argument :bib_from, Integer, required: false
     argument :bib_to, Integer, required: false
 

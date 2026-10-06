@@ -104,6 +104,16 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     assert_nil @cat3.registrations.sole.bib
   end
 
+  test "registrations expose the racing age; events expose and accept the cross-season setting" do
+    as("admin")
+    register(race: @cat3, bib: "1", racer: create_racer(birth_date: Date.new(1985, 6, 1)))
+    body = gql("query($id: ID!) { event(id: $id) { ageNextYear registrations { age racingAge } } }", id: @event.id)
+    assert_equal({ "ageNextYear" => true, "registrations" => [{ "age" => nil, "racingAge" => 42 }] }, body.dig("data", "event"))
+    off = gql("mutation($id: ID!) { updateEvent(id: $id, ageNextYear: false) { event { ageNextYear registrations { racingAge } } errors } }", id: @event.id)
+    assert_equal({ "ageNextYear" => false, "registrations" => [{ "racingAge" => 41 }] }, data(off, "updateEvent")["event"])
+    assert_equal true, gql("{ disciplines { id ageNextYear } }").dig("data", "disciplines").find { it["id"] == "cyclocross" }["ageNextYear"]
+  end
+
   test "bib ranges are set on events and races by admins" do
     as("admin")
     body = gql("mutation($id: ID!) { updateEvent(id: $id, bibFrom: 500, bibTo: 599) { event { bibFrom bibTo } errors } }", id: @event.id)

@@ -276,7 +276,7 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
         )}
       </TableCell>
       <TableCell>{reg.racer.gender}</TableCell>
-      <TableCell>{reg.age ?? ""}</TableCell>
+      <TableCell>{reg.racingAge ?? ""}</TableCell>
       <TableCell>{reg.racer.team ?? ""}</TableCell>
       <TableCell>{reg.race.name}</TableCell>
       <TableCell>

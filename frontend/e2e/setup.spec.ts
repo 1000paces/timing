@@ -28,6 +28,7 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await create.getByLabel("Location").fill("River Park");
   await create.getByLabel("Discipline").selectOption("cyclocross");
   await expect(create.getByLabel("Finish with leader")).toBeChecked();
+  await expect(create.getByLabel("Age as of next year (cross season)")).toBeChecked();
   await create.getByRole("button", { name: "Create" }).click();
   await expect(page).toHaveURL(/\/console\/event\/[0-9a-f-]+\/setup$/);
 

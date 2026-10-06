@@ -35,6 +35,7 @@ export type EventInfo = {
   discipline: string;
   subDiscipline: string | null;
   finishWithLeader: boolean;
+  ageNextYear: boolean;
   bibFrom: number | null;
   bibTo: number | null;
   races: RaceInfo[];
@@ -47,16 +48,16 @@ const RACE_FIELDS = `id name defaultName nameOverride category ageGroup ageMin a
 export const EVENT = gql`
   query Event($id: ID!) {
     event(id: $id) {
-      id name date location discipline subDiscipline finishWithLeader bibFrom bibTo
+      id name date location discipline subDiscipline finishWithLeader ageNextYear bibFrom bibTo
       races { ${RACE_FIELDS} }
     }
   }
 `;
 
-export type Discipline = { id: string; label: string; finishWithLeader: boolean; subDisciplines: { id: string; label: string; finishWithLeader: boolean }[] };
+export type Discipline = { id: string; label: string; finishWithLeader: boolean; ageNextYear: boolean; subDisciplines: { id: string; label: string; finishWithLeader: boolean }[] };
 export type DisciplinesData = { disciplines: Discipline[] };
 export const DISCIPLINES = gql`
-  query Disciplines { disciplines { id label finishWithLeader subDisciplines { id label finishWithLeader } } }
+  query Disciplines { disciplines { id label finishWithLeader ageNextYear subDisciplines { id label finishWithLeader } } }
 `;
 
 export type EventInput = {
@@ -66,21 +67,24 @@ export type EventInput = {
   discipline: string;
   subDiscipline: string | null;
   finishWithLeader: boolean;
+  ageNextYear: boolean;
   bibFrom?: number | null;
   bibTo?: number | null;
 };
 export const CREATE_EVENT = gql`
-  mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String, $finishWithLeader: Boolean) {
-    createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline, finishWithLeader: $finishWithLeader) {
+  mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String,
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean) {
+    createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear) {
       event { id } errors
     }
   }
 `;
 export const UPDATE_EVENT = gql`
   mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String,
-                       $finishWithLeader: Boolean, $bibFrom: Int, $bibTo: Int) {
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $bibFrom: Int, $bibTo: Int) {
     updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
-                finishWithLeader: $finishWithLeader, bibFrom: $bibFrom, bibTo: $bibTo) {
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, bibFrom: $bibFrom, bibTo: $bibTo) {
       event { id } errors
     }
   }
@@ -218,7 +222,7 @@ export const DELETE_CAPTURE = gql`
   mutation DeleteCapture($captureId: ID!) { deleteCapture(captureId: $captureId) { errors } }
 `;
 
-const REGISTRATION_FIELDS = `id bib age source checkedInAtMs eligibilityWarnings race { id name }
+const REGISTRATION_FIELDS = `id bib age racingAge source checkedInAtMs eligibilityWarnings race { id name }
   racer { firstName lastName gender team licenseNumber birthDate city state }`;
 export type RegistrationScreenData = {
   event: {

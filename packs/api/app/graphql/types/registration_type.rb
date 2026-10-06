@@ -4,7 +4,8 @@ module Types
     field :bib, String, description: "Null until one is given out"
     field :race_id, ID, null: false
     field :race, RaceType, null: false
-    field :age, Integer, description: "Age for this event as reported by the import (used when the birth date is unknown)"
+    field :age, Integer, description: "Age entered or imported for this event"
+    field :racing_age, Integer, description: "The age entered, else worked out from the birth date by the event's age rule"
     field :source, String, null: false, description: "import or manual"
     field :external_category, String, description: "The category text from the imported file"
     field :checked_in_at_ms, Millis

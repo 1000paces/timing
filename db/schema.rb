@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_000003) do
   create_table "category_mappings", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "external_category", null: false
@@ -66,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000002) do
     t.boolean "finish_with_leader", default: true, null: false
     t.integer "bib_from"
     t.integer "bib_to"
+    t.boolean "age_next_year", default: false, null: false
   end
 
   create_table "officials", id: :string, force: :cascade do |t|

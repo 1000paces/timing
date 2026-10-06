@@ -23,7 +23,7 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
         value={value.discipline}
         onChange={(e) => {
           const d = disciplines.find((x) => x.id === e.target.value);
-          set({ discipline: e.target.value, subDiscipline: null, finishWithLeader: defaultFor(d, null) });
+          set({ discipline: e.target.value, subDiscipline: null, finishWithLeader: defaultFor(d, null), ageNextYear: d?.ageNextYear ?? false });
         }}
         slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
       >
@@ -52,6 +52,10 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
       <FormControlLabel
         control={<Checkbox checked={value.finishWithLeader} onChange={(e) => set({ finishWithLeader: e.target.checked })} />}
         label="Finish with leader"
+      />
+      <FormControlLabel
+        control={<Checkbox checked={value.ageNextYear} onChange={(e) => set({ ageNextYear: e.target.checked })} />}
+        label="Age as of next year (cross season)"
       />
       {bibRange && (
         <Stack direction="row" spacing={2}>

@@ -66,6 +66,19 @@ class RegistrationModelTest < ActiveSupport::TestCase
     refute CategoryMapping.new(event: @event, external_category: "Nothing").valid?
   end
 
+  test "the racing age is the registration's age when given, else from the birth date" do
+    born1985 = create_racer(birth_date: Date.new(1985, 6, 1))
+    assert_equal 42, Registration.create!(race: @race, racer: born1985).racing_age # CX: next year's age
+    assert_equal 39, Registration.create!(race: @race, racer: create_racer(birth_date: Date.new(1985, 6, 1)), age: 39).racing_age
+    assert_nil Registration.create!(race: @race, racer: create_racer(birth_date: nil)).racing_age
+  end
+
+  test "eligibility uses the registration's age before the birth date" do
+    masters = create_race(event: @event, category: "Masters 50", age_min: 50)
+    reg = Registration.create!(race: masters, racer: create_racer(birth_date: Date.new(1960, 1, 1)), age: 45)
+    assert_match(/age 45 is below minimum 50/, reg.eligibility_warnings.first)
+  end
+
   test "eligibility uses the registration's age when the birth date is unknown" do
     masters = create_race(event: @event, category: "Masters", age_min: 35)
     racer = create_racer(birth_date: nil)

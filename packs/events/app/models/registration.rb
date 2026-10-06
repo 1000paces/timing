@@ -20,6 +20,9 @@ class Registration < ApplicationRecord
   # Warnings, not errors: officials may let racers race up.
   def eligibility_warnings = Eligibility.warnings(racer:, race:, event:, age:)
 
+  # The age entered or imported for this event, else worked out from the birth date.
+  def racing_age = age || event.age_of(racer.birth_date)
+
   def checked_in? = checked_in_at_ms.present?
 
   def check_in!(at_ms:) = update!(checked_in_at_ms: at_ms)

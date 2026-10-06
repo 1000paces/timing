@@ -66,7 +66,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
   const data = event.data?.event;
   useEffect(() => {
     if (data && !details) {
-      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader, bibFrom: data.bibFrom, bibTo: data.bibTo });
+      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader, ageNextYear: data.ageNextYear, bibFrom: data.bibFrom, bibTo: data.bibTo });
     }
   }, [data, details]);
 

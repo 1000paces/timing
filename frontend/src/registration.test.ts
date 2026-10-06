@@ -5,6 +5,7 @@ const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   id: "r",
   bib: null,
   age: null,
+  racingAge: null,
   source: "import",
   checkedInAtMs: null,
   eligibilityWarnings: [],
@@ -78,9 +79,9 @@ describe("filters in the page address", () => {
 
 describe("sortRegistrations", () => {
   const racer = row({}).racer;
-  const ann = row({ id: "a", bib: "20", age: 41, checkedInAtMs: 1, race: { id: "w", name: "Women Open" }, racer: { ...racer, firstName: "Ann", lastName: "Lee", gender: "F", team: "Velo" } });
-  const bob = row({ id: "b", bib: "3", age: 30, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Bob", lastName: "Ray", gender: "M", team: null } });
-  const cy = row({ id: "c", bib: null, age: null, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Cy", lastName: "Dee", gender: "M", team: "Spoke" } });
+  const ann = row({ id: "a", bib: "20", racingAge: 41, checkedInAtMs: 1, race: { id: "w", name: "Women Open" }, racer: { ...racer, firstName: "Ann", lastName: "Lee", gender: "F", team: "Velo" } });
+  const bob = row({ id: "b", bib: "3", age: 30, racingAge: 30, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Bob", lastName: "Ray", gender: "M", team: null } });
+  const cy = row({ id: "c", bib: null, age: null, racingAge: 35, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Cy", lastName: "Dee", gender: "M", team: "Spoke" } });
   const ids = (rows: RegistrationRow[]) => rows.map((r) => r.id).join("");
 
   it("sorts bibs as numbers, with racers lacking a bib last either way", () => {
@@ -90,7 +91,7 @@ describe("sortRegistrations", () => {
 
   it("sorts names by last then first name, and the other columns", () => {
     expect(ids(sortRegistrations([ann, bob, cy], { key: "name", dir: "asc" }))).toBe("cab");
-    expect(ids(sortRegistrations([ann, bob, cy], { key: "age", dir: "asc" }))).toBe("bac");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "age", dir: "asc" }))).toBe("bca"); // racing age
     expect(ids(sortRegistrations([ann, bob, cy], { key: "team", dir: "asc" }))).toBe("cab");
     expect(ids(sortRegistrations([ann, bob, cy], { key: "race", dir: "desc" }))).toBe("abc");
     expect(ids(sortRegistrations([ann, bob, cy], { key: "checkedIn", dir: "asc" }))).toBe("abc");

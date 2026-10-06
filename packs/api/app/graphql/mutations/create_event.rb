@@ -6,6 +6,7 @@ module Mutations
     argument :discipline, String
     argument :sub_discipline, String, required: false
     argument :finish_with_leader, Boolean, required: false, description: "Defaults from the discipline"
+    argument :age_next_year, Boolean, required: false
     argument :bib_from, Integer, required: false
     argument :bib_to, Integer, required: false
     argument :timezone, String, required: false

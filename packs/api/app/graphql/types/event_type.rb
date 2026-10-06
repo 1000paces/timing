@@ -9,6 +9,7 @@ module Types
     field :finish_with_leader, Boolean, null: false, description: "Default for races that don't override it"
     field :timezone, String, null: false
     field :age_rule, String, null: false
+    field :age_next_year, Boolean, null: false, description: "Racing age as of the end of the following year (season crosses the year boundary, e.g. CX)"
     field :races, [RaceType], null: false, description: "In scheduled order, then name"
     field :registrations, [RegistrationType], null: false, description: "By bib, then racers without one by name"
     field :registration_counts, RegistrationCountsType, null: false

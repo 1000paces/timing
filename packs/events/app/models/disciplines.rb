@@ -1,11 +1,15 @@
 # Event disciplines, their sub-disciplines, and whether races finish with the
 # leader by default (CX, XCC and crits do; XCO, marathon, road races don't).
+# age_next_year: the season crosses the year boundary (CX), so racing age is
+# as of the end of the following year.
 module Disciplines
   Sub = Data.define(:id, :label, :finish_with_leader)
-  Discipline = Data.define(:id, :label, :finish_with_leader, :subs)
+  Discipline = Data.define(:id, :label, :finish_with_leader, :subs, :age_next_year) do
+    def initialize(age_next_year: false, **) = super
+  end
 
   TABLE = [
-    Discipline.new(id: "cyclocross", label: "Cyclocross", finish_with_leader: true, subs: []),
+    Discipline.new(id: "cyclocross", label: "Cyclocross", finish_with_leader: true, subs: [], age_next_year: true),
     Discipline.new(id: "mountain_bike", label: "Mountain bike", finish_with_leader: false, subs: [
       Sub.new(id: "xco", label: "XCO", finish_with_leader: false),
       Sub.new(id: "xcc", label: "XCC", finish_with_leader: true),
@@ -36,4 +40,6 @@ module Disciplines
     d = find(discipline) or return false
     d.subs.find { it.id == sub }&.finish_with_leader || (sub.blank? && d.finish_with_leader) || false
   end
+
+  def default_age_next_year(discipline) = find(discipline)&.age_next_year || false
 end

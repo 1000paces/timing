@@ -7,12 +7,22 @@ class EventsTest < ActiveSupport::TestCase
   end
 
   test "racing age is year difference; age on event date respects birthdays" do
-    event = create_event(date: Date.new(2026, 3, 1))
+    event = create_event(date: Date.new(2026, 3, 1), age_next_year: false)
     assert_equal 41, event.age_of(Date.new(1985, 6, 1))
     event.update!(age_rule: "age_on_event_date")
     assert_equal 40, event.age_of(Date.new(1985, 6, 1))
     assert_equal 41, event.age_of(Date.new(1985, 3, 1))
     assert_nil event.age_of(nil)
+  end
+
+  test "cross season: racing age as of the end of the following year, on by default for cyclocross only" do
+    cx = create_event(date: Date.new(2026, 10, 18))
+    assert cx.age_next_year
+    assert_equal 42, cx.age_of(Date.new(1985, 6, 1))
+    road = create_event(discipline: "road", sub_discipline: "criterium")
+    refute road.age_next_year
+    assert_equal 41, road.age_of(Date.new(1985, 6, 1))
+    assert_equal 41, create_event(age_next_year: false).age_of(Date.new(1985, 6, 1))
   end
 
   test "bib is unique within an event across races, but reusable across events" do

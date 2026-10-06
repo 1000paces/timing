@@ -1,7 +1,8 @@
 export type RegistrationRow = {
   id: string;
   bib: string | null;
-  age: number | null;
+  age: number | null; // entered or imported for this event
+  racingAge: number | null; // age, else from the birth date by the event's age rule
   source: string;
   checkedInAtMs: number | null;
   eligibilityWarnings: string[];
@@ -96,7 +97,7 @@ function sortValue(r: RegistrationRow, key: SortKey): string | number | null {
     case "gender":
       return r.racer.gender;
     case "age":
-      return r.age;
+      return r.racingAge;
     case "team":
       return r.racer.team?.toLowerCase() || null;
     case "race":

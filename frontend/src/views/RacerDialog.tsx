@@ -89,7 +89,7 @@ export function RacerDialog({ races, registration, onClose }: Props) {
           </Stack>
           <Stack direction="row" spacing={2}>
             {field("bib", "Bib", { helperText: "Optional; give one out later", slotProps: { htmlInput: { style: { textAlign: "center" } } } })}
-            {field("age", "Age", { type: "number" })}
+            {field("age", "Age", { type: "number", helperText: "Blank: from birth date" })}
             {field("birthDate", "Birth date", { type: "date", slotProps: { inputLabel: { shrink: true } } })}
           </Stack>
           <Stack direction="row" spacing={2}>
