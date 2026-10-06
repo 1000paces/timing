@@ -158,3 +158,9 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Registration export (CSV).
 - Presets for other registration sources (USAC, RaceRoster, …) beyond the recognised header names.
 - Chip / tag numbers on registrations (for chip timing).
+- Registration review minors (2026-10-06):
+  - show "not in file" in the import preview, not only after importing;
+  - a returning rider's first import into a new event keeps last event's team/city/state (applied on the next re-import);
+  - a row with no category says "category  is not mapped" — say "no category";
+  - "License number has already been taken" should name the rider who holds it;
+  - the import dialog's file analysis has no error handling for network/sign-out errors.
