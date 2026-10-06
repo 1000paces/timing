@@ -13,7 +13,12 @@ async function openRegistration(page: Page, name: string, pin: string) {
 }
 
 const row = (page: Page, name: string) => page.getByTestId("registration").filter({ hasText: name });
-const counts = (page: Page) => page.getByTestId("registration-counts");
+// The stat tiles over the table: racers, checked in, and racers still needing a bib.
+async function expectStats(page: Page, racers: string, checkedIn: string, needsBib: string) {
+  await expect(page.getByTestId("stat-racers")).toHaveAccessibleName(racers);
+  await expect(page.getByTestId("stat-checked-in")).toHaveAccessibleName(checkedIn);
+  await expect(page.getByTestId("stat-needs-bib")).toHaveAccessibleName(needsBib);
+}
 
 test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up and checks racers in", async ({ page }) => {
   await openRegistration(page, "E2E Admin", "9753");
@@ -41,14 +46,21 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(page.getByTestId("registration")).toHaveCount(5);
   await expect(row(page, "Ann Lee")).toContainText("needs bib");
   await expect(row(page, "Bob Ray")).not.toContainText("needs bib");
-  await expect(counts(page)).toHaveText("5 registered · 0 checked in · 4 need a bib");
+  await expectStats(page, "5 racers", "0 of 5 checked in", "4 need a bib");
+
+  // The need-bib tile is a shortcut to its filter (and back).
+  await page.getByTestId("stat-needs-bib").click();
+  await expect(page.getByRole("checkbox", { name: "Needs bib" })).toBeChecked();
+  await expect(page.getByTestId("registration")).toHaveCount(4);
+  await page.getByTestId("stat-needs-bib").click();
+  await expect(page.getByTestId("registration")).toHaveCount(5);
 
   // Assign bibs for one race from Setup: Cat 3 Men from its 100–199.
   await page.getByRole("tab", { name: "Setup" }).click();
   await page.getByRole("button", { name: "Assign bibs for Cat 3 Men" }).click();
   await expect(page.getByText("Cat 3 Men: assigned 1 bib")).toBeVisible();
   await page.getByRole("tab", { name: "Registration" }).click();
-  await expect(counts(page)).toHaveText("5 registered · 0 checked in · 3 need a bib");
+  await expectStats(page, "5 racers", "0 of 5 checked in", "3 need a bib");
 
   // Then the rest of the event from the Registration toolbar, from the event's 1–99.
   await page.getByRole("button", { name: "Assign bibs" }).click();
@@ -58,7 +70,7 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Di Eve").getByRole("button", { name: "Edit Di Eve" })).toBeVisible();
   await expect(row(page, "Di Eve").getByRole("button", { name: "Remove Di Eve" })).toBeVisible();
   await expect(row(page, "Ann Lee").getByLabel("Bib for Ann Lee")).not.toHaveValue("");
-  await expect(counts(page)).toHaveText("5 registered · 0 checked in · 0 need a bib");
+  await expectStats(page, "5 racers", "0 of 5 checked in", "0 need a bib");
 
   // Search and race take several values, shown as chips, and survive a refresh.
   const search = page.getByLabel("Search");
@@ -68,12 +80,12 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await search.press("Enter");
   await expect(page.getByRole("button", { name: "eve", exact: true })).toBeVisible();
   await expect(page.getByTestId("registration")).toHaveCount(2);
-  await page.getByLabel("Race").click();
+  await page.getByRole("combobox", { name: "Race" }).click();
   await page.getByRole("option", { name: "Women Open" }).click();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("registration")).toHaveCount(1);
   await page.getByRole("checkbox", { name: "Not checked in" }).check();
-  await expect(counts(page)).toHaveText("1 of 5 registered · 0 checked in · 0 need a bib");
+  await expectStats(page, "1 of 5 racers", "0 of 1 checked in", "0 need a bib");
   await page.reload();
   await expect(page.getByRole("button", { name: "gee", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Women Open", exact: true })).toBeVisible();
@@ -106,7 +118,7 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Walk Up").getByRole("checkbox", { name: "Checked in Walk Up" })).toBeChecked();
 
   await row(page, "Ann Lee").getByRole("checkbox", { name: "Checked in Ann Lee" }).check();
-  await expect(counts(page)).toHaveText("6 registered · 2 checked in · 1 needs a bib");
+  await expectStats(page, "6 racers", "2 of 6 checked in", "1 needs a bib");
 
   // A half-typed bib is not saved when you click away; only Enter saves.
   const diBib = row(page, "Di Eve").getByLabel("Bib for Di Eve");
@@ -118,5 +130,5 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await bib.fill("150");
   await bib.press("Enter");
   await expect(row(page, "Walk Up")).not.toContainText("needs bib");
-  await expect(counts(page)).toHaveText("6 registered · 2 checked in · 0 need a bib");
+  await expectStats(page, "6 racers", "2 of 6 checked in", "0 need a bib");
 });

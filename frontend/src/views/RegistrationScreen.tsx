@@ -5,6 +5,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
@@ -40,7 +41,7 @@ import {
   DEFAULT_SORT,
   NO_FILTER,
   countRegistrations,
-  countsLabel,
+  statLabels,
   filterFromSearch,
   filterRegistrations,
   filterToSearch,
@@ -138,12 +139,14 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   return (
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", justifyContent: "flex-end", mb: 2 }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 2 }}>
+        <StatTiles counts={countRegistrations(rows)} total={event.registrations.length} filter={filter} onFilter={setFilterPart} />
+        <Box sx={{ flex: 1 }} />
         {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
         {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
         {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
       </Stack>
-      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2, "& > :last-child": { ml: "auto" } }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
         <FilterWithChips chips={filter.terms.map((t) => ({ key: t, label: t }))}
           onDelete={(term) => setFilterPart({ terms: filter.terms.filter((t) => t !== term) })}>
         <Autocomplete
@@ -184,11 +187,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
         {filtering && <Button size="small" onClick={() => { setFilter(NO_FILTER); setTyping(""); }}>Clear filters</Button>}
         </Stack>
-        <Stack sx={{ justifyContent: "center", minHeight: 40 }}>
-          <Typography data-testid="registration-counts" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-            {countsLabel(countRegistrations(rows), event.registrations.length)}
-          </Typography>
-        </Stack>
+
       </Stack>
       {notice && (
         <Alert severity={notice.severity} sx={{ mb: 2 }} onClose={() => setNotice(null)}>
@@ -347,5 +346,62 @@ function FilterWithChips({ chips, onDelete, children }: {
         </Stack>
       )}
     </Stack>
+  );
+}
+
+// Racers shown, check-in progress, and racers still needing a bib. The last two
+// are shortcuts to their filters; "need a bib" turns amber while it's above 0.
+function StatTiles({ counts, total, filter, onFilter }: {
+  counts: { registered: number; checkedIn: number; needsBib: number };
+  total: number;
+  filter: RegistrationFilter;
+  onFilter: (part: Partial<RegistrationFilter>) => void;
+}) {
+  const labels = statLabels(counts, total);
+  const filtered = counts.registered !== total;
+  return (
+    <Stack direction="row" spacing={1.5} sx={{ alignItems: "stretch" }}>
+      <Tile testId="stat-racers" label={labels.racers} value={counts.registered} detail={filtered ? `of ${total}` : undefined} caption="racers" />
+      <Tile testId="stat-checked-in" label={labels.checkedIn} value={counts.checkedIn} detail={`/ ${counts.registered}`} caption="checked in"
+        progress={labels.checkedInPercent} active={filter.notCheckedIn} onClick={() => onFilter({ notCheckedIn: !filter.notCheckedIn })}
+        hint="Show racers not checked in" />
+      <Tile testId="stat-needs-bib" label={labels.needsBib} value={counts.needsBib} caption={counts.needsBib === 1 ? "needs a bib" : "need a bib"}
+        warning={counts.needsBib > 0} active={filter.needsBib} onClick={() => onFilter({ needsBib: !filter.needsBib })}
+        hint="Show racers without a bib" />
+    </Stack>
+  );
+}
+
+function Tile({ testId, label, value, detail, caption, progress, warning, active, onClick, hint }: {
+  testId: string;
+  label: string;
+  value: number;
+  detail?: string;
+  caption: string;
+  progress?: number;
+  warning?: boolean;
+  active?: boolean;
+  onClick?: () => void;
+  hint?: string;
+}) {
+  const accent = warning ? "warning.main" : active ? "primary.main" : "divider";
+  const body = (
+    <Box sx={{ px: 1.5, py: 0.75, minWidth: 110, height: "100%", boxSizing: "border-box", textAlign: "left", border: 1, borderColor: accent, borderRadius: 1,
+      bgcolor: active ? "action.selected" : "background.paper" }}>
+      <Typography component="div" sx={{ lineHeight: 1.1 }}>
+        <Box component="span" sx={{ fontSize: 26, fontWeight: 600, color: warning ? "warning.main" : "text.primary" }}>{value}</Box>
+        {detail && <Box component="span" sx={{ ml: 0.5, fontSize: 14, color: "text.secondary" }}>{detail}</Box>}
+      </Typography>
+      <Typography variant="caption" color="text.secondary">{caption}</Typography>
+      {progress != null && <LinearProgress variant="determinate" value={progress} sx={{ mt: 0.5, height: 4, borderRadius: 2 }} />}
+    </Box>
+  );
+  if (!onClick) return <Box data-testid={testId} role="group" aria-label={label} sx={{ display: "flex" }}>{body}</Box>;
+  return (
+    <Tooltip title={hint ?? ""}>
+      <ButtonBase data-testid={testId} aria-label={label} aria-pressed={active} onClick={onClick} sx={{ borderRadius: 1, alignItems: "stretch" }}>
+        {body}
+      </ButtonBase>
+    </Tooltip>
   );
 }

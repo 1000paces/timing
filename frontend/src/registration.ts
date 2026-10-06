@@ -46,10 +46,17 @@ export function countRegistrations(rows: RegistrationRow[]): RegistrationCounts 
   };
 }
 
-// Counts of the rows shown; "N of TOTAL" when a filter hides some.
-export function countsLabel({ registered, checkedIn, needsBib }: RegistrationCounts, total = registered): string {
-  const shown = registered === total ? `${registered}` : `${registered} of ${total}`;
-  return `${shown} registered · ${checkedIn} checked in · ${needsBib} ${needsBib === 1 ? "needs" : "need"} a bib`;
+export type StatLabels = { racers: string; checkedIn: string; needsBib: string; checkedInPercent: number };
+
+// Labels for the stat tiles, describing the rows shown ("N of TOTAL racers"
+// when a filter hides some).
+export function statLabels({ registered, checkedIn, needsBib }: RegistrationCounts, total = registered): StatLabels {
+  return {
+    racers: registered === total ? `${registered} racers` : `${registered} of ${total} racers`,
+    checkedIn: `${checkedIn} of ${registered} checked in`,
+    needsBib: `${needsBib} ${needsBib === 1 ? "needs" : "need"} a bib`,
+    checkedInPercent: registered ? Math.round((checkedIn / registered) * 100) : 0,
+  };
 }
 
 // Filters live in the page address (?q=..&q=..&race=..&needsBib=1&notCheckedIn=1)

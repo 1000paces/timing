@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countRegistrations, countsLabel, filterFromSearch, sortFromSearch, sortRegistrations, sortToSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
+import { countRegistrations, statLabels, filterFromSearch, sortFromSearch, sortRegistrations, sortToSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
 
 const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   id: "r",
@@ -42,15 +42,18 @@ describe("filterRegistrations", () => {
   });
 });
 
-describe("countsLabel", () => {
-  it("summarises registration counts", () => {
-    expect(countsLabel({ registered: 168, checkedIn: 142, needsBib: 6 })).toBe("168 registered · 142 checked in · 6 need a bib");
-    expect(countsLabel({ registered: 1, checkedIn: 0, needsBib: 1 })).toBe("1 registered · 0 checked in · 1 needs a bib");
+describe("statLabels", () => {
+  it("labels the racer, check-in and bib tiles", () => {
+    expect(statLabels({ registered: 168, checkedIn: 42, needsBib: 6 })).toEqual({
+      racers: "168 racers", checkedIn: "42 of 168 checked in", needsBib: "6 need a bib", checkedInPercent: 25,
+    });
+    expect(statLabels({ registered: 1, checkedIn: 0, needsBib: 1 }).needsBib).toBe("1 needs a bib");
+    expect(statLabels({ registered: 0, checkedIn: 0, needsBib: 0 }).checkedInPercent).toBe(0);
   });
 
-  it("describes the filtered rows, out of the event's total, when a filter is on", () => {
-    expect(countsLabel({ registered: 5, checkedIn: 2, needsBib: 1 }, 31)).toBe("5 of 31 registered · 2 checked in · 1 needs a bib");
-    expect(countsLabel({ registered: 31, checkedIn: 4, needsBib: 0 }, 31)).toBe("31 registered · 4 checked in · 0 need a bib");
+  it("shows the filtered count out of the event's total when a filter hides some", () => {
+    expect(statLabels({ registered: 5, checkedIn: 2, needsBib: 1 }, 31).racers).toBe("5 of 31 racers");
+    expect(statLabels({ registered: 31, checkedIn: 4, needsBib: 0 }, 31).racers).toBe("31 racers");
   });
 
   it("counts rows", () => {
