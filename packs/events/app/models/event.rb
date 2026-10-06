@@ -1,6 +1,8 @@
 class Event < ApplicationRecord
   AGE_RULES = %w[racing_age_dec31 age_on_event_date].freeze
 
+  include BibRange
+
   has_many :races, dependent: :destroy
   has_many :registrations, dependent: :destroy
 
@@ -23,6 +25,8 @@ class Event < ApplicationRecord
   end
 
   private
+
+  def other_bib_ranges = races.filter_map { |race| [race.name, race.own_bib_range] if race.own_bib_range }
 
   def discipline_known
     errors.add(:sub_discipline, "#{sub_discipline} is not part of #{discipline}") unless Disciplines.valid?(discipline, sub_discipline)

@@ -2,13 +2,13 @@ require "test_helper"
 
 class RegistrationImportTest < ActiveSupport::TestCase
   CSV_TEXT = <<~CSV
-    first_name,last_name,gender,birth_date,ability_level,team,license_number,bib,race
-    Ann,Lee,F,1980-04-02,Cat 3,Velo,L1,301,Women Open
-    Bob,Ray,M,1990-01-01,Cat 3,,,101,Cat 3 Men
-    Cy,Dee,M,not-a-date,Cat 3,,,102,Cat 3 Men
-    Di,Eve,M,1985-05-05,Cat 3,,,101,Cat 3 Men
-    Ed,Fox,M,1985-05-05,Cat 3,,,103,Juniors
-    Flo,Gee,M,2010-05-05,Cat 4,,,104,cat 3 men
+    first_name,last_name,gender,birth_date,team,license_number,bib,race
+    Ann,Lee,F,1980-04-02,Velo,L1,301,Women Open
+    Bob,Ray,M,1990-01-01,,,101,Cat 3 Men
+    Cy,Dee,M,not-a-date,,,102,Cat 3 Men
+    Di,Eve,M,1985-05-05,,,101,Cat 3 Men
+    Ed,Fox,M,1985-05-05,,,103,Juniors
+    Flo,Gee,M,2010-05-05,,,104,cat 3 men
   CSV
 
   setup do

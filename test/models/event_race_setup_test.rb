@@ -71,7 +71,7 @@ class EventRaceSetupTest < ActiveSupport::TestCase
   test "eligibility checks gender and age only" do
     event = create_event(date: Date.new(2026, 10, 18))
     race = create_race(event:, category: "Cat 3", age_group: "Masters 35+", age_min: 35, gender: "men")
-    rider = ->(**attrs) { Rider.new({ first_name: "A", last_name: "B", gender: "M", birth_date: Date.new(1980, 1, 1), ability_level: "Cat 5" }.merge(attrs)) }
+    rider = ->(**attrs) { Rider.new({ first_name: "A", last_name: "B", gender: "M", birth_date: Date.new(1980, 1, 1) }.merge(attrs)) }
     assert_empty Eligibility.warnings(rider: rider.(), race:, event:)
     assert_match(/gender F/, Eligibility.warnings(rider: rider.(gender: "F"), race:, event:).first)
     assert_match(/below minimum 35/, Eligibility.warnings(rider: rider.(birth_date: Date.new(2000, 1, 1)), race:, event:).first)

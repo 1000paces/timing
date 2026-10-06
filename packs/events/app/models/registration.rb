@@ -1,4 +1,6 @@
 class Registration < ApplicationRecord
+  SOURCES = %w[manual import].freeze
+
   include BroadcastsEventChange
   belongs_to :event
   belongs_to :race
@@ -9,11 +11,15 @@ class Registration < ApplicationRecord
     self.bib = bib.to_s.strip.presence
   end
 
-  validates :bib, presence: true, uniqueness: { scope: :event_id }
+  validates :bib, uniqueness: { scope: :event_id }, allow_nil: true
+  validates :source, inclusion: { in: SOURCES }
+  validates :age, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :race_in_same_event
 
   # Warnings, not errors: officials may let riders race up.
-  def eligibility_warnings = Eligibility.warnings(rider:, race:, event:)
+  def eligibility_warnings = Eligibility.warnings(rider:, race:, event:, age:)
+
+  def checked_in? = checked_in_at_ms.present?
 
   private
 

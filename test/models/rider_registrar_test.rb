@@ -6,7 +6,7 @@ class RiderRegistrarTest < ActiveSupport::TestCase
     @race = create_race(event: @event)
   end
 
-  def attrs(**over) = { first_name: "Ann", last_name: "Lee", gender: "M", ability_level: "Cat 3", license_number: "L1" }.merge(over)
+  def attrs(**over) = { first_name: "Ann", last_name: "Lee", gender: "M", license_number: "L1" }.merge(over)
 
   test "creates rider and registration together" do
     reg = RiderRegistrar.register(race: @race, bib: "101", rider_attrs: attrs)

@@ -8,7 +8,7 @@ module BuildHelpers
   end
 
   def create_rider(**attrs)
-    Rider.create!({ first_name: "Ada", last_name: "Rider", gender: "M", birth_date: Date.new(1985, 6, 1), ability_level: "Cat 3" }.merge(attrs))
+    Rider.create!({ first_name: "Ada", last_name: "Rider", gender: "M", birth_date: Date.new(1985, 6, 1) }.merge(attrs))
   end
 
   def register(race:, bib:, rider: create_rider) = Registration.create!(race:, rider:, bib:)

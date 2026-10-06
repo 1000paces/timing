@@ -3,9 +3,9 @@ require "csv"
 # Imports registrations from a CSV export. Rows are independent: a bad row is
 # reported and skipped, the rest still import.
 class RegistrationImport
-  FIELDS = %w[first_name last_name gender birth_date ability_level team license_number bib race].freeze
+  FIELDS = %w[first_name last_name gender birth_date team license_number bib race].freeze
   REQUIRED = %w[first_name last_name gender bib race].freeze
-  RIDER_FIELDS = %w[first_name last_name gender ability_level team license_number].freeze
+  RIDER_FIELDS = %w[first_name last_name gender team license_number].freeze
 
   RowMessage = Data.define(:row, :message)
   Result = Data.define(:created, :errors, :warnings)

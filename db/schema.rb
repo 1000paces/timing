@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
+  create_table "category_mappings", id: :string, force: :cascade do |t|
+    t.string "event_id", null: false
+    t.string "external_category", null: false
+    t.string "race_id"
+    t.boolean "skip", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "external_category"], name: "index_category_mappings_on_event_id_and_external_category", unique: true
+    t.index ["event_id"], name: "index_category_mappings_on_event_id"
+    t.index ["race_id"], name: "index_category_mappings_on_race_id"
+  end
+
   create_table "device_entries", id: :string, force: :cascade do |t|
     t.string "type", null: false
     t.string "event_id", null: false
@@ -52,6 +64,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
     t.string "discipline", default: "cyclocross", null: false
     t.string "sub_discipline"
     t.boolean "finish_with_leader", default: true, null: false
+    t.integer "bib_from"
+    t.integer "bib_to"
   end
 
   create_table "officials", id: :string, force: :cascade do |t|
@@ -90,6 +104,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
     t.bigint "expected_duration_ms"
     t.integer "expected_laps"
     t.boolean "finish_with_leader"
+    t.integer "bib_from"
+    t.integer "bib_to"
     t.index ["event_id"], name: "index_races_on_event_id"
   end
 
@@ -97,9 +113,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
     t.string "event_id", null: false
     t.string "race_id", null: false
     t.string "rider_id", null: false
-    t.string "bib", null: false
+    t.string "bib"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "age"
+    t.string "source", default: "manual", null: false
+    t.string "external_category"
+    t.bigint "checked_in_at_ms"
     t.index ["event_id", "bib"], name: "index_registrations_on_event_id_and_bib", unique: true
     t.index ["event_id"], name: "index_registrations_on_event_id"
     t.index ["race_id"], name: "index_registrations_on_race_id"
@@ -111,11 +131,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
     t.string "last_name", null: false
     t.string "gender", null: false
     t.date "birth_date"
-    t.string "ability_level"
     t.string "license_number"
     t.string "team"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "city"
+    t.string "state"
     t.index ["license_number"], name: "index_riders_on_license_number", unique: true
   end
 
@@ -130,6 +151,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_000002) do
     t.index ["event_id"], name: "index_rulings_on_event_id"
   end
 
+  add_foreign_key "category_mappings", "events"
+  add_foreign_key "category_mappings", "races"
   add_foreign_key "device_entries", "device_entries", column: "capture_id"
   add_foreign_key "device_entries", "devices"
   add_foreign_key "device_entries", "events"

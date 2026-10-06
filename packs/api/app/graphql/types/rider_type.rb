@@ -5,7 +5,6 @@ module Types
     field :last_name, String, null: false
     field :gender, String, null: false
     field :birth_date, GraphQL::Types::ISO8601Date
-    field :ability_level, String
     field :license_number, String
     field :team, String
 
