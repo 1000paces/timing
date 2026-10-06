@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import NumbersIcon from "@mui/icons-material/Numbers";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Button from "@mui/material/Button";
@@ -174,7 +174,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                         <Tooltip title="Assign bibs">
                           <IconButton size="small" aria-label={`Assign bibs for ${race.name}`} onClick={() => void assignRaceBibs(race)}>
-                            <ConfirmationNumberIcon fontSize="small" />
+                            <NumbersIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <IconButton size="small" aria-label={`Edit ${race.name}`} onClick={() => setEditing(race)}>

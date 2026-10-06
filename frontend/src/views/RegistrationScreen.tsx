@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import NumbersIcon from "@mui/icons-material/Numbers";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -144,7 +145,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <Box sx={{ flex: 1 }} />
         {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
         {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
-        {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
+        {canAct && <Button variant="outlined" startIcon={<NumbersIcon />} onClick={onAssignBibs}>Assign bibs</Button>}
       </Stack>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
         <FilterWithChips chips={filter.terms.map((t) => ({ key: t, label: t }))}
