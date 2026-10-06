@@ -6,7 +6,7 @@ import type { Discipline, EventInput } from "../queries";
 
 // Event details form, shared by "New event" and the Setup screen. Picking a
 // discipline pre-fills "finish with leader" from its default.
-export function EventFields({ value, onChange, disciplines }: { value: EventInput; onChange: (v: EventInput) => void; disciplines: Discipline[] }) {
+export function EventFields({ value, onChange, disciplines, bibRange = false }: { value: EventInput; onChange: (v: EventInput) => void; disciplines: Discipline[]; bibRange?: boolean }) {
   const discipline = disciplines.find((d) => d.id === value.discipline);
   const defaultFor = (d: Discipline | undefined, sub: string | null) =>
     sub ? (d?.subDisciplines.find((s) => s.id === sub)?.finishWithLeader ?? false) : (d?.finishWithLeader ?? false);
@@ -53,6 +53,14 @@ export function EventFields({ value, onChange, disciplines }: { value: EventInpu
         control={<Checkbox checked={value.finishWithLeader} onChange={(e) => set({ finishWithLeader: e.target.checked })} />}
         label="Finish with leader"
       />
+      {bibRange && (
+        <Stack direction="row" spacing={2}>
+          <TextField label="Event first bib" type="number" value={value.bibFrom ?? ""} fullWidth
+            onChange={(e) => set({ bibFrom: e.target.value ? Number(e.target.value) : null })} />
+          <TextField label="Event last bib" type="number" value={value.bibTo ?? ""} fullWidth
+            onChange={(e) => set({ bibTo: e.target.value ? Number(e.target.value) : null })} helperText="For races without their own range" />
+        </Stack>
+      )}
     </Stack>
   );
 }

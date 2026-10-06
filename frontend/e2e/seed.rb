@@ -13,3 +13,10 @@ start = Clock.now_ms - 600_000
 writer.start_races([masters35], at_ms: start)
 { "101" => 2, "102" => 3, "103" => 3 }.each { |bib, laps| (1..laps).each { writer.capture(at_ms: start + it * 60_000, bib:) } }
 puts "Seeded #{capture.name} (#{capture.id})"
+
+# Registration: two races, Cat 3 Men with its own bib range, an event-wide range for the rest.
+registration = Event.create!(name: "E2E Registration", date: Date.new(2026, 10, 18), discipline: "cyclocross", bib_from: 1, bib_to: 99)
+six_pm = Time.zone.local(2026, 10, 18, 18).to_i * 1000
+Race.create!(event: registration, name_override: "Women Open", gender: "women", scheduled_at_ms: six_pm)
+Race.create!(event: registration, category: "Cat 3", gender: "men", scheduled_at_ms: six_pm, bib_from: 100, bib_to: 199)
+puts "Seeded #{registration.name} (#{registration.id})"

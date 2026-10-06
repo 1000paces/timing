@@ -58,7 +58,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
   const data = event.data?.event;
   useEffect(() => {
     if (data && !details) {
-      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader });
+      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader, bibFrom: data.bibFrom, bibTo: data.bibTo });
     }
   }, [data, details]);
 
@@ -105,7 +105,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
       <Stack direction="row" spacing={2} sx={{ alignItems: "start" }}>
         <Paper sx={{ p: 2, width: 340, flexShrink: 0 }}>
           <Typography variant="h6" component="h2">Event</Typography>
-          <EventFields value={details} onChange={setDetails} disciplines={disciplines.data.disciplines} />
+          <EventFields value={details} onChange={setDetails} disciplines={disciplines.data.disciplines} bibRange />
           <Button variant="contained" sx={{ mt: 2 }} onClick={saveDetails}>Save event</Button>
         </Paper>
         <Paper sx={{ p: 2, flex: 1 }}>

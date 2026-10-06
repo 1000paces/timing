@@ -24,6 +24,8 @@ export type RaceInfo = {
   expectedLaps: number | null;
   finishWithLeader: boolean;
   finishWithLeaderOverride: boolean | null;
+  bibFrom: number | null;
+  bibTo: number | null;
 };
 export type EventInfo = {
   id: string;
@@ -33,17 +35,19 @@ export type EventInfo = {
   discipline: string;
   subDiscipline: string | null;
   finishWithLeader: boolean;
+  bibFrom: number | null;
+  bibTo: number | null;
   races: RaceInfo[];
 };
 export type EventData = { event: EventInfo };
 
 const RACE_FIELDS = `id name defaultName nameOverride category ageGroup ageMin ageMax gender scheduledAtMs expectedDurationMs
-  expectedLaps finishWithLeader finishWithLeaderOverride`;
+  expectedLaps finishWithLeader finishWithLeaderOverride bibFrom bibTo`;
 
 export const EVENT = gql`
   query Event($id: ID!) {
     event(id: $id) {
-      id name date location discipline subDiscipline finishWithLeader
+      id name date location discipline subDiscipline finishWithLeader bibFrom bibTo
       races { ${RACE_FIELDS} }
     }
   }
@@ -55,7 +59,16 @@ export const DISCIPLINES = gql`
   query Disciplines { disciplines { id label finishWithLeader subDisciplines { id label finishWithLeader } } }
 `;
 
-export type EventInput = { name: string; date: string; location: string | null; discipline: string; subDiscipline: string | null; finishWithLeader: boolean };
+export type EventInput = {
+  name: string;
+  date: string;
+  location: string | null;
+  discipline: string;
+  subDiscipline: string | null;
+  finishWithLeader: boolean;
+  bibFrom?: number | null;
+  bibTo?: number | null;
+};
 export const CREATE_EVENT = gql`
   mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String, $finishWithLeader: Boolean) {
     createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline, finishWithLeader: $finishWithLeader) {
@@ -64,8 +77,10 @@ export const CREATE_EVENT = gql`
   }
 `;
 export const UPDATE_EVENT = gql`
-  mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String, $finishWithLeader: Boolean) {
-    updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline, finishWithLeader: $finishWithLeader) {
+  mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String,
+                       $finishWithLeader: Boolean, $bibFrom: Int, $bibTo: Int) {
+    updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
+                finishWithLeader: $finishWithLeader, bibFrom: $bibFrom, bibTo: $bibTo) {
       event { id } errors
     }
   }
@@ -82,11 +97,13 @@ export type RaceInput = {
   expectedDurationMs: number | null;
   expectedLaps: number | null;
   finishWithLeader: boolean | null;
+  bibFrom: number | null;
+  bibTo: number | null;
 };
 const RACE_ARGS = `$category: String, $ageGroup: String, $ageMin: Int, $ageMax: Int, $nameOverride: String, $expectedDurationMs: Millis,
-  $expectedLaps: Int, $finishWithLeader: Boolean`;
+  $expectedLaps: Int, $finishWithLeader: Boolean, $bibFrom: Int, $bibTo: Int`;
 const RACE_VALUES = `category: $category, ageGroup: $ageGroup, ageMin: $ageMin, ageMax: $ageMax, nameOverride: $nameOverride,
-  expectedDurationMs: $expectedDurationMs, expectedLaps: $expectedLaps, finishWithLeader: $finishWithLeader`;
+  expectedDurationMs: $expectedDurationMs, expectedLaps: $expectedLaps, finishWithLeader: $finishWithLeader, bibFrom: $bibFrom, bibTo: $bibTo`;
 export const CREATE_RACE = gql`
   mutation CreateRace($eventId: ID!, $gender: String!, $scheduledAtMs: Millis!, ${RACE_ARGS}) {
     createRace(eventId: $eventId, gender: $gender, scheduledAtMs: $scheduledAtMs, ${RACE_VALUES}) { race { id } errors }
@@ -199,4 +216,89 @@ export const RECORD_CAPTURE = gql`
 `;
 export const DELETE_CAPTURE = gql`
   mutation DeleteCapture($captureId: ID!) { deleteCapture(captureId: $captureId) { errors } }
+`;
+
+const REGISTRATION_FIELDS = `id bib age source checkedInAtMs eligibilityWarnings race { id name }
+  rider { firstName lastName gender team licenseNumber birthDate city state }`;
+export type RegistrationScreenData = {
+  event: {
+    id: string;
+    name: string;
+    races: { id: string; name: string; gender: string }[];
+    registrations: import("./registration").RegistrationRow[];
+    registrationCounts: { registered: number; checkedIn: number; needsBib: number };
+  };
+};
+export const REGISTRATION_SCREEN = gql`
+  query RegistrationScreen($id: ID!) {
+    event(id: $id) {
+      id name
+      races { id name gender }
+      registrations { ${REGISTRATION_FIELDS} }
+      registrationCounts { registered checkedIn needsBib }
+    }
+  }
+`;
+export type RiderFields = {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  birthDate: string | null;
+  team: string | null;
+  licenseNumber: string | null;
+  city: string | null;
+  state: string | null;
+};
+export type RegistrationResult = { registration: { id: string } | null; warnings: string[]; errors: string[] };
+export const REGISTER_RIDER = gql`
+  mutation RegisterRider($raceId: ID!, $bib: String, $age: Int, $rider: RiderInput!) {
+    registerRider(raceId: $raceId, bib: $bib, age: $age, rider: $rider) { registration { id } warnings errors }
+  }
+`;
+export const UPDATE_REGISTRATION = gql`
+  mutation UpdateRegistration($id: ID!, $raceId: ID, $bib: String, $age: Int, $rider: RiderInput) {
+    updateRegistration(id: $id, raceId: $raceId, bib: $bib, age: $age, rider: $rider) { registration { id } warnings errors }
+  }
+`;
+export const UPDATE_BIB = gql`
+  mutation UpdateBib($id: ID!, $bib: String) {
+    updateRegistration(id: $id, bib: $bib) { registration { id } warnings errors }
+  }
+`;
+export const SET_CHECKED_IN = gql`
+  mutation SetCheckedIn($id: ID!, $checkedIn: Boolean!) {
+    setCheckedIn(registrationId: $id, checkedIn: $checkedIn) { registration { id checkedInAtMs } errors }
+  }
+`;
+export const REMOVE_REGISTRATION = gql`
+  mutation RemoveRegistration($id: ID!) { removeRegistration(id: $id) { errors } }
+`;
+export type AssignBibsResult = { assignBibs: { assigned: { bib: string; name: string; raceName: string }[]; unfilled: string[]; errors: string[] } };
+export const ASSIGN_BIBS = gql`
+  mutation AssignBibs($eventId: ID!) { assignBibs(eventId: $eventId) { assigned { bib name raceName } unfilled errors } }
+`;
+export type ImportCategory = { value: string; count: number; raceId: string | null; skip: boolean };
+export type AnalyzeImportResult = {
+  analyzeImport: { headers: string[]; mapping: Record<string, string>; categories: ImportCategory[]; errors: string[] };
+};
+export const ANALYZE_IMPORT = gql`
+  mutation AnalyzeImport($eventId: ID!, $csv: String!) {
+    analyzeImport(eventId: $eventId, csv: $csv) { headers mapping categories { value count raceId skip } errors }
+  }
+`;
+export type ImportSummary = {
+  created: number;
+  updated: number;
+  skipped: number;
+  rowErrors: { row: number; message: string }[];
+  warnings: { row: number; message: string }[];
+  notInFile: string[];
+  errors: string[];
+};
+export const IMPORT_REGISTRATIONS = gql`
+  mutation ImportRegistrations($eventId: ID!, $csv: String!, $mapping: JSON, $categories: JSON, $dryRun: Boolean) {
+    importRegistrations(eventId: $eventId, csv: $csv, mapping: $mapping, categories: $categories, dryRun: $dryRun) {
+      created updated skipped rowErrors { row message } warnings { row message } notInFile errors
+    }
+  }
 `;
