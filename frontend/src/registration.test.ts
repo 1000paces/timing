@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countRegistrations, countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
+import { countRegistrations, countsLabel, filterFromSearch, sortFromSearch, sortRegistrations, sortToSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
 
 const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   id: "r",
@@ -70,5 +70,33 @@ describe("filters in the page address", () => {
   it("defaults to no filters", () => {
     expect(filterFromSearch("")).toEqual({ terms: [], raceIds: [], needsBib: false, notCheckedIn: false });
     expect(filterToSearch({ terms: ["  "], raceIds: [], needsBib: false, notCheckedIn: false })).toBe("");
+  });
+});
+
+describe("sortRegistrations", () => {
+  const racer = row({}).racer;
+  const ann = row({ id: "a", bib: "20", age: 41, checkedInAtMs: 1, race: { id: "w", name: "Women Open" }, racer: { ...racer, firstName: "Ann", lastName: "Lee", gender: "F", team: "Velo" } });
+  const bob = row({ id: "b", bib: "3", age: 30, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Bob", lastName: "Ray", gender: "M", team: null } });
+  const cy = row({ id: "c", bib: null, age: null, race: { id: "c", name: "Cat 3 Men" }, racer: { ...racer, firstName: "Cy", lastName: "Dee", gender: "M", team: "Spoke" } });
+  const ids = (rows: RegistrationRow[]) => rows.map((r) => r.id).join("");
+
+  it("sorts bibs as numbers, with racers lacking a bib last either way", () => {
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "bib", dir: "asc" }))).toBe("bac");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "bib", dir: "desc" }))).toBe("abc");
+  });
+
+  it("sorts names by last then first name, and the other columns", () => {
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "name", dir: "asc" }))).toBe("cab");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "age", dir: "asc" }))).toBe("bac");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "team", dir: "asc" }))).toBe("cab");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "race", dir: "desc" }))).toBe("abc");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "checkedIn", dir: "asc" }))).toBe("abc");
+    expect(ids(sortRegistrations([ann, bob, cy], { key: "gender", dir: "asc" }))).toBe("abc");
+  });
+
+  it("keeps the sort in the page address", () => {
+    expect(sortToSearch({ key: "name", dir: "desc" })).toEqual([["sort", "name"], ["dir", "desc"]]);
+    expect(sortFromSearch("?q=x&sort=name&dir=desc")).toEqual({ key: "name", dir: "desc" });
+    expect(sortFromSearch("?sort=nonsense")).toEqual({ key: "bib", dir: "asc" });
   });
 });

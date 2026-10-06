@@ -73,3 +73,50 @@ export function filterToSearch(filter: RegistrationFilter): string {
   const query = params.toString();
   return query ? `?${query}` : "";
 }
+
+export const SORT_KEYS = ["bib", "name", "gender", "age", "team", "race", "checkedIn"] as const;
+export type SortKey = (typeof SORT_KEYS)[number];
+export type RegistrationSort = { key: SortKey; dir: "asc" | "desc" };
+export const DEFAULT_SORT: RegistrationSort = { key: "bib", dir: "asc" };
+
+// A value to compare, or null for "nothing here" (always sorted last).
+function sortValue(r: RegistrationRow, key: SortKey): string | number | null {
+  switch (key) {
+    case "bib":
+      return r.bib ? Number(r.bib) || r.bib : null;
+    case "name":
+      return `${r.racer.lastName} ${r.racer.firstName}`.toLowerCase();
+    case "gender":
+      return r.racer.gender;
+    case "age":
+      return r.age;
+    case "team":
+      return r.racer.team?.toLowerCase() || null;
+    case "race":
+      return r.race.name.toLowerCase();
+    case "checkedIn":
+      return r.checkedInAtMs != null ? 0 : 1; // checked in first
+  }
+}
+
+export function sortRegistrations(rows: RegistrationRow[], sort: RegistrationSort): RegistrationRow[] {
+  const sign = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const x = sortValue(a, sort.key);
+    const y = sortValue(b, sort.key);
+    if (x == null || y == null) return x == null && y == null ? 0 : x == null ? 1 : -1;
+    if (typeof x === "number" && typeof y === "number") return (x - y) * sign;
+    return String(x).localeCompare(String(y), undefined, { numeric: true }) * sign;
+  });
+}
+
+export function sortFromSearch(search: string): RegistrationSort {
+  const params = new URLSearchParams(search);
+  const key = params.get("sort");
+  if (!SORT_KEYS.includes(key as SortKey)) return DEFAULT_SORT;
+  return { key: key as SortKey, dir: params.get("dir") === "desc" ? "desc" : "asc" };
+}
+
+export function sortToSearch(sort: RegistrationSort): [string, string][] {
+  return [["sort", sort.key], ["dir", sort.dir]];
+}

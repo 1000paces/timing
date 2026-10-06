@@ -21,6 +21,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -36,14 +37,20 @@ import {
   type RegistrationScreenData,
 } from "../queries";
 import {
+  DEFAULT_SORT,
   NO_FILTER,
   countRegistrations,
   countsLabel,
   filterFromSearch,
   filterRegistrations,
   filterToSearch,
+  sortFromSearch,
+  sortRegistrations,
+  sortToSearch,
   type RegistrationFilter,
   type RegistrationRow,
+  type RegistrationSort,
+  type SortKey,
 } from "../registration";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
@@ -62,10 +69,15 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   const [filter, setFilter] = useState<RegistrationFilter>(() => filterFromSearch(window.location.search));
   const setFilterPart = (part: Partial<RegistrationFilter>) => setFilter((current) => ({ ...current, ...part }));
   const [typing, setTyping] = useState(""); // search text not yet added as a chip; filters as you type
-  // Replace (not push) so typing in Search doesn't fill the Back button's history.
+  const [sort, setSort] = useState<RegistrationSort>(() => sortFromSearch(window.location.search));
+  // Filters and sort live in the address; replace (not push) so typing in
+  // Search doesn't fill the Back button's history.
   useEffect(() => {
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${filterToSearch(filter)}`);
-  }, [filter]);
+    const params = new URLSearchParams(filterToSearch(filter));
+    if (sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir) sortToSearch(sort).forEach(([k, v]) => params.set(k, v));
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, [filter, sort]);
   const [editing, setEditing] = useState<RegistrationRow | "new" | null>(null);
   const [importing, setImporting] = useState(false);
   const [removing, setRemoving] = useState<RegistrationRow | null>(null);
@@ -84,7 +96,16 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   if (!event) {
     return <Box sx={{ p: 3 }}>{screen.error ? <Alert severity="error">{screen.error.message}</Alert> : <LinearProgress />}</Box>;
   }
-  const rows = filterRegistrations(event.registrations, { ...filter, terms: [...filter.terms, typing] });
+  const rows = sortRegistrations(filterRegistrations(event.registrations, { ...filter, terms: [...filter.terms, typing] }), sort);
+  // A header click sorts by that column; clicking the sorted column reverses it.
+  const header = (key: SortKey, label: string, align?: "center") => (
+    <TableCell align={align} sortDirection={sort.key === key ? sort.dir : false}>
+      <TableSortLabel active={sort.key === key} direction={sort.key === key ? sort.dir : "asc"}
+        onClick={() => setSort(sort.key === key ? { key, dir: sort.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" })}>
+        {label}
+      </TableSortLabel>
+    </TableCell>
+  );
   const filtering = filter.terms.length > 0 || filter.raceIds.length > 0 || filter.needsBib || filter.notCheckedIn || typing.trim() !== "";
   const racesById = new Map(event.races.map((r) => [r.id, r]));
 
@@ -171,13 +192,13 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell align="center">Bib</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Gender</TableCell>
-              <TableCell>Age</TableCell>
-              <TableCell>Team</TableCell>
-              <TableCell>Race</TableCell>
-              <TableCell>Checked in</TableCell>
+              {header("bib", "Bib", "center")}
+              {header("name", "Name")}
+              {header("gender", "Gender")}
+              {header("age", "Age")}
+              {header("team", "Team")}
+              {header("race", "Race")}
+              {header("checkedIn", "Checked in")}
               <TableCell />
             </TableRow>
           </TableHead>

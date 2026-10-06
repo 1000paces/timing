@@ -83,6 +83,14 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByTestId("registration")).toHaveCount(5);
 
+  // Columns sort; a second click reverses, and the sort survives a refresh.
+  await page.getByRole("button", { name: "Name" }).click();
+  await expect(page.getByTestId("registration").first()).toContainText("Cy Dee");
+  await page.getByRole("button", { name: "Name" }).click();
+  await expect(page.getByTestId("registration").first()).toContainText("Bob Ray");
+  await page.reload();
+  await expect(page.getByTestId("registration").first()).toContainText("Bob Ray");
+
   // Day-of as a chief: a walk-up without a bib, a check-in, then a bib typed in the row.
   await page.getByRole("button", { name: "Sign out" }).click();
   await openRegistration(page, "E2E Chief", "2468");
