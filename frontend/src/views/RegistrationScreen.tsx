@@ -138,6 +138,14 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   return (
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
+      <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 2 }}>
+        <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
+          {countsLabel(countRegistrations(rows), event.registrations.length)}
+        </Typography>
+        {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
+        {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
+        {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
+      </Stack>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
         <FilterWithChips chips={filter.terms.map((t) => ({ key: t, label: t }))}
           onDelete={(term) => setFilterPart({ terms: filter.terms.filter((t) => t !== term) })}>
@@ -173,15 +181,12 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
           renderInput={(params) => <TextField {...params} label="Race" placeholder={filter.raceIds.length ? "Add a race" : "All races"} />}
         />
         </FilterWithChips>
+        {/* Same height as the inputs, so these line up with them even when chips sit under the inputs. */}
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center", minHeight: 40 }}>
         <FormControlLabel control={<Checkbox checked={filter.needsBib} onChange={(e) => setFilterPart({ needsBib: e.target.checked })} />} label="Needs bib" />
         <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
         {filtering && <Button size="small" onClick={() => { setFilter(NO_FILTER); setTyping(""); }}>Clear filters</Button>}
-        <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
-          {countsLabel(countRegistrations(rows), event.registrations.length)}
-        </Typography>
-        {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
-        {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
-        {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
+        </Stack>
       </Stack>
       {notice && (
         <Alert severity={notice.severity} sx={{ mb: 2 }} onClose={() => setNotice(null)}>
