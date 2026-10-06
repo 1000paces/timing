@@ -53,6 +53,17 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Ann Lee").getByLabel("Bib for Ann Lee")).not.toHaveValue("");
   await expect(counts(page)).toHaveText("5 registered · 0 checked in · 0 need a bib");
 
+  // Filters survive a page refresh.
+  await page.getByLabel("Search").fill("eve");
+  await page.getByRole("checkbox", { name: "Not checked in" }).check();
+  await expect(page.getByTestId("registration")).toHaveCount(1);
+  await page.reload();
+  await expect(page.getByLabel("Search")).toHaveValue("eve");
+  await expect(page.getByRole("checkbox", { name: "Not checked in" })).toBeChecked();
+  await expect(page.getByTestId("registration")).toHaveCount(1);
+  await page.getByLabel("Search").fill("");
+  await page.getByRole("checkbox", { name: "Not checked in" }).uncheck();
+
   // Day-of as a chief: a walk-up without a bib, a check-in, then a bib typed in the row.
   await page.getByRole("button", { name: "Sign out" }).click();
   await openRegistration(page, "E2E Chief", "2468");

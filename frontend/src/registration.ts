@@ -36,3 +36,25 @@ export function filterRegistrations(rows: RegistrationRow[], filter: Registratio
 export function countsLabel({ registered, checkedIn, needsBib }: { registered: number; checkedIn: number; needsBib: number }): string {
   return `${registered} registered · ${checkedIn} checked in · ${needsBib} ${needsBib === 1 ? "needs" : "need"} a bib`;
 }
+
+// Filters live in the page address (?q=&race=&needsBib=1&notCheckedIn=1) so a
+// refresh keeps them and the link can be shared.
+export function filterFromSearch(search: string): RegistrationFilter {
+  const params = new URLSearchParams(search);
+  return {
+    search: params.get("q") ?? "",
+    raceId: params.get("race") || null,
+    needsBib: params.get("needsBib") === "1",
+    notCheckedIn: params.get("notCheckedIn") === "1",
+  };
+}
+
+export function filterToSearch(filter: RegistrationFilter): string {
+  const params = new URLSearchParams();
+  if (filter.search.trim()) params.set("q", filter.search);
+  if (filter.raceId) params.set("race", filter.raceId);
+  if (filter.needsBib) params.set("needsBib", "1");
+  if (filter.notCheckedIn) params.set("notCheckedIn", "1");
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}

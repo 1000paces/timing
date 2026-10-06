@@ -34,7 +34,7 @@ import {
   type RegistrationResult,
   type RegistrationScreenData,
 } from "../queries";
-import { countsLabel, filterRegistrations, type RegistrationRow } from "../registration";
+import { countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationFilter, type RegistrationRow } from "../registration";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -49,10 +49,12 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   const screen = useQuery<RegistrationScreenData>(REGISTRATION_SCREEN, { variables: { id: eventId }, fetchPolicy: "cache-and-network" });
   const [assignBibs] = useMutation<AssignBibsResult>(ASSIGN_BIBS);
   const [removeRegistration] = useMutation<{ removeRegistration: { errors: string[] } }>(REMOVE_REGISTRATION);
-  const [search, setSearch] = useState("");
-  const [raceId, setRaceId] = useState("");
-  const [needsBib, setNeedsBib] = useState(false);
-  const [notCheckedIn, setNotCheckedIn] = useState(false);
+  const [filter, setFilter] = useState<RegistrationFilter>(() => filterFromSearch(window.location.search));
+  const setFilterPart = (part: Partial<RegistrationFilter>) => setFilter((current) => ({ ...current, ...part }));
+  // Replace (not push) so typing in Search doesn't fill the Back button's history.
+  useEffect(() => {
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${filterToSearch(filter)}`);
+  }, [filter]);
   const [editing, setEditing] = useState<RegistrationRow | "new" | null>(null);
   const [importing, setImporting] = useState(false);
   const [removing, setRemoving] = useState<RegistrationRow | null>(null);
@@ -71,7 +73,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   if (!event) {
     return <Box sx={{ p: 3 }}>{screen.error ? <Alert severity="error">{screen.error.message}</Alert> : <LinearProgress />}</Box>;
   }
-  const rows = filterRegistrations(event.registrations, { search, raceId: raceId || null, needsBib, notCheckedIn });
+  const rows = filterRegistrations(event.registrations, filter);
 
   async function onAssignBibs() {
     try {
@@ -103,14 +105,14 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
     <Box sx={{ p: 2 }}>
       <EventNav eventId={eventId} eventName={event.name} current="registration" admin={admin} />
       <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
-        <TextField label="Search" size="small" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, bib, team, license" />
-        <TextField select label="Race" size="small" value={raceId} onChange={(e) => setRaceId(e.target.value)} sx={{ minWidth: 180 }}
+        <TextField label="Search" size="small" value={filter.search} onChange={(e) => setFilterPart({ search: e.target.value })} placeholder="Name, bib, team, license" />
+        <TextField select label="Race" size="small" value={filter.raceId ?? ""} onChange={(e) => setFilterPart({ raceId: e.target.value || null })} sx={{ minWidth: 180 }}
           slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}>
           <option value="">All races</option>
           {event.races.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </TextField>
-        <FormControlLabel control={<Checkbox checked={needsBib} onChange={(e) => setNeedsBib(e.target.checked)} />} label="Needs bib" />
-        <FormControlLabel control={<Checkbox checked={notCheckedIn} onChange={(e) => setNotCheckedIn(e.target.checked)} />} label="Not checked in" />
+        <FormControlLabel control={<Checkbox checked={filter.needsBib} onChange={(e) => setFilterPart({ needsBib: e.target.checked })} />} label="Needs bib" />
+        <FormControlLabel control={<Checkbox checked={filter.notCheckedIn} onChange={(e) => setFilterPart({ notCheckedIn: e.target.checked })} />} label="Not checked in" />
         <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
           {countsLabel(event.registrationCounts)}
         </Typography>

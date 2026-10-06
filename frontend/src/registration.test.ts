@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countsLabel, filterRegistrations, type RegistrationRow } from "./registration";
+import { countsLabel, filterFromSearch, filterRegistrations, filterToSearch, type RegistrationRow } from "./registration";
 
 const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   id: "r",
@@ -38,5 +38,19 @@ describe("countsLabel", () => {
   it("summarises registration counts", () => {
     expect(countsLabel({ registered: 168, checkedIn: 142, needsBib: 6 })).toBe("168 registered · 142 checked in · 6 need a bib");
     expect(countsLabel({ registered: 1, checkedIn: 0, needsBib: 1 })).toBe("1 registered · 0 checked in · 1 needs a bib");
+  });
+});
+
+describe("filters in the page address", () => {
+  it("round-trips through the query string", () => {
+    const filter = { search: "lee ann", raceId: "r-1", needsBib: true, notCheckedIn: false };
+    const search = filterToSearch(filter);
+    expect(search).toBe("?q=lee+ann&race=r-1&needsBib=1");
+    expect(filterFromSearch(search)).toEqual(filter);
+  });
+
+  it("defaults to no filters", () => {
+    expect(filterFromSearch("")).toEqual({ search: "", raceId: null, needsBib: false, notCheckedIn: false });
+    expect(filterToSearch({ search: "  ", raceId: null, needsBib: false, notCheckedIn: false })).toBe("");
   });
 });
