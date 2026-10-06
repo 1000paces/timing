@@ -60,4 +60,21 @@ class RiderRegistrarTest < ActiveSupport::TestCase
     assert second.persisted?
     assert_equal first.rider_id, second.rider_id
   end
+
+  test "walk-ups are manual and may have no bib" do
+    reg = RiderRegistrar.register(race: @race, bib: nil, rider_attrs: attrs)
+    assert reg.persisted?
+    assert_equal ["manual", nil], [reg.source, reg.bib]
+  end
+
+  test "upsert matches by license, else by name within the event, and never clears a bib" do
+    first = RiderRegistrar.upsert(event: @event, race: @race, attrs: attrs(bib: "7", team: "A"), source: "import")
+    assert first.previously_new_record?
+    by_license = RiderRegistrar.upsert(event: @event, race: @race, attrs: attrs(bib: nil, team: "B"), source: "import")
+    assert_equal first.id, by_license.id
+    assert_equal ["7", "B"], [by_license.bib, by_license.rider.team]
+    by_name = RiderRegistrar.upsert(event: @event, race: @race, attrs: attrs(license_number: nil, first_name: "ANN", team: "C"), source: "import")
+    assert_equal first.id, by_name.id
+    assert_equal "C", by_name.rider.team
+  end
 end

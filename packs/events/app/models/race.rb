@@ -5,6 +5,7 @@ class Race < ApplicationRecord
   include BibRange
   belongs_to :event
   has_many :registrations, dependent: :restrict_with_error
+  has_many :category_mappings, dependent: :destroy
 
   attribute :gender, default: nil
   attribute :scheduled_at_ms, default: nil # keep the bigint column type; no 0 default

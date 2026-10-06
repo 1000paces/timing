@@ -5,6 +5,7 @@ class Event < ApplicationRecord
 
   has_many :races, dependent: :destroy
   has_many :registrations, dependent: :destroy
+  has_many :category_mappings, dependent: :destroy
 
   attribute :finish_with_leader, :boolean, default: nil
 
