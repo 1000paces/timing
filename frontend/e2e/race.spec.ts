@@ -48,6 +48,8 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await page.reload();
   await expect(row("Masters 35+ Men")).toContainText("Started");
 
+  await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+
   // Wave 2, started by mistake, then unstarted and started again.
   await page.getByRole("checkbox", { name: "Select Women Open" }).check();
   await start.click();

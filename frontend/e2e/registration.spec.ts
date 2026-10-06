@@ -69,6 +69,7 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Di Eve").getByLabel("Bib for Di Eve")).toHaveCSS("text-align", "center");
   await expect(row(page, "Di Eve").getByRole("button", { name: "Edit Di Eve" })).toBeVisible();
   await expect(row(page, "Di Eve").getByRole("button", { name: "Remove Di Eve" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
   await expect(row(page, "Ann Lee").getByLabel("Bib for Ann Lee")).not.toHaveValue("");
   await expectStats(page, "5 racers", "0 of 5 checked in", "0 need a bib");
 

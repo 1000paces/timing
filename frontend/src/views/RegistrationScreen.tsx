@@ -205,7 +205,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
               {header("team", "Team")}
               {header("race", "Race")}
               {header("checkedIn", "Checked in")}
-              <TableCell />
+              {canAct && <TableCell align="right">Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -283,18 +283,16 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
         <Checkbox checked={checked} disabled={!canAct} slotProps={{ input: { "aria-label": `Checked in ${name}` } }}
           onChange={(e) => toggle(e.target.checked)} />
       </TableCell>
-      <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-        {canAct && (
-          <>
-            <IconButton size="small" aria-label={`Edit ${name}`} onClick={onEdit}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton size="small" color="error" aria-label={`Remove ${name}`} onClick={onRemove}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </>
-        )}
-      </TableCell>
+      {canAct && (
+        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+          <IconButton size="small" aria-label={`Edit ${name}`} onClick={onEdit}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" color="error" aria-label={`Remove ${name}`} onClick={onRemove}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </TableCell>
+      )}
     </TableRow>
   );
 }

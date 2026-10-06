@@ -137,7 +137,7 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
               <TableCell>Race</TableCell>
               <TableCell>Scheduled</TableCell>
               <TableCell>Status</TableCell>
-              {canAct && <TableCell />}
+              {canAct && <TableCell align="right">Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>

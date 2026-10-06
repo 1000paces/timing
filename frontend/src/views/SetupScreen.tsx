@@ -149,7 +149,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
                   <TableCell align="center">Bib range</TableCell>
                   <TableCell>Finish with leader</TableCell>
                   <TableCell>Started</TableCell>
-                  <TableCell />
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
