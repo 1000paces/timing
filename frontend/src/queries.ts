@@ -192,7 +192,7 @@ export type CaptureScreenData = {
     id: string;
     name: string;
     races: { id: string; name: string }[];
-    registrations: { bib: string; raceId: string; rider: { firstName: string; lastName: string } }[];
+    registrations: { bib: string; raceId: string; racer: { firstName: string; lastName: string } }[];
     myCaptures: CaptureRow[];
   };
 };
@@ -201,7 +201,7 @@ export const CAPTURE_SCREEN = gql`
     event(id: $id) {
       id name
       races { id name }
-      registrations { bib raceId rider { firstName lastName } }
+      registrations { bib raceId racer { firstName lastName } }
       myCaptures { id bib capturedAtMs lap lapMs typicalLapMs lapFlag }
     }
   }
@@ -219,7 +219,7 @@ export const DELETE_CAPTURE = gql`
 `;
 
 const REGISTRATION_FIELDS = `id bib age source checkedInAtMs eligibilityWarnings race { id name }
-  rider { firstName lastName gender team licenseNumber birthDate city state }`;
+  racer { firstName lastName gender team licenseNumber birthDate city state }`;
 export type RegistrationScreenData = {
   event: {
     id: string;
@@ -239,7 +239,7 @@ export const REGISTRATION_SCREEN = gql`
     }
   }
 `;
-export type RiderFields = {
+export type RacerFields = {
   firstName: string;
   lastName: string;
   gender: string;
@@ -250,14 +250,14 @@ export type RiderFields = {
   state: string | null;
 };
 export type RegistrationResult = { registration: { id: string } | null; warnings: string[]; errors: string[] };
-export const REGISTER_RIDER = gql`
-  mutation RegisterRider($raceId: ID!, $bib: String, $age: Int, $rider: RiderInput!) {
-    registerRider(raceId: $raceId, bib: $bib, age: $age, rider: $rider) { registration { id } warnings errors }
+export const REGISTER_RACER = gql`
+  mutation RegisterRacer($raceId: ID!, $bib: String, $age: Int, $racer: RacerInput!) {
+    registerRacer(raceId: $raceId, bib: $bib, age: $age, racer: $racer) { registration { id } warnings errors }
   }
 `;
 export const UPDATE_REGISTRATION = gql`
-  mutation UpdateRegistration($id: ID!, $raceId: ID, $bib: String, $age: Int, $rider: RiderInput) {
-    updateRegistration(id: $id, raceId: $raceId, bib: $bib, age: $age, rider: $rider) { registration { id } warnings errors }
+  mutation UpdateRegistration($id: ID!, $raceId: ID, $bib: String, $age: Int, $racer: RacerInput) {
+    updateRegistration(id: $id, raceId: $raceId, bib: $bib, age: $age, racer: $racer) { registration { id } warnings errors }
   }
 `;
 export const UPDATE_BIB = gql`

@@ -87,7 +87,7 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   }
 
   await expect(page.getByTestId("suggestion")).toHaveCount(0, { timeout: 20_000 });
-  const statuses = page.getByTestId("rider-status");
+  const statuses = page.getByTestId("racer-status");
   await expect(statuses).toHaveCount(12);
   await expect(statuses.filter({ hasNotText: "finished" })).toHaveCount(0);
 });

@@ -37,7 +37,7 @@ export function Standings({ race, controls }: { race: RaceStandings; controls?: 
               <TableCell sx={num}>{row.place ?? "–"}</TableCell>
               <TableCell align="center">{row.bib}</TableCell>
               <TableCell>{row.name}</TableCell>
-              <TableCell data-testid="rider-status">{row.status.toLowerCase()}</TableCell>
+              <TableCell data-testid="racer-status">{row.status.toLowerCase()}</TableCell>
               <TableCell sx={num}>{row.laps}</TableCell>
               <TableCell sx={num}>{formatElapsed(row.elapsedMs)}</TableCell>
               <TableCell sx={num}>{formatGap(row.gapLapsDown, row.gapMs)}</TableCell>

@@ -1,5 +1,5 @@
 module Types
-  class RiderInput < BaseInputObject
+  class RacerInput < BaseInputObject
     argument :first_name, String
     argument :last_name, String
     argument :gender, String

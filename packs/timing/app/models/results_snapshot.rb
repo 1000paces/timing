@@ -9,7 +9,7 @@ class ResultsSnapshot
         Results::RaceDef.new(id: it.id, scheduled_at_ms: it.scheduled_at_ms, finish_with_leader: it.effective_finish_with_leader,
                              expected_laps: it.expected_laps)
       end,
-      entrants: event.registrations.includes(:rider).map { Results::Entrant.new(bib: it.bib, race_id: it.race_id, name: it.rider.full_name) },
+      entrants: event.registrations.includes(:racer).map { Results::Entrant.new(bib: it.bib, race_id: it.race_id, name: it.racer.full_name) },
       captures: Capture.where(event:).map do
         Results::Capture.new(id: it.id, device_id: it.device_id, device_seq: it.device_seq, captured_at_ms: it.captured_at_ms,
                              clock_offset_ms: it.clock_offset_ms, bib: it.bib)

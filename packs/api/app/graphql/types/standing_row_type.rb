@@ -3,7 +3,7 @@ module Types
     field :place, Integer
     field :bib, String, null: false
     field :name, String, null: false
-    field :status, RiderStatusEnum, null: false
+    field :status, RacerStatusEnum, null: false
     field :laps, Integer, null: false
     field :elapsed_ms, Millis
     field :gap_laps_down, Integer

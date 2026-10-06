@@ -1,5 +1,5 @@
 module Types
-  class RiderStatusEnum < BaseEnum
+  class RacerStatusEnum < BaseEnum
     value "FINISHED", value: :finished
     value "RACING", value: :racing
     value "PULLED", value: :pulled

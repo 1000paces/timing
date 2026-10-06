@@ -7,9 +7,9 @@ class BibAssignerTest < ActiveSupport::TestCase
     @late = create_race(event: @event, category: "Late", scheduled_at_ms: 2_000)
   end
 
-  def rider(first, last) = create_rider(first_name: first, last_name: last)
-  def entry(race, first, last, bib: nil) = register(race:, bib:, rider: rider(first, last))
-  def bibs = @event.registrations.joins(:rider).order("riders.last_name", "riders.first_name").pluck("riders.last_name", :bib).to_h
+  def racer(first, last) = create_racer(first_name: first, last_name: last)
+  def entry(race, first, last, bib: nil) = register(race:, bib:, racer: racer(first, last))
+  def bibs = @event.registrations.joins(:racer).order("racers.last_name", "racers.first_name").pluck("racers.last_name", :bib).to_h
 
   test "fills empty bibs from the race's range in last-name order, and from the event's range for other races" do
     @event.update!(bib_from: 1, bib_to: 50)
@@ -18,7 +18,7 @@ class BibAssignerTest < ActiveSupport::TestCase
     entry(@late, "Bo", "Brown")
     result = BibAssigner.call(@event)
     assert_equal({ "Adams" => "100", "Young" => "101", "Brown" => "1" }, bibs)
-    assert_equal [%w[Adams 100], %w[Young 101], %w[Brown 1]], result.assigned.map { |reg, bib| [reg.rider.last_name, bib] }
+    assert_equal [%w[Adams 100], %w[Young 101], %w[Brown 1]], result.assigned.map { |reg, bib| [reg.racer.last_name, bib] }
     assert_empty result.unfilled
   end
 
@@ -39,12 +39,12 @@ class BibAssignerTest < ActiveSupport::TestCase
     assert_equal "101", bibs["Adams"]
   end
 
-  test "riders left over when a range is full, or there is no range, are reported" do
+  test "racers left over when a range is full, or there is no range, are reported" do
     %w[A B C D].each { entry(@early, it, "Early#{it}") }
     entry(@late, "Lo", "Late")
     result = BibAssigner.call(@event)
     assert_equal 3, result.assigned.size
-    assert_equal ["Early Men: 1 rider still needs a bib — range 100–102 is full", "Late Men: 1 rider still needs a bib — no bib range"],
+    assert_equal ["Early Men: 1 racer still needs a bib — range 100–102 is full", "Late Men: 1 racer still needs a bib — no bib range"],
                  result.unfilled
     assert_nil bibs["EarlyD"]
   end

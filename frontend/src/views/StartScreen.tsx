@@ -178,7 +178,7 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
         <DialogTitle>Unstart {confirm?.name}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Its start at {confirm?.startAtMs != null ? formatClock(confirm.startAtMs) : "—"} is removed and its riders show as
+            Its start at {confirm?.startAtMs != null ? formatClock(confirm.startAtMs) : "—"} is removed and its racers show as
             not started until you start it again.
           </DialogContentText>
         </DialogContent>

@@ -1,7 +1,7 @@
 module RaceSimulator
-  # Ground-truth crossings for a start group. Each rider has a pace within
+  # Ground-truth crossings for a start group. Each racer has a pace within
   # ±spread of lap_ms, laps vary by ±jitter, and the start lap is shorter.
-  # Riders stop on their first crossing after the leader completes `laps`.
+  # Racers stop on their first crossing after the leader completes `laps`.
   class Generator
     def initialize(races:, laps:, seed: 1, lap_ms: 300_000, spread: 0.12, jitter: 0.03, start_lap_factor: 0.8,
                    untagged_rate: 0.0, untagged_min_gap_ms: 120_000)
@@ -30,15 +30,15 @@ module RaceSimulator
       end
       leader_finish = raw.map { |_, _, crossings| crossings[@laps - 1] }.min
       truths = raw.map do |bib, race_id, crossings|
-        RiderTruth.new(bib:, race_id:, crossings_ms: crossings[0..crossings.index { it >= leader_finish }], untagged: [])
+        RacerTruth.new(bib:, race_id:, crossings_ms: crossings[0..crossings.index { it >= leader_finish }], untagged: [])
       end
       pick_untagged(truths, rng)
     end
 
     private
 
-    # At most one bib-less tap per rider, never the first or last crossing, and
-    # far enough apart that each lines up with only one rider's missed crossing.
+    # At most one bib-less tap per racer, never the first or last crossing, and
+    # far enough apart that each lines up with only one racer's missed crossing.
     def pick_untagged(truths, rng)
       taken = []
       truths.sort_by(&:bib).to_h do |truth|

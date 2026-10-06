@@ -4,7 +4,7 @@ class Registration < ApplicationRecord
   include BroadcastsEventChange
   belongs_to :event
   belongs_to :race
-  belongs_to :rider
+  belongs_to :racer
 
   before_validation do
     self.event_id ||= race&.event_id
@@ -16,8 +16,8 @@ class Registration < ApplicationRecord
   validates :age, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :race_in_same_event
 
-  # Warnings, not errors: officials may let riders race up.
-  def eligibility_warnings = Eligibility.warnings(rider:, race:, event:, age:)
+  # Warnings, not errors: officials may let racers race up.
+  def eligibility_warnings = Eligibility.warnings(racer:, race:, event:, age:)
 
   def checked_in? = checked_in_at_ms.present?
 

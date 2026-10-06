@@ -6,7 +6,7 @@ export type RegistrationRow = {
   checkedInAtMs: number | null;
   eligibilityWarnings: string[];
   race: { id: string; name: string };
-  rider: {
+  racer: {
     firstName: string;
     lastName: string;
     gender: string;
@@ -28,7 +28,7 @@ export function filterRegistrations(rows: RegistrationRow[], filter: Registratio
     if (filter.needsBib && r.bib) return false;
     if (filter.notCheckedIn && r.checkedInAtMs != null) return false;
     if (!needle) return true;
-    const haystack = [`${r.rider.firstName} ${r.rider.lastName}`, r.bib, r.rider.team, r.rider.licenseNumber];
+    const haystack = [`${r.racer.firstName} ${r.racer.lastName}`, r.bib, r.racer.team, r.racer.licenseNumber];
     return haystack.some((value) => value?.toLowerCase().includes(needle));
   });
 }

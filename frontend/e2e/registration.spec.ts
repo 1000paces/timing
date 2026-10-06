@@ -15,7 +15,7 @@ async function openRegistration(page: Page, name: string, pin: string) {
 const row = (page: Page, name: string) => page.getByTestId("registration").filter({ hasText: name });
 const counts = (page: Page) => page.getByTestId("registration-counts");
 
-test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up and checks riders in", async ({ page }) => {
+test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up and checks racers in", async ({ page }) => {
   await openRegistration(page, "E2E Admin", "9753");
 
   // Import: columns are matched automatically; categories are mapped, skipped or made into a new race.
@@ -57,8 +57,8 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await page.getByRole("button", { name: "Sign out" }).click();
   await openRegistration(page, "E2E Chief", "2468");
   await expect(page.getByRole("button", { name: "Import" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Add rider" }).click();
-  const walkUp = page.getByRole("dialog", { name: "Add rider" });
+  await page.getByRole("button", { name: "Add racer" }).click();
+  const walkUp = page.getByRole("dialog", { name: "Add racer" });
   await walkUp.getByLabel("First name").fill("Walk");
   await walkUp.getByLabel("Last name").fill("Up");
   await walkUp.getByLabel("Gender").selectOption("M");

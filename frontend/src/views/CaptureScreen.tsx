@@ -54,7 +54,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
   }
 
   const raceNames = new Map(event.races.map((r) => [r.id, r.name]));
-  const riders = new Map(event.registrations.map((r) => [r.bib, `${r.rider.firstName} ${r.rider.lastName} · ${raceNames.get(r.raceId) ?? ""}`]));
+  const racers = new Map(event.registrations.map((r) => [r.bib, `${r.racer.firstName} ${r.racer.lastName} · ${raceNames.get(r.raceId) ?? ""}`]));
 
   // Each Enter is sent at once (no waiting on the previous one), so fast typing
   // doesn't delay the next crossing's hub time.
@@ -101,7 +101,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           autoFocus
           fullWidth
           autoComplete="off"
-          helperText="Enter records the crossing now; leave blank for a rider whose bib you missed"
+          helperText="Enter records the crossing now; leave blank for a racer whose bib you missed"
           slotProps={{ htmlInput: { inputMode: "numeric", style: { fontSize: 40, textAlign: "center" } } }}
         />
       </form>
@@ -113,8 +113,8 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
               <Typography sx={{ fontWeight: "bold", width: 80, textAlign: "center" }}>{c.bib ?? "—"}</Typography>
               <Typography sx={{ width: 70 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
-              <Typography sx={{ flex: 1 }} color={c.bib && riders.has(c.bib) ? "text.primary" : "warning.main"}>
-                {c.bib ? (riders.get(c.bib) ?? "unknown bib") : "no bib"}
+              <Typography sx={{ flex: 1 }} color={c.bib && racers.has(c.bib) ? "text.primary" : "warning.main"}>
+                {c.bib ? (racers.get(c.bib) ?? "unknown bib") : "no bib"}
               </Typography>
               <LapWarning capture={c} />
               <IconButton aria-label="Delete capture" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleting(c)}>

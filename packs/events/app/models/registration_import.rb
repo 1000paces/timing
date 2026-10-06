@@ -4,7 +4,7 @@ require "csv"
 # own column names). Two steps: analyze (columns and categories), then call
 # with the official's column mapping and category choices. Rows are
 # independent: a bad row is reported and skipped, the rest still import.
-# Re-imports update matching riders and never remove anyone.
+# Re-imports update matching racers and never remove anyone.
 class RegistrationImport
   # field => header names recognised automatically (case-insensitive)
   HEADERS = {
@@ -22,7 +22,7 @@ class RegistrationImport
   }.freeze
   FIELDS = HEADERS.keys.freeze
   REQUIRED = %w[first_name last_name gender category].freeze
-  RIDER_FIELDS = %w[first_name last_name team license_number city state].freeze
+  RACER_FIELDS = %w[first_name last_name team license_number city state].freeze
   GENDERS = { "m" => "M", "male" => "M", "f" => "F", "female" => "F", "x" => "X" }.freeze
 
   RowMessage = Data.define(:row, :message)
@@ -117,11 +117,11 @@ class RegistrationImport
       end
       seen[key] = number
 
-      if (earlier = RiderRegistrar.match_in_event(@event, attrs)&.then { touched[it.id] })
+      if (earlier = RacerRegistrar.match_in_event(@event, attrs)&.then { touched[it.id] })
         next errors << RowMessage.new(row: number, message: "#{attrs['first_name']} #{attrs['last_name']} appears more than once in this file (row #{earlier})")
       end
 
-      registration = RiderRegistrar.upsert(event: @event, race: target, attrs: attrs.merge("external_category" => category), source: "import")
+      registration = RacerRegistrar.upsert(event: @event, race: target, attrs: attrs.merge("external_category" => category), source: "import")
       if registration.errors.any? || !registration.persisted?
         registration.errors.full_messages.each { errors << RowMessage.new(row: number, message: it) }
         next
@@ -135,7 +135,7 @@ class RegistrationImport
 
   # Returns [attrs, nil] or [nil, problem].
   def row_attrs(row)
-    attrs = RIDER_FIELDS.to_h { [it, value(row, it)] }
+    attrs = RACER_FIELDS.to_h { [it, value(row, it)] }
     raw_gender = value(row, "gender")
     attrs["gender"] = GENDERS[raw_gender.to_s.downcase]
     return [nil, "gender #{raw_gender} must be M, F or X"] unless attrs["gender"]
@@ -162,8 +162,8 @@ class RegistrationImport
   end
 
   def not_in_file(touched)
-    @event.registrations.where(source: "import").where.not(id: touched).includes(:rider, :race).map do |reg|
-      "#{reg.rider.full_name} (#{[reg.bib && "bib #{reg.bib}", reg.race.name].compact.join(', ')})"
+    @event.registrations.where(source: "import").where.not(id: touched).includes(:racer, :race).map do |reg|
+      "#{reg.racer.full_name} (#{[reg.bib && "bib #{reg.bib}", reg.race.name].compact.join(', ')})"
     end
   end
 

@@ -44,7 +44,7 @@ describe("unassignedLabel", () => {
 
   it("shows time of day and elapsed since the latest start before the crossing", () => {
     expect(unassignedLabel({ bib: null, atMs: at(10, 23, 30) }, starts)).toBe("No bib · 10:23:30 · +23:00.0");
-    expect(unassignedLabel({ bib: "400", atMs: at(11, 5, 0) }, starts)).toBe("Unknown rider: bib 400 · 11:05:00 · +5:00.0");
+    expect(unassignedLabel({ bib: "400", atMs: at(11, 5, 0) }, starts)).toBe("Unknown racer: bib 400 · 11:05:00 · +5:00.0");
   });
 
   it("omits elapsed before any start", () => {

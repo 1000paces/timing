@@ -2,11 +2,11 @@
 Official.create!(name: "E2E Chief", role: "chief", pin: "2468")
 Official.create!(name: "E2E Timer", role: "timer", pin: "1357")
 Official.create!(name: "E2E Admin", role: "admin", pin: "9753")
-event = RaceSimulator::Demo.create!(riders_per_race: 4, name: "E2E CX")
+event = RaceSimulator::Demo.create!(racers_per_race: 4, name: "E2E CX")
 puts "Seeded #{event.name} (#{event.id})"
 # Masters 35+ Men started 10 minutes ago with 60 s laps (a tablet's captures):
 # 102 and 103 have 3 laps, 101 has 2, so 101 typed now is a long lap.
-capture = RaceSimulator::Demo.create!(riders_per_race: 3, name: "E2E Capture")
+capture = RaceSimulator::Demo.create!(racers_per_race: 3, name: "E2E Capture")
 masters35 = capture.races.find { it.name == "Masters 35+ Men" }
 writer = RaceSimulator::Writer.new(event: capture, device_name: "Tablet")
 start = Clock.now_ms - 600_000

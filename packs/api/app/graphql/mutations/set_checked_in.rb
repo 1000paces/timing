@@ -1,6 +1,6 @@
 module Mutations
   class SetCheckedIn < BaseMutation
-    description "Check a rider in (at hub time now), or undo it"
+    description "Check a racer in (at hub time now), or undo it"
     argument :registration_id, ID
     argument :checked_in, Boolean
 

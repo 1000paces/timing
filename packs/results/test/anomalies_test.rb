@@ -3,7 +3,7 @@ require "test_helper"
 class AnomaliesTest < Minitest::Test
   include ResultsTestHelpers
 
-  # Three riders, 5 laps of ~300s. Bib 2 misses lap 3's crossing; bib 3 misses lap 4's.
+  # Three racers, 5 laps of ~300s. Bib 2 misses lap 3's crossing; bib 3 misses lap 4's.
   MISSED = <<~YAML
     crossings:
       1: [300, 600, 900, 1200, 1500]
@@ -25,7 +25,7 @@ class AnomaliesTest < Minitest::Test
   def test_unassigned_messages_name_the_problem_not_the_capture_id
     out = compute("crossings:\n  1: [300]\n  9: [400]\nunassigned: [500]\n", bibs: [1], laps: 5)
     messages = out.suggestions.select { it.kind == :unassigned_capture }.map(&:message)
-    assert_equal ["Unknown rider: bib 9", "No bib"], messages
+    assert_equal ["Unknown racer: bib 9", "No bib"], messages
   end
 
   def test_accepting_the_suggestion_fixes_laps_and_clears_it
@@ -55,7 +55,7 @@ class AnomaliesTest < Minitest::Test
     assert_empty out.suggestions
   end
 
-  def test_slow_rider_is_not_flagged_as_missing_crossings
+  def test_slow_racer_is_not_flagged_as_missing_crossings
     out = compute("crossings:\n  1: [100, 200, 300, 400]\n  2: [190, 380, 570]\n", bibs: [1, 2], laps: 20)
     assert_empty out.suggestions.reject { it.kind == :about_to_be_lapped }
   end

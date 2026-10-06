@@ -1,14 +1,14 @@
 module Eligibility
-  RIDER_GENDER = { "men" => "M", "women" => "F" }.freeze
+  RACER_GENDER = { "men" => "M", "women" => "F" }.freeze
 
   module_function
 
   # age: the age reported for this event, used when the birth date is unknown.
-  def warnings(rider:, race:, event:, age: nil)
+  def warnings(racer:, race:, event:, age: nil)
     warnings = []
-    wanted = RIDER_GENDER[race.gender]
-    warnings << "gender #{rider.gender} does not match #{race.name}" if wanted && rider.gender != wanted
-    age = event.age_of(rider.birth_date) || age
+    wanted = RACER_GENDER[race.gender]
+    warnings << "gender #{racer.gender} does not match #{race.name}" if wanted && racer.gender != wanted
+    age = event.age_of(racer.birth_date) || age
     if age.nil?
       warnings << "age unknown; #{race.name} has an age range" if race.age_min || race.age_max
     else

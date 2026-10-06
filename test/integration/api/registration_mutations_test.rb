@@ -1,7 +1,7 @@
 require "test_helper"
 
 class RegistrationMutationsTest < ActionDispatch::IntegrationTest
-  REG = "id bib age source checkedInAtMs race { id name } rider { firstName city state } eligibilityWarnings"
+  REG = "id bib age source checkedInAtMs race { id name } racer { firstName city state } eligibilityWarnings"
 
   setup do
     @event = create_event
@@ -13,17 +13,17 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
   def data(body, key) = body.dig("data", key)
 
   def walk_up(race: @cat3, bib: nil, age: nil, first: "Walk")
-    gql(<<~GQL, raceId: race.id, bib:, age:, rider: { firstName: first, lastName: "Up", gender: "M", city: "Lyons", state: "CO" })
-      mutation($raceId: ID!, $bib: String, $age: Int, $rider: RiderInput!) {
-        registerRider(raceId: $raceId, bib: $bib, age: $age, rider: $rider) { registration { #{REG} } warnings errors }
+    gql(<<~GQL, raceId: race.id, bib:, age:, racer: { firstName: first, lastName: "Up", gender: "M", city: "Lyons", state: "CO" })
+      mutation($raceId: ID!, $bib: String, $age: Int, $racer: RacerInput!) {
+        registerRacer(raceId: $raceId, bib: $bib, age: $age, racer: $racer) { registration { #{REG} } warnings errors }
       }
     GQL
   end
 
   test "a chief adds a walk-up: manual, checked in, bib optional" do
     as("chief")
-    reg = data(walk_up, "registerRider")["registration"]
-    assert_equal [nil, "manual", "Lyons", "CO"], [reg["bib"], reg["source"], reg.dig("rider", "city"), reg.dig("rider", "state")]
+    reg = data(walk_up, "registerRacer")["registration"]
+    assert_equal [nil, "manual", "Lyons", "CO"], [reg["bib"], reg["source"], reg.dig("racer", "city"), reg.dig("racer", "state")]
     assert reg["checkedInAtMs"].is_a?(Integer)
   end
 
@@ -35,7 +35,7 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
   # Review Focus 4
   test "updateRegistration moves races keeping the bib, recomputes warnings, and refuses a taken bib" do
     as("chief")
-    reg = data(walk_up(bib: "150", age: 40), "registerRider")["registration"]
+    reg = data(walk_up(bib: "150", age: 40), "registerRacer")["registration"]
     update = <<~GQL
       mutation($id: ID!, $raceId: ID, $bib: String) { updateRegistration(id: $id, raceId: $raceId, bib: $bib) { registration { #{REG} } warnings errors } }
     GQL
@@ -43,20 +43,20 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     assert_equal ["150", @masters.id], [moved.dig("registration", "bib"), moved.dig("registration", "race", "id")]
     assert_equal ["age 40 is below minimum 50"], moved["warnings"]
 
-    data(walk_up(bib: "151", first: "Other"), "registerRider")
+    data(walk_up(bib: "151", first: "Other"), "registerRacer")
     taken = data(gql(update, id: reg["id"], bib: "151"), "updateRegistration")
     assert_equal ["Bib has already been taken"], taken["errors"]
     cleared = data(gql(update, id: reg["id"], bib: nil), "updateRegistration")
     assert_nil cleared.dig("registration", "bib")
   end
 
-  test "updateRegistration edits rider fields" do
+  test "updateRegistration edits racer fields" do
     as("chief")
-    reg = data(walk_up, "registerRider")["registration"]
-    body = gql(<<~GQL, id: reg["id"], rider: { firstName: "Wally", lastName: "Up", gender: "M", team: "Velo" })
-      mutation($id: ID!, $rider: RiderInput) { updateRegistration(id: $id, rider: $rider) { registration { rider { firstName team } } errors } }
+    reg = data(walk_up, "registerRacer")["registration"]
+    body = gql(<<~GQL, id: reg["id"], racer: { firstName: "Wally", lastName: "Up", gender: "M", team: "Velo" })
+      mutation($id: ID!, $racer: RacerInput) { updateRegistration(id: $id, racer: $racer) { registration { racer { firstName team } } errors } }
     GQL
-    assert_equal({ "firstName" => "Wally", "team" => "Velo" }, data(body, "updateRegistration").dig("registration", "rider"))
+    assert_equal({ "firstName" => "Wally", "team" => "Velo" }, data(body, "updateRegistration").dig("registration", "racer"))
   end
 
   test "check in and undo; counts follow" do
@@ -82,11 +82,11 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
 
   test "assignBibs fills from the range and reports what it couldn't" do
     as("chief")
-    register(race: @cat3, bib: nil, rider: create_rider(first_name: "Amy", last_name: "Adams"))
+    register(race: @cat3, bib: nil, racer: create_racer(first_name: "Amy", last_name: "Adams"))
     register(race: @masters, bib: nil)
     body = gql("mutation($id: ID!) { assignBibs(eventId: $id) { assigned { bib name raceName } unfilled errors } }", id: @event.id)
     assert_equal({ "assigned" => [{ "bib" => "100", "name" => "Amy Adams", "raceName" => "Cat 3 Men" }],
-                   "unfilled" => ["Masters Men: 1 rider still needs a bib — no bib range"], "errors" => [] }, data(body, "assignBibs"))
+                   "unfilled" => ["Masters Men: 1 racer still needs a bib — no bib range"], "errors" => [] }, data(body, "assignBibs"))
   end
 
   test "bib ranges are set on events and races by admins" do

@@ -35,7 +35,7 @@ class RaceDayTest < ActionDispatch::IntegrationTest
 
   test "untagged taps fixed from the review queue give the same published standings as perfect timing" do
     sign_in(create_official(role: "chief", pin: "2468"), "2468")
-    @event = RaceSimulator::Demo.create!(riders_per_race: 8)
+    @event = RaceSimulator::Demo.create!(racers_per_race: 8)
     races = @event.races.to_a
 
     started = gql("mutation($ids: [ID!]!) { startRaces(raceIds: $ids) { rulings { payload } errors } }", ids: races.map(&:id))

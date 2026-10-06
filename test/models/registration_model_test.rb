@@ -12,25 +12,25 @@ class RegistrationModelTest < ActiveSupport::TestCase
     assert_nil a.bib
     assert_nil b.bib
     register(race: @race, bib: "7")
-    dup = Registration.new(race: @race, rider: create_rider, bib: "7")
+    dup = Registration.new(race: @race, racer: create_racer, bib: "7")
     refute dup.valid?
     assert_includes dup.errors.full_messages, "Bib has already been taken"
   end
 
   test "source, age, external category and check-in" do
-    reg = Registration.create!(race: @race, rider: create_rider, bib: "1", age: 41, source: "import", external_category: "Cat 3 Men")
+    reg = Registration.create!(race: @race, racer: create_racer, bib: "1", age: 41, source: "import", external_category: "Cat 3 Men")
     assert_equal [41, "import", "Cat 3 Men"], [reg.age, reg.source, reg.external_category]
     refute reg.checked_in?
     reg.update!(checked_in_at_ms: 5)
     assert reg.checked_in?
-    assert_equal "manual", Registration.create!(race: @race, rider: create_rider).source
-    refute Registration.new(race: @race, rider: create_rider, source: "web").valid?
+    assert_equal "manual", Registration.create!(race: @race, racer: create_racer).source
+    refute Registration.new(race: @race, racer: create_racer, source: "web").valid?
   end
 
-  test "riders have city and state; ability level is gone" do
-    rider = create_rider(city: "Boulder", state: "CO")
-    assert_equal %w[Boulder CO], [rider.city, rider.state]
-    refute Rider.column_names.include?("ability_level")
+  test "racers have city and state; ability level is gone" do
+    racer = create_racer(city: "Boulder", state: "CO")
+    assert_equal %w[Boulder CO], [racer.city, racer.state]
+    refute Racer.column_names.include?("ability_level")
   end
 
   test "bib ranges: ordered, positive, and not overlapping within the event" do
@@ -68,8 +68,8 @@ class RegistrationModelTest < ActiveSupport::TestCase
 
   test "eligibility uses the registration's age when the birth date is unknown" do
     masters = create_race(event: @event, category: "Masters", age_min: 35)
-    rider = create_rider(birth_date: nil)
-    assert_match(/below minimum 35/, Registration.create!(race: masters, rider:, age: 30).eligibility_warnings.first)
-    assert_empty Registration.create!(race: masters, rider: create_rider(birth_date: nil), age: 40).eligibility_warnings
+    racer = create_racer(birth_date: nil)
+    assert_match(/below minimum 35/, Registration.create!(race: masters, racer:, age: 30).eligibility_warnings.first)
+    assert_empty Registration.create!(race: masters, racer: create_racer(birth_date: nil), age: 40).eligibility_warnings
   end
 end

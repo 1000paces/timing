@@ -1,7 +1,7 @@
 # Writes realistic races straight into the hub, as if a tablet were tapping.
 module RaceSimulator
   RaceSpec = Data.define(:race_id, :offset_ms, :bibs)
-  RiderTruth = Data.define(:bib, :race_id, :crossings_ms, :untagged)
+  RacerTruth = Data.define(:bib, :race_id, :crossings_ms, :untagged)
 
   def self.specs_for(races)
     races.includes(:registrations).order(:id).map do |race|

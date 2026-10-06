@@ -9,13 +9,13 @@ const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   checkedInAtMs: null,
   eligibilityWarnings: [],
   race: { id: "cat3", name: "Cat 3 Men" },
-  rider: { firstName: "Ann", lastName: "Lee", gender: "F", team: null, licenseNumber: null, birthDate: null, city: null, state: null },
+  racer: { firstName: "Ann", lastName: "Lee", gender: "F", team: null, licenseNumber: null, birthDate: null, city: null, state: null },
   ...over,
 });
 
 describe("filterRegistrations", () => {
-  const ann = row({ id: "1", bib: "101", rider: { ...row({}).rider, team: "Velo" } });
-  const bob = row({ id: "2", checkedInAtMs: 5, race: { id: "masters", name: "Masters" }, rider: { ...row({}).rider, firstName: "Bob", lastName: "Ray", licenseNumber: "L77" } });
+  const ann = row({ id: "1", bib: "101", racer: { ...row({}).racer, team: "Velo" } });
+  const bob = row({ id: "2", checkedInAtMs: 5, race: { id: "masters", name: "Masters" }, racer: { ...row({}).racer, firstName: "Bob", lastName: "Ray", licenseNumber: "L77" } });
   const all = [ann, bob];
   const none = { search: "", raceId: null, needsBib: false, notCheckedIn: false };
 

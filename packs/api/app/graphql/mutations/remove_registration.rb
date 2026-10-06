@@ -1,6 +1,6 @@
 module Mutations
   class RemoveRegistration < BaseMutation
-    description "Remove a registration that has no captures (fix captured riders with rulings instead)"
+    description "Remove a registration that has no captures (fix captured racers with rulings instead)"
     argument :id, ID
 
     def resolve(id:)

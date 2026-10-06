@@ -37,12 +37,12 @@ class RegistrationImportTest < ActiveSupport::TestCase
     result = run_bikereg
     assert_equal [5, 0, 1], [result.created, result.updated, result.skipped]
     assert_empty result.errors
-    ann = @event.registrations.joins(:rider).find_by(riders: { first_name: "Ann" })
+    ann = @event.registrations.joins(:racer).find_by(racers: { first_name: "Ann" })
     assert_equal [@women, nil, 41, "import", "Women Open"], [ann.race, ann.bib, ann.age, ann.source, ann.external_category]
-    assert_equal %w[Boulder CO Velo 100001], [ann.rider.city, ann.rider.state, ann.rider.team, ann.rider.license_number]
-    assert_equal "12", @event.registrations.joins(:rider).find_by(riders: { first_name: "Bob" }).bib
-    assert_equal %w[F M M M F], @event.registrations.joins(:rider).order("riders.first_name").pluck("riders.gender")
-    refute Rider.column_names.any? { it.include?("email") || it.include?("phone") }
+    assert_equal %w[Boulder CO Velo 100001], [ann.racer.city, ann.racer.state, ann.racer.team, ann.racer.license_number]
+    assert_equal "12", @event.registrations.joins(:racer).find_by(racers: { first_name: "Bob" }).bib
+    assert_equal %w[F M M M F], @event.registrations.joins(:racer).order("racers.first_name").pluck("racers.gender")
+    refute Racer.column_names.any? { it.include?("email") || it.include?("phone") }
   end
 
   test "an unmapped category is a row error; other rows still import" do
@@ -60,11 +60,11 @@ class RegistrationImportTest < ActiveSupport::TestCase
   end
 
   # Review Focus 1
-  test "re-import updates matches, keeps a bib set in the console, and lists riders not in the file" do
+  test "re-import updates matches, keeps a bib set in the console, and lists racers not in the file" do
     run_bikereg
-    ann = @event.registrations.joins(:rider).find_by(riders: { first_name: "Ann" })
+    ann = @event.registrations.joins(:racer).find_by(racers: { first_name: "Ann" })
     ann.update!(bib: "301")
-    walk_up = RiderRegistrar.register(race: @cat3, bib: "150", rider_attrs: { first_name: "Walk", last_name: "Up", gender: "M" })
+    walk_up = RacerRegistrar.register(race: @cat3, bib: "150", racer_attrs: { first_name: "Walk", last_name: "Up", gender: "M" })
     assert walk_up.persisted?
 
     csv = BIKEREG.sub('"Velo","100001","41"', '"New Team","","42"') # Ann: new team, license blank this time
@@ -72,28 +72,28 @@ class RegistrationImportTest < ActiveSupport::TestCase
     result = run_bikereg(csv)
     assert_equal [0, 4], [result.created, result.updated]
     ann.reload
-    assert_equal ["301", 42, "New Team", "100001"], [ann.bib, ann.age, ann.rider.team, ann.rider.license_number]
+    assert_equal ["301", 42, "New Team", "100001"], [ann.bib, ann.age, ann.racer.team, ann.racer.license_number]
     assert_equal ["Di Eve (Cat 3 Men)"], result.not_in_file
   end
 
-  test "a re-import can move a rider to another race" do
+  test "a re-import can move a racer to another race" do
     run_bikereg
     result = run_bikereg(BIKEREG.sub('"Women Open","F"', '"Cat 3 Men","F"'))
     assert_equal 0, result.created
-    assert_equal @cat3, @event.registrations.joins(:rider).find_by(riders: { first_name: "Ann" }).race
+    assert_equal @cat3, @event.registrations.joins(:racer).find_by(racers: { first_name: "Ann" }).race
   end
 
   # Review Focus 2
-  test "the same rider twice in one file for races is an error on the second row" do
+  test "the same racer twice in one file for races is an error on the second row" do
     csv = BIKEREG.sub('"T-Shirt","Male"', '"Cat 3 Men","Male"')
     result = run_bikereg(csv)
     assert_equal [[5, "Cy Dee appears more than once in this file (row 4)"]], result.errors.map { [it.row, it.message] }
-    assert_equal @masters, @event.registrations.joins(:rider).find_by(riders: { first_name: "Cy" }).race
+    assert_equal @masters, @event.registrations.joins(:racer).find_by(racers: { first_name: "Cy" }).race
   end
 
   test "a dry run reports the same counts and changes nothing" do
     preview = nil
-    assert_no_difference(-> { Registration.count + Rider.count + CategoryMapping.count }) { preview = run_bikereg(dry_run: true) }
+    assert_no_difference(-> { Registration.count + Racer.count + CategoryMapping.count }) { preview = run_bikereg(dry_run: true) }
     real = run_bikereg
     assert_equal [preview.created, preview.updated, preview.skipped, preview.errors], [real.created, real.updated, real.skipped, real.errors]
   end
@@ -147,11 +147,11 @@ class RegistrationImportTest < ActiveSupport::TestCase
     assert_equal @cat3, @event.registrations.sole.race
   end
 
-  test "two different licensed riders with the same name are both registered" do
+  test "two different licensed racers with the same name are both registered" do
     csv = "first_name,last_name,gender,license_number,race\nJo,Smith,M,111,Cat 3 Men\nJo,Smith,M,222,Masters 50+ Men\n"
     result = RegistrationImport.call(event: @event, csv:)
     assert_equal [2, 0, []], [result.created, result.updated, result.errors]
-    assert_equal({ "111" => @cat3.id, "222" => @masters.id }, @event.registrations.joins(:rider).pluck("riders.license_number", :race_id).to_h)
+    assert_equal({ "111" => @cat3.id, "222" => @masters.id }, @event.registrations.joins(:racer).pluck("racers.license_number", :race_id).to_h)
   end
 
   # Final review, Important 2

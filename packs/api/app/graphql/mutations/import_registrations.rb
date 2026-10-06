@@ -1,6 +1,6 @@
 module Mutations
   class ImportRegistrations < BaseMutation
-    description "Import registrations; re-imports update matching riders and never remove anyone"
+    description "Import registrations; re-imports update matching racers and never remove anyone"
     argument :event_id, ID
     argument :csv, String
     argument :mapping, GraphQL::Types::JSON, required: false, description: "field name => CSV header; omitted fields use the suggested mapping"

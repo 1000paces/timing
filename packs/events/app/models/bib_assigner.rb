@@ -16,7 +16,7 @@ class BibAssigner
     Registration.transaction do
       used = @event.registrations.where.not(bib: nil).pluck(:bib).to_set { it.to_i }
       @event.races.sort_by { [it.scheduled_at_ms, it.name] }.each do |race|
-        waiting = race.registrations.where(bib: nil).joins(:rider).order("riders.last_name", "riders.first_name", :id).to_a
+        waiting = race.registrations.where(bib: nil).joins(:racer).order("racers.last_name", "racers.first_name", :id).to_a
         next if waiting.empty?
 
         range = race.bib_range
@@ -38,7 +38,7 @@ class BibAssigner
   private
 
   def unfilled_message(race, left, range)
-    who = left == 1 ? "1 rider still needs" : "#{left} riders still need"
+    who = left == 1 ? "1 racer still needs" : "#{left} racers still need"
     why = range ? "range #{range.first}–#{range.last} is full" : "no bib range"
     "#{race.name}: #{who} a bib — #{why}"
   end

@@ -1,11 +1,11 @@
 module Mutations
   class UpdateRegistration < BaseMutation
-    description "Change a registration or its rider; arguments left out are unchanged, an explicit null clears bib or age"
+    description "Change a registration or its racer; arguments left out are unchanged, an explicit null clears bib or age"
     argument :id, ID
     argument :race_id, ID, required: false
     argument :bib, String, required: false
     argument :age, Integer, required: false
-    argument :rider, Types::RiderInput, required: false
+    argument :racer, Types::RacerInput, required: false
 
     field :registration, Types::RegistrationType
     field :warnings, [String], null: false
@@ -13,16 +13,16 @@ module Mutations
     def resolve(id:, **changes)
       require_official!("chief")
       registration = Registration.find(id)
-      rider = registration.rider
+      racer = registration.racer
       registration.race = registration.event.races.find(changes[:race_id]) if changes[:race_id]
       registration.bib = changes[:bib] if changes.key?(:bib)
       registration.age = changes[:age] if changes.key?(:age)
-      rider.assign_attributes(changes[:rider].to_h) if changes[:rider]
+      racer.assign_attributes(changes[:racer].to_h) if changes[:racer]
       saved = Registration.transaction do
-        (rider.save && registration.save) || raise(ActiveRecord::Rollback)
+        (racer.save && registration.save) || raise(ActiveRecord::Rollback)
       end
       return { registration:, warnings: registration.eligibility_warnings, errors: [] } if saved
-      { registration: nil, warnings: [], errors: rider.errors.full_messages + registration.errors.full_messages }
+      { registration: nil, warnings: [], errors: racer.errors.full_messages + registration.errors.full_messages }
     end
   end
 end

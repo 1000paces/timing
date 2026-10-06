@@ -40,7 +40,7 @@ import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { ImportDialog } from "./ImportDialog";
-import { RiderDialog } from "./RiderDialog";
+import { RacerDialog } from "./RacerDialog";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
 type Notice = { severity: "success" | "info" | "error"; lines: string[] };
@@ -114,7 +114,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         <Typography data-testid="registration-counts" color="text.secondary" sx={{ flex: 1 }}>
           {countsLabel(event.registrationCounts)}
         </Typography>
-        {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add rider</Button>}
+        {canAct && <Button variant="contained" onClick={() => setEditing("new")}>Add racer</Button>}
         {admin && <Button variant="outlined" onClick={() => setImporting(true)}>Import</Button>}
         {canAct && <Button variant="outlined" onClick={onAssignBibs}>Assign bibs</Button>}
       </Stack>
@@ -144,7 +144,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8}>
-                  <Typography color="text.secondary">{event.registrations.length ? "No riders match." : "No riders registered yet."}</Typography>
+                  <Typography color="text.secondary">{event.registrations.length ? "No racers match." : "No racers registered yet."}</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -152,7 +152,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
         </Table>
       </Paper>
       {editing && (
-        <RiderDialog races={event.races} registration={editing === "new" ? null : editing}
+        <RacerDialog races={event.races} registration={editing === "new" ? null : editing}
           onClose={(saved) => { setEditing(null); if (saved) void refresh(); }} />
       )}
       {importing && (
@@ -160,7 +160,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
           onClose={(changed) => { setImporting(false); if (changed) void refresh(); }} />
       )}
       <Dialog open={removing != null} onClose={() => setRemoving(null)}>
-        <DialogTitle>Remove {removing?.rider.firstName} {removing?.rider.lastName} from {removing?.race.name}?</DialogTitle>
+        <DialogTitle>Remove {removing?.racer.firstName} {removing?.racer.lastName} from {removing?.race.name}?</DialogTitle>
         <DialogActions>
           <Button onClick={() => setRemoving(null)}>Cancel</Button>
           <Button color="error" variant="contained" onClick={() => removing && onRemove(removing)}>Remove</Button>
@@ -178,7 +178,7 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
   onChanged: () => void;
 }) {
   const [setCheckedIn] = useMutation(SET_CHECKED_IN);
-  const name = `${reg.rider.firstName} ${reg.rider.lastName}`;
+  const name = `${reg.racer.firstName} ${reg.racer.lastName}`;
   // Ticks at once; the refetch afterwards confirms it (or puts it back if the save failed).
   const [checked, setChecked] = useState(reg.checkedInAtMs != null);
   useEffect(() => setChecked(reg.checkedInAtMs != null), [reg.checkedInAtMs]);
@@ -204,9 +204,9 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
           </Tooltip>
         )}
       </TableCell>
-      <TableCell>{reg.rider.gender}</TableCell>
+      <TableCell>{reg.racer.gender}</TableCell>
       <TableCell>{reg.age ?? ""}</TableCell>
-      <TableCell>{reg.rider.team ?? ""}</TableCell>
+      <TableCell>{reg.racer.team ?? ""}</TableCell>
       <TableCell>{reg.race.name}</TableCell>
       <TableCell>
         <Checkbox checked={checked} disabled={!canAct} slotProps={{ input: { "aria-label": `Checked in ${name}` } }}

@@ -20,7 +20,7 @@ class EventsTest < ActiveSupport::TestCase
     race_a = create_race(event:)
     race_b = create_race(event:, category: "Cat 4")
     register(race: race_a, bib: "101")
-    dup = Registration.new(race: race_b, rider: create_rider, bib: "101")
+    dup = Registration.new(race: race_b, racer: create_racer, bib: "101")
     refute dup.valid?
     other = create_event(name: "Next week")
     assert register(race: create_race(event: other), bib: "101").persisted?
@@ -33,9 +33,9 @@ class EventsTest < ActiveSupport::TestCase
     assert_equal "7", reg.bib
   end
 
-  test "rider license numbers are unique" do
-    create_rider(license_number: "U1")
-    dup = Rider.new(first_name: "A", last_name: "B", gender: "M", license_number: "U1")
+  test "racer license numbers are unique" do
+    create_racer(license_number: "U1")
+    dup = Racer.new(first_name: "A", last_name: "B", gender: "M", license_number: "U1")
     refute dup.valid?
     assert_includes dup.errors[:license_number], "has already been taken"
   end

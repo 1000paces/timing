@@ -8,7 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
-import { REGISTER_RIDER, UPDATE_REGISTRATION, type RegistrationResult } from "../queries";
+import { REGISTER_RACER, UPDATE_REGISTRATION, type RegistrationResult } from "../queries";
 import type { RegistrationRow } from "../registration";
 
 type Props = {
@@ -20,23 +20,23 @@ type Props = {
 const blank = (s: string) => (s.trim() ? s.trim() : null);
 
 // Add a walk-up (registered and checked in at once; bib optional) or edit a
-// registration and its rider, including moving them to another race.
-export function RiderDialog({ races, registration, onClose }: Props) {
-  const [registerRider] = useMutation<{ registerRider: RegistrationResult }>(REGISTER_RIDER);
+// registration and its racer, including moving them to another race.
+export function RacerDialog({ races, registration, onClose }: Props) {
+  const [registerRacer] = useMutation<{ registerRacer: RegistrationResult }>(REGISTER_RACER);
   const [updateRegistration] = useMutation<{ updateRegistration: RegistrationResult }>(UPDATE_REGISTRATION);
-  const rider = registration?.rider;
+  const racer = registration?.racer;
   const [form, setForm] = useState({
-    firstName: rider?.firstName ?? "",
-    lastName: rider?.lastName ?? "",
-    gender: rider?.gender ?? "M",
+    firstName: racer?.firstName ?? "",
+    lastName: racer?.lastName ?? "",
+    gender: racer?.gender ?? "M",
     raceId: registration?.race.id ?? races[0]?.id ?? "",
     bib: registration?.bib ?? "",
     age: registration?.age?.toString() ?? "",
-    birthDate: rider?.birthDate ?? "",
-    team: rider?.team ?? "",
-    licenseNumber: rider?.licenseNumber ?? "",
-    city: rider?.city ?? "",
-    state: rider?.state ?? "",
+    birthDate: racer?.birthDate ?? "",
+    team: racer?.team ?? "",
+    licenseNumber: racer?.licenseNumber ?? "",
+    city: racer?.city ?? "",
+    state: racer?.state ?? "",
   });
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -47,7 +47,7 @@ export function RiderDialog({ races, registration, onClose }: Props) {
   async function save() {
     setBusy(true);
     setErrors([]);
-    const riderInput = {
+    const racerInput = {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       gender: form.gender,
@@ -57,11 +57,11 @@ export function RiderDialog({ races, registration, onClose }: Props) {
       city: blank(form.city),
       state: blank(form.state),
     };
-    const variables = { raceId: form.raceId, bib: blank(form.bib), age: form.age.trim() ? Number(form.age) : null, rider: riderInput };
+    const variables = { raceId: form.raceId, bib: blank(form.bib), age: form.age.trim() ? Number(form.age) : null, racer: racerInput };
     try {
       const result = registration
         ? (await updateRegistration({ variables: { id: registration.id, ...variables } })).data?.updateRegistration
-        : (await registerRider({ variables })).data?.registerRider;
+        : (await registerRacer({ variables })).data?.registerRacer;
       if (result?.errors.length) setErrors(result.errors);
       else onClose(true);
     } catch (e) {
@@ -73,7 +73,7 @@ export function RiderDialog({ races, registration, onClose }: Props) {
 
   return (
     <Dialog open onClose={() => onClose(false)} maxWidth="sm" fullWidth>
-      <DialogTitle>{registration ? `Edit ${rider?.firstName} ${rider?.lastName}` : "Add rider"}</DialogTitle>
+      <DialogTitle>{registration ? `Edit ${racer?.firstName} ${racer?.lastName}` : "Add racer"}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction="row" spacing={2}>

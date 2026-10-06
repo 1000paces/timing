@@ -4,7 +4,7 @@ class ResultsSnapshotTest < ActiveSupport::TestCase
   setup do
     @event = create_event
     @race = create_race(event: @event)
-    register(race: @race, bib: "1", rider: create_rider(first_name: "Ann", last_name: "Lee"))
+    register(race: @race, bib: "1", racer: create_racer(first_name: "Ann", last_name: "Lee"))
     register(race: @race, bib: "2")
     @device = create_device(event: @event)
   end
@@ -20,7 +20,7 @@ class ResultsSnapshotTest < ActiveSupport::TestCase
     out = ResultsSnapshot.compute(@event, now_ms: 400_000)
     race = out.races.find { it.race_id == @race.id }
     assert_equal :finish_open, race.state
-    assert_equal [[1, "1", "Ann Lee", :finished, 2, 200_000], [2, "2", "Ada Rider", :finished, 2, 215_000]],
+    assert_equal [[1, "1", "Ann Lee", :finished, 2, 200_000], [2, "2", "Ada Racer", :finished, 2, 215_000]],
                  race.rows.map { [it.place, it.bib, it.name, it.status, it.laps, it.elapsed_ms] }
     assert_empty out.unassigned
   end

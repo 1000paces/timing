@@ -10,7 +10,7 @@ module Types
     field :timezone, String, null: false
     field :age_rule, String, null: false
     field :races, [RaceType], null: false, description: "In scheduled order, then name"
-    field :registrations, [RegistrationType], null: false, description: "By bib, then riders without one by name"
+    field :registrations, [RegistrationType], null: false, description: "By bib, then racers without one by name"
     field :registration_counts, RegistrationCountsType, null: false
     field :bib_from, Integer, description: "Event-wide bib range, for races without their own"
     field :bib_to, Integer
@@ -26,7 +26,7 @@ module Types
     end
 
     def registrations
-      object.registrations.includes(:event, :rider, :race).sort_by { [it.bib ? 0 : 1, it.bib.to_i, it.bib.to_s, it.rider.last_name, it.rider.first_name] }
+      object.registrations.includes(:event, :racer, :race).sort_by { [it.bib ? 0 : 1, it.bib.to_i, it.bib.to_s, it.racer.last_name, it.racer.first_name] }
     end
 
     def registration_counts

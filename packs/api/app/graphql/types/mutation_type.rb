@@ -5,7 +5,7 @@ module Types
     field :create_race, mutation: Mutations::CreateRace
     field :update_race, mutation: Mutations::UpdateRace
     field :delete_race, mutation: Mutations::DeleteRace
-    field :register_rider, mutation: Mutations::RegisterRider
+    field :register_racer, mutation: Mutations::RegisterRacer
     field :create_official, mutation: Mutations::CreateOfficial
     field :analyze_import, mutation: Mutations::AnalyzeImport
     field :import_registrations, mutation: Mutations::ImportRegistrations

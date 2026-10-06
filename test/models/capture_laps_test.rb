@@ -29,7 +29,7 @@ class CaptureLapsTest < ActiveSupport::TestCase
     assert_nil lap(Capture.record!(device: @tablet, at_ms: 70_000, bib: nil))
   end
 
-  # Riders 101–103 lap in about 60 s; flags compare a lap with the race's
+  # Racers 101–103 lap in about 60 s; flags compare a lap with the race's
   # typical lap: the median of the race's other laps, lap 1 excluded.
   def lap_at(bib, *times) = times.map { Capture.record!(device: @tablet, at_ms: 10_000 + it * 1000, bib:) }
 

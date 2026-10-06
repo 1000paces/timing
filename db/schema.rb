@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_000002) do
   create_table "category_mappings", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "external_category", null: false
@@ -90,6 +90,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
     t.index ["token_digest"], name: "index_pairing_tokens_on_token_digest", unique: true
   end
 
+  create_table "racers", id: :string, force: :cascade do |t|
+    t.string "first_name", null: false
+    t.string "last_name", null: false
+    t.string "gender", null: false
+    t.date "birth_date"
+    t.string "license_number"
+    t.string "team"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "city"
+    t.string "state"
+    t.index ["license_number"], name: "index_racers_on_license_number", unique: true
+  end
+
   create_table "races", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.datetime "created_at", null: false
@@ -112,7 +126,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
   create_table "registrations", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "race_id", null: false
-    t.string "rider_id", null: false
+    t.string "racer_id", null: false
     t.string "bib"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -123,21 +137,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
     t.index ["event_id", "bib"], name: "index_registrations_on_event_id_and_bib", unique: true
     t.index ["event_id"], name: "index_registrations_on_event_id"
     t.index ["race_id"], name: "index_registrations_on_race_id"
-    t.index ["rider_id"], name: "index_registrations_on_rider_id"
-  end
-
-  create_table "riders", id: :string, force: :cascade do |t|
-    t.string "first_name", null: false
-    t.string "last_name", null: false
-    t.string "gender", null: false
-    t.date "birth_date"
-    t.string "license_number"
-    t.string "team"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "city"
-    t.string "state"
-    t.index ["license_number"], name: "index_riders_on_license_number", unique: true
+    t.index ["racer_id"], name: "index_registrations_on_racer_id"
   end
 
   create_table "rulings", id: :string, force: :cascade do |t|
@@ -160,7 +160,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000001) do
   add_foreign_key "pairing_tokens", "events"
   add_foreign_key "races", "events"
   add_foreign_key "registrations", "events"
+  add_foreign_key "registrations", "racers"
   add_foreign_key "registrations", "races"
-  add_foreign_key "registrations", "riders"
   add_foreign_key "rulings", "events"
 end
