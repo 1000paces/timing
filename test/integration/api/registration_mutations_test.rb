@@ -44,6 +44,10 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     assert_equal ["age 40 is below minimum 50"], moved["warnings"]
 
     data(walk_up(bib: "151", first: "Other"), "registerRacer")
+    locked = data(gql(update, id: reg["id"], bib: "152"), "updateRegistration")
+    assert_equal ["Bib can't change once the racer is checked in (undo check-in first)"], locked["errors"]
+
+    gql("mutation($id: ID!) { setCheckedIn(registrationId: $id, checkedIn: false) { errors } }", id: reg["id"])
     taken = data(gql(update, id: reg["id"], bib: "151"), "updateRegistration")
     assert_equal ["Bib has already been taken"], taken["errors"]
     cleared = data(gql(update, id: reg["id"], bib: nil), "updateRegistration")
