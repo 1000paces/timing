@@ -103,6 +103,12 @@ Items deliberately deferred. Each has enough context to pick up cold.
 ### Officiating follow-ups (after part 1, 2026-10-07)
 - Open the racer panel from Problems and Capture rows (today: Results and History only).
 - Redo (undoing an undo). Today an undo can't be undone; re-apply the fix instead.
+- Voiding an inserted crossing should use the already-undone guard (two chiefs → two "Undo: Insert…" lines).
+- Hide "Finish here" / "Pull here" on ignored crossings (before start, after pull/finish), or refuse them on the hub; today they record a fix that does nothing.
+- Racer panel fix list: show when an undo happened ("undone by X at T").
+- History: "Show more" appears at exactly 50 entries; debounce the search box.
+- Keyboard access to Results rows (open the racer panel with Enter), since DNF/DNS/DSQ now live in the panel.
+- "Pull now" uses the console's clock, not hub time; "Insert missed crossing before" a pre-start crossing pre-fills a time the hub refuses.
 
 ### Ops console / API plan
 - **Sessions:** expire after 12–24 h; `updateOfficial(id, active, role, pin)`
