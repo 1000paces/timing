@@ -95,6 +95,20 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   const keypadBox = (await enterKey.boundingBox())!;
   const logBox = (await log.boundingBox())!;
   expect(keypadBox.x + keypadBox.width).toBeLessThanOrEqual(logBox.x + 1);
+
+  // The correction sheet fits a short landscape screen (iPhone: 844 x 390).
+  await phone.setViewportSize({ width: 844, height: 390 });
+  for (const name of ["0", "Enter"]) {
+    const box = (await phone.getByRole("button", { name, exact: true }).first().boundingBox())!;
+    expect(box.y + box.height, `main ${name} is on screen`).toBeLessThanOrEqual(390);
+  }
+  await rows.filter({ hasText: "entered: 999" }).getByRole("button", { name: "Edit bib" }).click();
+  const editSheet = phone.getByRole("dialog", { name: "Correct bib" });
+  for (const name of ["1", "0", "Backspace", "Save", "Cancel"]) {
+    const box = (await editSheet.getByRole("button", { name, exact: true }).boundingBox())!;
+    expect(box.y + box.height, `${name} is on screen`).toBeLessThanOrEqual(390);
+  }
+  await editSheet.getByRole("button", { name: "Cancel" }).click();
   await phone.setViewportSize({ width: 412, height: 915 });
 
   // 5. Revoked on the console: the phone says so, rather than just "Offline".

@@ -22,6 +22,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatClock, formatElapsed } from "../../src/format";
 import { hubApi } from "./api";
@@ -186,6 +187,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   const [editing, setEditing] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [menu, setMenu] = useState<HTMLElement | null>(null);
+  const short = useMediaQuery("(orientation: landscape) and (max-height: 500px)"); // a phone in landscape
 
   const reload = useCallback(async () => setEntries(await allEntries(db)), [db]);
 
@@ -306,11 +308,11 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
         gridTemplateRows: "auto minmax(0, 1fr)",
         "@media (orientation: landscape)": { gridTemplateRows: "minmax(0, 1fr)", gridTemplateColumns: "minmax(260px, 40%) minmax(0, 1fr)" },
       }}>
-      <Box sx={{ p: 2, overflowY: "auto" }}>
-        <Typography data-testid="bib-display" sx={{ fontSize: 56, fontWeight: 700, textAlign: "center", lineHeight: 1.2, minHeight: 68, letterSpacing: 4 }}>
+      <Box sx={{ p: short ? 1 : 2, overflowY: "auto" }}>
+        <Typography data-testid="bib-display" sx={{ fontSize: short ? 36 : 56, fontWeight: 700, textAlign: "center", lineHeight: 1.2, minHeight: short ? 44 : 68, letterSpacing: 4 }}>
           {bib || <Box component="span" sx={{ color: "text.disabled", fontSize: 24, letterSpacing: 0 }}>bib (blank = no bib)</Box>}
         </Typography>
-        <Keypad onDigit={(d) => setBib((b) => (b + d).slice(0, 6))} onBack={() => setBib((b) => b.slice(0, -1))} onEnter={enter} />
+        <Keypad compact={short} onDigit={(d) => setBib((b) => (b + d).slice(0, 6))} onBack={() => setBib((b) => b.slice(0, -1))} onEnter={enter} />
       </Box>
       <Box data-testid="crossing-log" sx={{ overflowY: "auto", minHeight: 0, borderTop: 1, borderColor: "divider",
         "@media (orientation: landscape)": { borderTop: 0, borderLeft: 1, borderColor: "divider" } }}>
@@ -371,17 +373,42 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
 
 function BibSheet({ row, onCancel, onSave }: { row: Row; onCancel: () => void; onSave: (bib: string) => void }) {
   const [value, setValue] = useState(row.bib ?? "");
+  // Short, wide screens (a phone in landscape): full screen, value and buttons
+  // beside the keypad, shorter keys — so everything fits without scrolling.
+  const wide = useMediaQuery("(orientation: landscape) and (max-height: 500px)");
+  const display = <Typography sx={{ fontSize: wide ? 36 : 40, fontWeight: 700, textAlign: "center", minHeight: 52 }}>{value || "—"}</Typography>;
+  const keypad = <Keypad compact={wide} onDigit={(d) => setValue((v) => (v + d).slice(0, 6))} onBack={() => setValue((v) => v.slice(0, -1))} />;
+  const buttons = (
+    <>
+      <Button onClick={onCancel}>Cancel</Button>
+      <Button variant="contained" disabled={!value.trim()} onClick={() => onSave(value)}>Save</Button>
+    </>
+  );
+  if (wide) {
+    return (
+      <Dialog open onClose={onCancel} fullScreen aria-labelledby="correct-bib-title">
+        <Box sx={{ height: "100%", display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 3fr)", gap: 2, p: 2, boxSizing: "border-box" }}>
+          <Stack sx={{ justifyContent: "space-between" }}>
+            <Box>
+              <Typography id="correct-bib-title" variant="h6">Correct bib</Typography>
+              {row.enteredNote && <Typography variant="caption" color="text.secondary">{row.enteredNote}</Typography>}
+              {display}
+            </Box>
+            <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>{buttons}</Stack>
+          </Stack>
+          <Box sx={{ alignSelf: "center" }}>{keypad}</Box>
+        </Box>
+      </Dialog>
+    );
+  }
   return (
     <Dialog open onClose={onCancel} fullWidth>
       <DialogTitle>Correct bib</DialogTitle>
       <DialogContent>
-        <Typography sx={{ fontSize: 40, fontWeight: 700, textAlign: "center", minHeight: 52 }}>{value || "—"}</Typography>
-        <Keypad onDigit={(d) => setValue((v) => (v + d).slice(0, 6))} onBack={() => setValue((v) => v.slice(0, -1))} />
+        {display}
+        {keypad}
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="contained" disabled={!value.trim()} onClick={() => onSave(value)}>Save</Button>
-      </DialogActions>
+      <DialogActions>{buttons}</DialogActions>
     </Dialog>
   );
 }
