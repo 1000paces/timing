@@ -18,6 +18,11 @@ module Types
     field :set_lap_count, mutation: Mutations::SetLapCount
     field :record_ruling, mutation: Mutations::RecordRuling
     field :revert_ruling, mutation: Mutations::RevertRuling
+    field :void_crossing, mutation: Mutations::VoidCrossing
+    field :move_crossing, mutation: Mutations::MoveCrossing
+    field :insert_crossing, mutation: Mutations::InsertCrossing
+    field :pull_racer, mutation: Mutations::PullRacer
+    field :flag_finish, mutation: Mutations::FlagFinish
     field :accept_suggestion, mutation: Mutations::AcceptSuggestion
     field :dismiss_suggestion, mutation: Mutations::DismissSuggestion
     field :publish_results, mutation: Mutations::PublishResults

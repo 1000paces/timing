@@ -15,6 +15,10 @@ module Types
       argument :event_id, ID
     end
 
+    field :racer, RacerDetailType, description: "One racer's race: crossings, lap positions, fixes" do
+      argument :event_id, ID
+      argument :bib, String
+    end
     field :devices, [DeviceType], null: false do
       argument :event_id, ID
     end
@@ -47,6 +51,11 @@ module Types
       engine_rulings = rulings.map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
       context[:cancelled_ruling_ids] = Results::ActiveRulings.new(engine_rulings).cancelled_ids
       rulings
+    end
+
+    def racer(event_id:, bib:)
+      require_official!
+      RacerDetail.for(Event.find(event_id), bib.to_s.strip)
     end
 
     def devices(event_id:)
