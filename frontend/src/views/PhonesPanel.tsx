@@ -28,9 +28,9 @@ export function ago(ms: number | null, now = Date.now()): string {
 // Pair phones to this event with a QR code; see when each last synced; revoke.
 export function PhonesPanel({ eventId }: { eventId: string }) {
   const devices = useQuery<{ devices: PhoneRow[] }>(DEVICES, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
-  const [createToken] = useMutation<{ createPairingToken: MutationResult & { pairingUrl: string | null; expiresAtMs: number | null } }>(CREATE_PAIRING_TOKEN);
+  const [createToken] = useMutation<{ createPairingToken: MutationResult & { token: string | null; pairingUrl: string | null; expiresAtMs: number | null } }>(CREATE_PAIRING_TOKEN);
   const [revoke] = useMutation<{ revokeDevice: MutationResult }>(REVOKE_DEVICE);
-  const [pairing, setPairing] = useState<{ url: string; qr: string; expiresAtMs: number } | null>(null);
+  const [pairing, setPairing] = useState<{ url: string; code: string; qr: string; expiresAtMs: number } | null>(null);
   const [revoking, setRevoking] = useState<PhoneRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -43,8 +43,8 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
     setError(null);
     try {
       const result = (await createToken({ variables: { eventId } })).data?.createPairingToken;
-      if (!result?.pairingUrl || !result.expiresAtMs) return setError(result?.errors.join("; ") || "Couldn't create a pairing code");
-      setPairing({ url: result.pairingUrl, qr: await QRCode.toDataURL(result.pairingUrl, { width: 280, margin: 1 }), expiresAtMs: result.expiresAtMs });
+      if (!result?.pairingUrl || !result.token || !result.expiresAtMs) return setError(result?.errors.join("; ") || "Couldn't create a pairing code");
+      setPairing({ url: result.pairingUrl, code: result.token, qr: await QRCode.toDataURL(result.pairingUrl, { width: 280, margin: 1 }), expiresAtMs: result.expiresAtMs });
     } catch (e) {
       setError((e as Error).message);
     }
@@ -97,7 +97,8 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
         <DialogContent>
           <Stack spacing={1} sx={{ alignItems: "center" }}>
             {pairing && <img src={pairing.qr} alt="Pairing QR code" width={280} height={280} />}
-            <Typography variant="body2">Scan with the phone's camera, on the hub's Wi-Fi. {left > 0 ? `Expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}.` : "Expired — make a new one."}</Typography>
+            <Typography data-testid="pairing-code" sx={{ fontFamily: "monospace", fontSize: 36, fontWeight: 700, letterSpacing: 4 }}>{pairing?.code}</Typography>
+            <Typography variant="body2">Scan with the phone's camera on the hub's Wi-Fi, or type the code in the Capture app (needed for an iPhone home-screen app). {left > 0 ? `Expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}.` : "Expired — make a new one."}</Typography>
             <Typography data-testid="pairing-link" variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>{pairing?.url}</Typography>
           </Stack>
         </DialogContent>

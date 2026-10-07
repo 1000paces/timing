@@ -13,7 +13,7 @@ class DevicePairingTest < ActionDispatch::IntegrationTest
 
   test "admin issues a pairing code; a tablet redeems it once; admin sees and revokes the device" do
     issued = pairing_token
-    assert_equal "http://www.example.com/capture-app/?pair=#{issued['token']}", issued["pairingUrl"]
+    assert_equal "http://www.example.com/capture-app/?pair=#{issued['token'].delete('-')}", issued["pairingUrl"]
 
     delete "/session" # the tablet has no official session
     post "/devices/pair", params: { token: issued["token"], name: "Finish tablet" }.to_json, headers: ApiHelpers::JSON_HEADERS

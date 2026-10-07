@@ -29,11 +29,13 @@ import { openCaptureDb, type CaptureDb, type Pairing } from "./db";
 import { Keypad } from "./Keypad";
 import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, startNewPairing, type Entry } from "./log";
 import { captureRows, type Row } from "./rows";
+import { checkStorage, storageWarning, type StorageHealth } from "./storageHealth";
 import { createSync, type Sync, type SyncState } from "./sync";
 import { SyncPill } from "./SyncPill";
 
 const FLAG = { missed: "Missed lap?", long: "Long lap", short: "Short lap" } as const;
 const PAGE = 20;
+const DISMISSED = "timing:storage-warning-dismissed";
 
 // The tap time: the phone's high-resolution clock at the Enter press.
 const tapTime = () => performance.timeOrigin + performance.now();
@@ -41,36 +43,55 @@ const tapTime = () => performance.timeOrigin + performance.now();
 export function App() {
   const [db, setDb] = useState<CaptureDb | null>(null);
   const [pairing, setPairing] = useState<Pairing | null | undefined>(undefined);
-  const [persisted, setPersisted] = useState(true);
+  const [health, setHealth] = useState<StorageHealth | null>(null);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(DISMISSED) === "1";
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
+    void checkStorage().then(setHealth);
     void openCaptureDb().then(async (opened) => {
       setDb(opened);
       setPairing((await opened.get("pairing", "pairing")) ?? null);
     });
-    void navigator.storage?.persist?.().then(setPersisted).catch(() => setPersisted(false));
   }, []);
+  const warning = health ? storageWarning(health) : null;
+  function dismiss() {
+    setDismissed(true);
+    try {
+      localStorage.setItem(DISMISSED, "1");
+    } catch {
+      // not remembered; fine
+    }
+  }
 
+  if (warning === "insecure") {
+    // Nothing can be kept safely: don't offer capture at all.
+    return (
+      <Alert severity="error" square>
+        This page isn't secure, so the phone can't save crossings. Install the hub certificate from <a href="/onboarding">/onboarding</a>, then open the app from the hub's https:// address.
+      </Alert>
+    );
+  }
   if (!db || pairing === undefined) return <LinearProgress />;
   const token = new URLSearchParams(window.location.search).get("pair");
   return (
     <>
-      {!persisted && (
-        <Alert severity="warning" square>
-          This browser may clear the phone's saved crossings. Install the hub certificate from <a href="/onboarding">/onboarding</a> and add the app to your home screen.
+      {warning === "not-permanent" && !dismissed && (
+        <Alert severity="info" square onClose={dismiss}>
+          This browser hasn't promised to keep the phone's crossings permanently (they're saved, and safe on the hub once synced). Add the app to your home screen to make them permanent.
         </Alert>
       )}
-      {token ? (
-        <PairScreen db={db} token={token} paired={pairing} onPaired={setPairing} onCancel={() => {
+      {token || !pairing ? (
+        <PairScreen db={db} token={token ?? ""} paired={pairing} onPaired={setPairing} onCancel={() => {
           window.history.replaceState(null, "", window.location.pathname);
           setPairing(pairing ? { ...pairing } : null);
         }} />
-      ) : pairing ? (
-        <CaptureScreen db={db} pairing={pairing} onUnpaired={() => setPairing(null)} />
       ) : (
-        <Box sx={{ p: 3 }}>
-          <Typography variant="h5" gutterBottom>Timing Capture</Typography>
-          <Typography>Scan the pairing code on the console's Capture tab (Phones → Pair a phone).</Typography>
-        </Box>
+        <CaptureScreen db={db} pairing={pairing} health={health} onUnpaired={() => setPairing(null)} />
       )}
     </>
   );
@@ -94,6 +115,7 @@ function PairScreen({ db, token, paired, onPaired, onCancel }: {
   onPaired: (p: Pairing) => void;
   onCancel: () => void;
 }) {
+  const [code, setCode] = useState(token);
   const [name, setName] = useState(paired?.name ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,7 +133,7 @@ function PairScreen({ db, token, paired, onPaired, onCancel }: {
     setBusy(true);
     setError(null);
     try {
-      const result = await hubApi(() => null).pair(token, name.trim() || "Phone");
+      const result = await hubApi(() => null).pair(code, name.trim() || "Phone");
       const next = { deviceId: result.device_id, credential: result.credential, eventId: result.event_id, name: name.trim() || "Phone" };
       await startNewPairing(db, next); // the old log is archived on the phone, never deleted
       window.history.replaceState(null, "", window.location.pathname);
@@ -138,16 +160,21 @@ function PairScreen({ db, token, paired, onPaired, onCancel }: {
             </Stack>
           </Alert>
         )}
-        <TextField label="Phone name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Finish line phone 2" autoFocus />
+        <Typography variant="body2" color="text.secondary">
+          On the console: Capture (or Event) → Phones → Pair a phone. Scan the QR code, or type the code shown under it.
+        </Typography>
+        <TextField label="Pairing code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="K7Q-4MX"
+          autoFocus={!token} slotProps={{ htmlInput: { autoCapitalize: "characters", autoCorrect: "off", spellCheck: false, style: { letterSpacing: 4, fontSize: 24 } } }} />
+        <TextField label="Phone name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Finish line phone 2" autoFocus={!!token} />
         {error && <Alert severity="error">{error}</Alert>}
-        <Button variant="contained" size="large" disabled={busy || blocked} onClick={() => void pair()}>Pair</Button>
+        <Button variant="contained" size="large" disabled={busy || blocked || !code.trim()} onClick={() => void pair()}>Pair</Button>
         {paired && <Button onClick={onCancel}>Back to capture</Button>}
       </Stack>
     </Box>
   );
 }
 
-function CaptureScreen({ db, pairing, onUnpaired }: { db: CaptureDb; pairing: Pairing; onUnpaired: () => void }) {
+function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pairing: Pairing; health: StorageHealth | null; onUnpaired: () => void }) {
   const syncRef = useRef<Sync | null>(null);
   const [state, setState] = useState<SyncState | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -257,6 +284,9 @@ function CaptureScreen({ db, pairing, onUnpaired }: { db: CaptureDb; pairing: Pa
         <MenuItem disabled>{pairing.name}</MenuItem>
         <MenuItem disabled>Last sync: {state?.lastSyncAtMs ? formatClock(state.lastSyncAtMs) : "never"}</MenuItem>
         <MenuItem disabled>Clock: {state?.clockSynced ? `${offset > 0 ? "+" : ""}${offset} ms` : "not synced"}</MenuItem>
+        <MenuItem disabled>
+          Storage: secure {health?.secure ? "✓" : "✗"} · permanent {health?.persisted ? "✓" : "✗"} · offline app {health?.offlineApp ? "✓" : "✗"}
+        </MenuItem>
         <MenuItem onClick={() => { setMenu(null); void exportLog(db); }}>Export log</MenuItem>
         <MenuItem onClick={() => void unpair()}>Unpair</MenuItem>
       </Menu>

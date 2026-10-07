@@ -333,7 +333,7 @@ export const DEVICES = gql`
   }
 `;
 export const CREATE_PAIRING_TOKEN = gql`
-  mutation CreatePairingToken($eventId: ID!) { createPairingToken(eventId: $eventId) { pairingUrl expiresAtMs errors } }
+  mutation CreatePairingToken($eventId: ID!) { createPairingToken(eventId: $eventId) { token pairingUrl expiresAtMs errors } }
 `;
 export const REVOKE_DEVICE = gql`
   mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
