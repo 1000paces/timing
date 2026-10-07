@@ -72,6 +72,36 @@ class RecordCaptureTest < ActionDispatch::IntegrationTest
     assert_equal 0, Ruling.count
   end
 
+  test "myCaptures shows the resolved bib once a crossing is fixed, and what was entered" do
+    sign_in(@timer, "1111")
+    id = gql(RECORD, eventId: @event.id, bib: "").dig("data", "recordCapture", "capture", "id")
+    Ruling.create!(event: @event, kind: "assign_bib", payload: { "capture_id" => id, "bib" => "101" })
+    row = gql("query($id: ID!) { event(id: $id) { myCaptures { bib enteredBib } } }", id: @event.id).dig("data", "event", "myCaptures").first
+    assert_equal({ "bib" => "101", "enteredBib" => nil }, row)
+  end
+
+  CORRECT = <<~GQL
+    mutation($id: ID!, $bib: String!) { correctCaptureBib(captureId: $id, bib: $bib) { capture { bib enteredBib bibSource } errors } }
+  GQL
+
+  test "a timer corrects or adds the bib on their own crossing" do
+    sign_in(@timer, "1111")
+    id = gql(RECORD, eventId: @event.id, bib: "").dig("data", "recordCapture", "capture", "id")
+    data = gql(CORRECT, id:, bib: "101").dig("data", "correctCaptureBib")
+    assert_equal({ "bib" => "101", "enteredBib" => nil, "bibSource" => "DEVICE" }, data["capture"])
+    assert_equal ["Enter a bib (delete the crossing to take it back)"], gql(CORRECT, id:, bib: " ").dig("data", "correctCaptureBib", "errors")
+  end
+
+  test "an official's assignment wins and locks the timer's correction; other devices' crossings are refused" do
+    sign_in(@timer, "1111")
+    id = gql(RECORD, eventId: @event.id, bib: "").dig("data", "recordCapture", "capture", "id")
+    Ruling.create!(event: @event, kind: "assign_bib", payload: { "capture_id" => id, "bib" => "102" })
+    assert_equal ["An official assigned bib 102 to this crossing; change it in the review queue"],
+                 gql(CORRECT, id:, bib: "101").dig("data", "correctCaptureBib", "errors")
+    tablet = Capture.record!(device: create_device(event: @event), at_ms: 1, bib: "5")
+    assert_equal ["You can only change your own captures"], gql(CORRECT, id: tablet.id, bib: "6").dig("data", "correctCaptureBib", "errors")
+  end
+
   test "recording requires sign in" do
     body = gql(RECORD, eventId: @event.id, bib: "101")
     assert_equal "Sign in required", body["errors"].first["message"]

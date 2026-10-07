@@ -5,7 +5,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect } from "react";
 import { EVENT, STANDINGS, type EventData, type StandingsData } from "../queries";
-import { unassignedLabel } from "../races";
+import { unassignedLabels } from "../problems";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -57,13 +57,9 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
           />
         ))}
       </Box>
-      <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} labels={unassignedLabels(report)} canAct={canAct} onChanged={refresh} />
+      <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} labels={unassignedLabels(report)} canAct={canAct} onChanged={refresh}
+        raceNames={new Map(races.map((r) => [r.race.id, r.race.name]))}
+        racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
     </Box>
   );
-}
-
-// Readable lines for no-bib / unknown-bib crossings, keyed like their suggestions.
-function unassignedLabels(report: StandingsData["standings"] | undefined): Map<string, string> {
-  const starts = (report?.races ?? []).flatMap((r) => (r.startAtMs == null ? [] : [r.startAtMs]));
-  return new Map((report?.unassigned ?? []).map((u) => [`unassigned:${u.captureId}`, unassignedLabel(u, starts)]));
 }

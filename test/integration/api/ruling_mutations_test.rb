@@ -85,6 +85,15 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
     assert_equal({ "capture_id" => "loose", "bib" => "3" }, done.dig("ruling", "payload"))
   end
 
+  test "accepting a bib for a loose crossing refuses a bib nobody is registered under" do
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
+    record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")
+    refused = mutate("acceptSuggestion", "$id: ID!", 'eventId: $id, key: "unassigned:loose", bib: "999"', id: @event.id)
+    assert_equal ["Bib 999 is not registered in this event"], refused["errors"]
+    assert_equal 0, Ruling.where(kind: "assign_bib").count
+    assert_includes suggestion_keys, "unassigned:loose"
+  end
+
   test "dismissSuggestion hides it" do
     rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 100_000, bib: nil, id: "loose")

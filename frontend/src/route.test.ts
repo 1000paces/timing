@@ -49,3 +49,11 @@ describe("registration route", () => {
     expect(registrationHref(ID)).toBe(`/console/event/${ID}/registration`);
   });
 });
+
+describe("problems route", () => {
+  it("reads and builds the problems screen address", async () => {
+    const { problemsHref } = await import("./route");
+    expect(parseRoute(`/console/event/${ID}/problems`)).toEqual({ view: "problems", eventId: ID });
+    expect(problemsHref(ID)).toBe(`/console/event/${ID}/problems`);
+  });
+});

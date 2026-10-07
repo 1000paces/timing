@@ -1,7 +1,9 @@
-# A crossing's lap as the capture screen shows it: how many captures that bib
-# has (from every device) since its race's current start, up to and including
-# this one. Raw taps, no debounce; voided (deleted) captures don't count.
-# Results has the official count.
+# A crossing as the capture screen shows it. Its bib is the resolved one: an
+# official's assign_bib ruling, else the device's later bib entry, else what was
+# typed (the results engine's order). Its lap is how many captures that bib has
+# (from every device) since its race's current start, up to and including this
+# one. Raw taps, no debounce; voided (deleted) captures don't count. Results has
+# the official count.
 #
 # Each lap after the first is compared with the race's typical lap (the median
 # of its other laps after lap 1): roughly double is a suspected missed lap,
@@ -21,13 +23,27 @@ class CaptureLaps
     Results::ActiveRulings.new(rulings).of("void_capture").to_set { it.payload["capture_id"] }
   end
 
+  # capture id => bib from the latest active assign_bib ruling (reverts applied).
+  def self.assigned_bibs(event)
+    rulings = Ruling.where(event:, kind: %w[assign_bib revert])
+                    .map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
+    Results::ActiveRulings.new(rulings).latest_by("assign_bib") { it.payload["capture_id"] }.transform_values { it.payload["bib"].to_s }
+  end
+
   def initialize(event)
     @voided = self.class.voided_ids(event)
     starts = StandingsService.report(event).output.races.to_h { [it.race_id, it.start_at_ms] }
     race_by_bib = event.registrations.pluck(:bib, :race_id).to_h
     @start_by_bib = race_by_bib.transform_values { starts[it] }.compact
-    captures = Capture.where(event:, bib: @start_by_bib.keys).where.not(id: @voided.to_a).order(:captured_at_ms, :id)
-                      .pluck(:bib, :captured_at_ms, :id)
+    device_bibs = BibAssignment.where(event:).order(:device_seq).pluck(:capture_id, :bib).to_h
+    assigned = self.class.assigned_bibs(event)
+    @sources = {}
+    @bibs = Capture.where(event:).pluck(:id, :bib).to_h do |id, bib|
+      @sources[id] = assigned[id] ? :ruling : device_bibs[id] ? :device : :entered
+      [id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence]
+    end
+    captures = Capture.where(event:).where.not(id: @voided.to_a).order(:captured_at_ms, :id).pluck(:id, :captured_at_ms)
+                      .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [bib, at, id] }
     @info = {}
     laps_by_race = Hash.new { |h, k| h[k] = [] }
     captures.group_by(&:first).each do |bib, rows|
@@ -43,6 +59,11 @@ class CaptureLaps
   end
 
   def lap(capture) = info(capture).lap
+
+  def bib(capture) = @bibs.fetch(capture.id) { capture.bib }
+
+  # Where the shown bib comes from: :ruling (an official), :device (a later entry) or :entered.
+  def bib_source(capture) = @sources.fetch(capture.id, :entered)
 
   def voided?(capture) = @voided.include?(capture.id)
 

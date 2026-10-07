@@ -51,7 +51,7 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await expect(page.getByRole("row").filter({ hasText: "Novice Open" })).toContainText("Started");
 
   // Editing a started race without touching its start keeps the recorded start.
-  await page.getByRole("tab", { name: "Setup" }).click();
+  await page.getByRole("tab", { name: "Event" }).click();
   const novice = page.getByRole("row").filter({ hasText: "Novice Open" });
   const startedCell = novice.getByRole("cell").nth(6);
   await expect(startedCell).not.toHaveText("—");

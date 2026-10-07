@@ -19,4 +19,11 @@ class CaptureRecordTest < ActiveSupport::TestCase
   test "a blank bib is stored as no bib" do
     assert_nil Capture.record!(device: @device, at_ms: 1_000, bib: "  ").bib
   end
+
+  test "a later bib entry is appended to the device's log, chained, and becomes the shown bib" do
+    capture = Capture.record!(device: @device, at_ms: 1_000, bib: "999")
+    entry = BibAssignment.record!(capture:, bib: " 101 ")
+    assert_equal [2, capture.entry_hash, "101", capture], [entry.device_seq, entry.prev_hash, entry.bib, entry.capture]
+    assert_equal "101", CaptureLaps.new(@event).bib(capture)
+  end
 end

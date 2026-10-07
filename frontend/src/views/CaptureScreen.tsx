@@ -4,6 +4,8 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -12,12 +14,13 @@ import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatClock, formatElapsed } from "../format";
-import { CAPTURE_SCREEN, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
+import { CAPTURE_SCREEN, CORRECT_CAPTURE_BIB, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
 import { isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -54,7 +57,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
   }
 
   const raceNames = new Map(event.races.map((r) => [r.id, r.name]));
-  const racers = new Map(event.registrations.map((r) => [r.bib, `${r.racer.firstName} ${r.racer.lastName} · ${raceNames.get(r.raceId) ?? ""}`]));
+  const racers = new Map(event.registrations.map((r) => [r.bib, { name: `${r.racer.firstName} ${r.racer.lastName}`, race: raceNames.get(r.raceId) ?? "" }]));
 
   // Each Enter is sent at once (no waiting on the previous one), so fast typing
   // doesn't delay the next crossing's hub time.
@@ -111,12 +114,29 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           {event.myCaptures.map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
-              <Typography sx={{ fontWeight: "bold", width: 80, textAlign: "center" }}>{c.bib ?? "—"}</Typography>
-              <Typography sx={{ width: 70 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
-              <Typography sx={{ flex: 1 }} color={c.bib && racers.has(c.bib) ? "text.primary" : "warning.main"}>
-                {c.bib ? (racers.get(c.bib) ?? "unknown bib") : "no bib"}
-              </Typography>
-              <LapWarning capture={c} />
+              <Box sx={{ width: 110, textAlign: "center" }}>
+                <CaptureBib capture={c} onChanged={refresh} />
+                {c.enteredBib !== c.bib && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.1 }}>
+                    entered: {c.enteredBib ?? "no bib"}
+                  </Typography>
+                )}
+              </Box>
+              <Typography sx={{ width: 60 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {c.bib && racers.has(c.bib) && (
+                  <>
+                    <Typography noWrap>{racers.get(c.bib)!.name}</Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>{racers.get(c.bib)!.race}</Typography>
+                  </>
+                )}
+              </Box>
+              <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                {(!c.bib || !racers.has(c.bib)) && (
+                  <Chip data-testid="bib-problem" size="small" color="error" label={c.bib ? "Unknown bib" : "No bib"} />
+                )}
+                <LapWarning capture={c} />
+              </Stack>
               <IconButton aria-label="Delete capture" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleting(c)}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
@@ -153,12 +173,70 @@ const FLAG: Record<LapFlag, { label: string; hint: string }> = {
 function LapWarning({ capture }: { capture: CaptureRow }) {
   if (!capture.lapFlag || capture.lapMs == null || capture.typicalLapMs == null) return null;
   const { label, hint } = FLAG[capture.lapFlag];
+  const lap = formatElapsed(capture.lapMs);
+  const typical = formatElapsed(capture.typicalLapMs);
   return (
-    <Tooltip title={hint}>
-      <Typography data-testid="lap-warning" color="warning.main" sx={{ display: "flex", alignItems: "center", gap: 0.5, whiteSpace: "nowrap" }}>
-        <WarningAmberIcon fontSize="small" />
-        {label} {formatElapsed(capture.lapMs)} (typical {formatElapsed(capture.typicalLapMs)})
-      </Typography>
+    <Tooltip title={`Typical lap ${typical}. ${hint}`}>
+      <Chip data-testid="lap-warning" size="small" color="warning" icon={<WarningAmberIcon />} label={`${label} ${lap}`}
+        aria-label={`${label} ${lap}, typical ${typical}`} />
+    </Tooltip>
+  );
+}
+
+// The crossing's bib; click it to correct or add one: Enter or Tab saves,
+// Escape cancels. Locked when an official assigned the bib in the review queue.
+function CaptureBib({ capture, onChanged }: { capture: CaptureRow; onChanged: () => void }) {
+  const [correct] = useMutation<{ correctCaptureBib: { errors: string[] } }>(CORRECT_CAPTURE_BIB);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const saving = useRef(false);
+  const locked = capture.bibSource === "RULING";
+
+  function open() {
+    setValue(capture.bib ?? "");
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save() {
+    if (saving.current) return;
+    if (value.trim() === (capture.bib ?? "")) return setEditing(false);
+    saving.current = true;
+    try {
+      const errors = (await correct({ variables: { captureId: capture.id, bib: value } })).data?.correctCaptureBib.errors ?? [];
+      if (errors.length) setError(errors.join("; "));
+      else {
+        setEditing(false);
+        onChanged();
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      saving.current = false;
+    }
+  }
+
+  if (editing) {
+    return (
+      <TextField size="small" autoFocus value={value} onChange={(e) => setValue(e.target.value)} error={error != null} helperText={error}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void save();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        onBlur={() => void save()}
+        slotProps={{ htmlInput: { "aria-label": "Bib for crossing", inputMode: "numeric", style: { textAlign: "center", fontWeight: "bold" } } }}
+        sx={{ width: 100 }} />
+    );
+  }
+  return (
+    <Tooltip title={locked ? "An official assigned this bib; change it in the review queue" : capture.bib ? "Click to correct the bib" : "Click to add a bib"}>
+      <span>
+        <ButtonBase aria-label="Edit bib" disabled={locked} onClick={open}
+          sx={{ px: 1, borderRadius: 1, minWidth: 48, "&:hover": { bgcolor: "action.hover" } }}>
+          <Typography sx={{ fontWeight: "bold" }}>{capture.bib ?? "—"}</Typography>
+        </ButtonBase>
+      </span>
     </Tooltip>
   );
 }

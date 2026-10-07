@@ -65,4 +65,22 @@ class CaptureLapsTest < ActiveSupport::TestCase
     Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => void.id })
     assert_equal 3, CaptureLaps.new(@event).lap(later)
   end
+
+  test "the bib shown is an official's assignment, else the device's later entry, else what was typed; laps follow it" do
+    first = Capture.record!(device: @tablet, at_ms: 70_000, bib: "101")
+    loose = Capture.record!(device: @tablet, at_ms: 130_000, bib: nil)
+    typo = Capture.record!(device: @tablet, at_ms: 190_000, bib: "999")
+    BibAssignment.create!(event: @event, device: @tablet, capture: typo, bib: "101", device_seq: 4, prev_hash: "x", entry_hash: "y")
+    laps = CaptureLaps.new(@event)
+    assert_equal ["101", nil, "101"], [first, loose, typo].map { laps.bib(it) }
+    assert_equal [1, nil, 2], [first, loose, typo].map { laps.lap(it) }
+
+    assign = Ruling.create!(event: @event, kind: "assign_bib", payload: { "capture_id" => loose.id, "bib" => "101" })
+    laps = CaptureLaps.new(@event)
+    assert_equal ["101", "101", "101"], [first, loose, typo].map { laps.bib(it) }
+    assert_equal [1, 2, 3], [first, loose, typo].map { laps.lap(it) }
+
+    Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => assign.id })
+    assert_nil CaptureLaps.new(@event).bib(loose)
+  end
 end

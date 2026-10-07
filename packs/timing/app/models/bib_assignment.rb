@@ -5,6 +5,12 @@ class BibAssignment < DeviceEntry
   validates :bib, presence: true
   validate :same_device_as_capture
 
+  # A later bib for one of a hub-side device's own crossings (a correction).
+  def self.record!(capture:, bib:)
+    bib = bib.to_s.strip
+    append!(device: capture.device, hash_parts: [capture.id, bib], capture:, bib:)
+  end
+
   private
 
   def same_device_as_capture

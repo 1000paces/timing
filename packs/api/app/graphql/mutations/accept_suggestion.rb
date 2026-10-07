@@ -18,6 +18,10 @@ module Mutations
         fix = SuggestionFix.complete(suggestion.fix, capture_id:, bib:)
         missing = SuggestionFix.missing(fix)
         next refuse("Provide #{missing.join(' and ')} to accept this suggestion") if missing.any?
+        # Assigning a number nobody is registered under would only trade this problem for an Unknown Racer.
+        if fix["kind"] == "assign_bib" && !event.registrations.exists?(bib: fix["bib"].to_s.strip)
+          next refuse("Bib #{fix['bib']} is not registered in this event")
+        end
         record(event:, kind: fix["kind"], payload: fix.except("kind"))
       end
     end
