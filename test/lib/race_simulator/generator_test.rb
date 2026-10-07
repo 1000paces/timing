@@ -11,7 +11,7 @@ class RaceSimulator::GeneratorTest < ActiveSupport::TestCase
     refute_equal generate, RaceSimulator::Generator.new(races: RACES, laps: 5, seed: 8).call
   end
 
-  test "every rider finishes on their first crossing once the leader completes the laps" do
+  test "every racer finishes on their first crossing once the leader completes the laps" do
     truths = generate
     leader_finish = truths.filter_map { it.crossings_ms[4] }.min
     truths.each do |t|
@@ -22,7 +22,7 @@ class RaceSimulator::GeneratorTest < ActiveSupport::TestCase
     assert_equal 5, truths.map { it.crossings_ms.size }.max
   end
 
-  test "untagged taps are never a rider's first or last crossing and are spread out" do
+  test "untagged taps are never a racer's first or last crossing and are spread out" do
     truths = generate(untagged_rate: 1.0)
     picked = truths.flat_map { |t| t.untagged.map { [t, it] } }
     assert_operator picked.size, :>=, 3

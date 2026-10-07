@@ -7,11 +7,11 @@ module BuildHelpers
     Race.create!({ event:, category: "Cat 3", gender: "men", scheduled_at_ms: RACE_SCHEDULED_AT_MS }.merge(attrs))
   end
 
-  def create_rider(**attrs)
-    Rider.create!({ first_name: "Ada", last_name: "Rider", gender: "M", birth_date: Date.new(1985, 6, 1), ability_level: "Cat 3" }.merge(attrs))
+  def create_racer(**attrs)
+    Racer.create!({ first_name: "Ada", last_name: "Racer", gender: "M", birth_date: Date.new(1985, 6, 1) }.merge(attrs))
   end
 
-  def register(race:, bib:, rider: create_rider) = Registration.create!(race:, rider:, bib:)
+  def register(race:, bib:, racer: create_racer) = Registration.create!(race:, racer:, bib:)
 
   def create_device(event:, name: "Tablet 1")
     Device.create!(event:, name:, paired_at_ms: 0, credential_digest: "test-digest")

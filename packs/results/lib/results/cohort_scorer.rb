@@ -7,8 +7,8 @@ module Results
   class CohortScorer
     STATUS_KINDS = %w[dnf dns dsq].freeze
 
-    RiderState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at)
-    Scored = Data.define(:races, :lap_count, :finish_open_at, :riders, :race_results)
+    RacerState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at)
+    Scored = Data.define(:races, :lap_count, :finish_open_at, :racers, :race_results)
 
     def initialize(input, races, resolved)
       @input = input
@@ -29,18 +29,18 @@ module Results
       crossings = entrants.to_h { |e| [e.bib, post_start(e, starts[e.race_id])] }
       lap_count = resolve_lap_count
       finish_open_at = lap_count && crossings.values.filter_map { it[lap_count - 1] }.min_by { [it.at_ms, it.ref] }&.at_ms
-      riders = entrants.map { |e| rider_state(e, starts[e.race_id], crossings[e.bib], finish_open_at) }
+      racers = entrants.map { |e| racer_state(e, starts[e.race_id], crossings[e.bib], finish_open_at) }
 
       race_results = races.map do |race|
         state = if starts[race.id].nil? then :not_started
                 elsif finish_open_at then :finish_open
                 else :in_progress
                 end
-        rows = Standings.rows(riders.select { it.entrant.race_id == race.id })
+        rows = Standings.rows(racers.select { it.entrant.race_id == race.id })
         RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
                        start_at_ms: starts[race.id])
       end
-      Scored.new(races:, lap_count:, finish_open_at:, riders:, race_results:)
+      Scored.new(races:, lap_count:, finish_open_at:, racers:, race_results:)
     end
 
     private
@@ -71,7 +71,7 @@ module Results
       @resolved.crossings_by_bib.fetch(entrant.bib, []).select { it.at_ms >= start }
     end
 
-    def rider_state(entrant, start, crossings, finish_open_at)
+    def racer_state(entrant, start, crossings, finish_open_at)
       finish = finish_crossing(entrant.bib, crossings, finish_open_at)
       pull_at = @pulls[entrant.bib]&.payload&.fetch("at_ms")
       pull_at = nil if pull_at && finish && finish.at_ms <= pull_at # a pull at/after the finish does not undo it
@@ -84,11 +84,11 @@ module Results
                 elsif finish then crossings[0..crossings.index(finish)]
                 else crossings
                 end
-      RiderState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:)
+      RacerState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:)
     end
 
     # Earliest of: the flagged crossing (early checkered flag) and the first
-    # crossing once the finish is open. A flag on a crossing this rider no longer
+    # crossing once the finish is open. A flag on a crossing this racer no longer
     # has (voided or reassigned) is ignored.
     def finish_crossing(bib, crossings, finish_open_at)
       flag_ref = @flags[bib]&.payload&.fetch("capture_id")

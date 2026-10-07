@@ -85,7 +85,7 @@ class StandingsTest < Minitest::Test
     assert_equal [110_000, 110_000, 120_000], second.lap_times_ms
   end
 
-  def test_statuses_rank_after_placed_riders_without_places
+  def test_statuses_rank_after_placed_racers_without_places
     out = compute(<<~YAML, bibs: [1, 2, 3, 4])
       crossings:
         1: [100, 200, 300]

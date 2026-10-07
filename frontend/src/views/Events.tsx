@@ -75,7 +75,7 @@ function NewEventDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (list && !value) {
       const first = list[0];
-      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader });
+      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader, ageNextYear: first.ageNextYear });
     }
   }, [list, value]);
 

@@ -4,7 +4,7 @@ class RaceSimulator::TableTest < ActiveSupport::TestCase
   test "renders each race as a text table" do
     event = create_event
     race = create_race(event:, category: nil, gender: "women", name_override: "Women Open", expected_laps: 3)
-    register(race:, bib: "301", rider: create_rider(first_name: "Ann", last_name: "Lee", gender: "F"))
+    register(race:, bib: "301", racer: create_racer(first_name: "Ann", last_name: "Lee", gender: "F"))
     rule(event:, kind: "set_race_start", race_id: race.id, at_ms: 0)
     record_capture(device: create_device(event:), seq: 1, at_ms: 61_500, bib: "301")
     text = RaceSimulator::Table.render(StandingsService.report(event, now_ms: 100_000))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortRaces, unassignedLabel } from "./races";
+import { sortRaces, statusLabel, unassignedLabel } from "./races";
 
 describe("sortRaces", () => {
   it("orders by scheduled start time, then race name; unscheduled races last", () => {
@@ -44,10 +44,16 @@ describe("unassignedLabel", () => {
 
   it("shows time of day and elapsed since the latest start before the crossing", () => {
     expect(unassignedLabel({ bib: null, atMs: at(10, 23, 30) }, starts)).toBe("No bib · 10:23:30 · +23:00.0");
-    expect(unassignedLabel({ bib: "400", atMs: at(11, 5, 0) }, starts)).toBe("Unknown rider: bib 400 · 11:05:00 · +5:00.0");
+    expect(unassignedLabel({ bib: "400", atMs: at(11, 5, 0) }, starts)).toBe("Unknown racer: bib 400 · 11:05:00 · +5:00.0");
   });
 
   it("omits elapsed before any start", () => {
     expect(unassignedLabel({ bib: null, atMs: at(9, 0, 0) }, starts)).toBe("No bib · 09:00:00");
+  });
+});
+
+describe("statusLabel", () => {
+  it("capitalises racing statuses and keeps official ones upper case", () => {
+    expect(["FINISHED", "RACING", "PULLED", "DNF", "DNS", "DSQ"].map(statusLabel)).toEqual(["Finished", "Racing", "Pulled", "DNF", "DNS", "DSQ"]);
   });
 });

@@ -60,7 +60,7 @@ module Results
           RaceDef.new(id: it["id"], scheduled_at_ms: ms.(it.fetch("scheduled", 0)), finish_with_leader: it.fetch("fwl", true),
                       expected_laps: it["laps"])
         end,
-        entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Rider #{it['bib']}")) },
+        entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Racer #{it['bib']}")) },
         captures:, bib_assignments: assignments, rulings:, now_ms: ms.(data.fetch("now", 0))
       )
       [input, data["expect"] || {}]

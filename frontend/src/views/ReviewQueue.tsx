@@ -68,7 +68,8 @@ function SuggestionItem({ eventId, suggestion, label, canAct, onChanged }: { eve
       {canAct && (
         <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
           {needsBib && (
-            <TextField label="Bib" size="small" value={bib} onChange={(e) => setBib(e.target.value)} sx={{ width: 90 }} />
+            <TextField label="Bib" size="small" value={bib} onChange={(e) => setBib(e.target.value)} sx={{ width: 90 }}
+              slotProps={{ htmlInput: { style: { textAlign: "center" } } }} />
           )}
           {!needsCrossing && (
             <Button size="small" variant="contained" onClick={onAccept} disabled={busy || (needsBib && !bib.trim())}>

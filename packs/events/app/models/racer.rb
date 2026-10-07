@@ -1,4 +1,4 @@
-class Rider < ApplicationRecord
+class Racer < ApplicationRecord
   GENDERS = %w[M F X].freeze
 
   has_many :registrations, dependent: :restrict_with_error

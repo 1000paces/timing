@@ -38,9 +38,26 @@ export function cohortLapWarnings(races: CohortRace[]): string[] {
 // A review-queue line for a crossing with no bib or an unregistered one: its
 // time of day, and how long after the latest race start before it.
 export function unassignedLabel(item: { bib: string | null; atMs: number }, startsMs: number[]): string {
-  const what = item.bib ? `Unknown rider: bib ${item.bib}` : "No bib";
+  const what = item.bib ? `Unknown racer: bib ${item.bib}` : "No bib";
   const start = Math.max(...startsMs.filter((s) => s <= item.atMs));
   const parts = [what, formatClock(item.atMs)];
   if (Number.isFinite(start)) parts.push(`+${formatElapsed(item.atMs - start)}`);
   return parts.join(" · ");
 }
+
+const STATUS_LABEL: Record<string, string> = { FINISHED: "Finished", RACING: "Racing", PULLED: "Pulled" };
+
+// Racing statuses in title case; official ones (DNF, DNS, DSQ) stay upper case.
+export function statusLabel(status: string): string {
+  return STATUS_LABEL[status] ?? status;
+}
+
+// Chip colours for statuses: finished green, official outcomes red/amber.
+export const STATUS_COLOR: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
+  FINISHED: "success",
+  RACING: "info",
+  PULLED: "default",
+  DNF: "warning",
+  DNS: "default",
+  DSQ: "error",
+};

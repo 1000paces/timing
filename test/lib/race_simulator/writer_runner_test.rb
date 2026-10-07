@@ -2,7 +2,7 @@ require "test_helper"
 
 class RaceSimulator::WriterRunnerTest < ActiveSupport::TestCase
   setup do
-    @event = RaceSimulator::Demo.create!(riders_per_race: 3)
+    @event = RaceSimulator::Demo.create!(racers_per_race: 3)
   end
 
   test "demo event is a cyclocross event with three races scheduled together" do

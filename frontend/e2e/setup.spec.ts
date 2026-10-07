@@ -28,6 +28,7 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await create.getByLabel("Location").fill("River Park");
   await create.getByLabel("Discipline").selectOption("cyclocross");
   await expect(create.getByLabel("Finish with leader")).toBeChecked();
+  await expect(create.getByLabel("Age as of next year (cross season)")).toBeChecked();
   await create.getByRole("button", { name: "Create" }).click();
   await expect(page).toHaveURL(/\/console\/event\/[0-9a-f-]+\/setup$/);
 
@@ -52,13 +53,20 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   // Editing a started race without touching its start keeps the recorded start.
   await page.getByRole("tab", { name: "Setup" }).click();
   const novice = page.getByRole("row").filter({ hasText: "Novice Open" });
-  const startedCell = novice.getByRole("cell").nth(5);
+  const startedCell = novice.getByRole("cell").nth(6);
   await expect(startedCell).not.toHaveText("—");
   const recorded = await startedCell.textContent();
-  await novice.getByRole("button", { name: "Edit" }).click();
+  await novice.getByRole("button", { name: "Edit Novice Open" }).click();
   await page.getByRole("dialog").getByLabel("Expected duration (minutes)").fill("40");
+  await page.getByRole("dialog").getByLabel("First bib").fill("300");
+  await page.getByRole("dialog").getByLabel("Last bib").fill("399");
   await page.getByRole("dialog").getByRole("button", { name: "Save" }).click();
   await expect(novice).toContainText("40 min");
+  const bibRange = novice.getByRole("cell").nth(4);
+  await expect(bibRange).toHaveText("300–399");
+  await expect(bibRange).toHaveCSS("text-align", "center");
+  await expect(novice.getByRole("button", { name: "Delete Novice Open" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
   await expect(startedCell).toHaveText(recorded!);
 
   // Review Focus 1/5: laps set on one finish-with-leader race apply to its cohort only.

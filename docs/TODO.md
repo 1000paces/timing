@@ -47,21 +47,13 @@ Items deliberately deferred. Each has enough context to pick up cold.
 
 ## Events & eligibility
 
-### Cyclocross racing age (season spans two calendar years)
-- **Need:** CX seasons run through the winter (autumn into the following year), so
-  CX racing age is the rider's age on **Dec 31 of the following year** — i.e.
-  one year older than road racing age for autumn races.
-- **Today:** `Event#age_rule` supports `racing_age_dec31` (age on Dec 31 of the
-  event's year) and `age_on_event_date`. Neither gives CX age for an October race.
-- **Proposed:** add an age rule (e.g. `cx_racing_age`) that uses Dec 31 of the
-  *season's* end year. Simplest: for events dated Sep–Dec, use Dec 31 of the next
-  year; for Jan–Feb events, use Dec 31 of the event's own year (both = the season's
-  end year). Possibly configure the season boundary per organisation instead of
-  hard-coding months.
-- **Where:** `packs/events/app/models/event.rb` (`AGE_RULES`, `#age_of`),
-  eligibility warnings (`Eligibility.warnings`), CSV import and setup UI
-  (choose the rule per event), spec §3.1.
-- **Raised:** 2026-10-02.
+### Cyclocross racing age: January–February events
+- **Done (2026-10-06):** events have "Age as of next year (cross season)", on by
+  default for cyclocross; racing age is then as of Dec 31 of the following year.
+- **Left:** a CX event in Jan–Feb belongs to the season that started the autumn
+  before, so its age should be as of Dec 31 of the event's own year — today the
+  official has to untick the setting for those. Could default it from the event
+  date (Sep–Dec → next year; Jan–Aug → this year).
 
 ## Hub operations & hardening
 
@@ -149,3 +141,18 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Date/time fields use the browser's time zone, not the event's `timezone`.
 - Browser test for "a finish-with-leader-off race finishes on its own leader"
   (engine tests cover it; the e2e only checks lap counts per cohort).
+
+### Registration (out of scope for the first slice, 2026-10-06)
+- Starts tab: show "N of M checked in" per race before starting a wave.
+- Suggest DNS in the review queue for riders who never checked in and have no captures.
+- Assign bibs only to checked-in riders (option).
+- Import BikeReg's public "Who's Registered" list format.
+- Registration export (CSV).
+- Presets for other registration sources (USAC, RaceRoster, …) beyond the recognised header names.
+- Chip / tag numbers on registrations (for chip timing).
+- Registration review minors (2026-10-06):
+  - show "not in file" in the import preview, not only after importing;
+  - a returning rider's first import into a new event keeps last event's team/city/state (applied on the next re-import);
+  - a row with no category says "category  is not mapped" — say "no category";
+  - "License number has already been taken" should name the rider who holds it;
+  - the import dialog's file analysis has no error handling for network/sign-out errors.

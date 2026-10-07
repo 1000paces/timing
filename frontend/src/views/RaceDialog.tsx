@@ -17,14 +17,15 @@ type Props = {
   race: RaceInfo | null; // null = new race
   startAtMs: number | null;
   canSetStart: boolean;
-  onClose: (saved: boolean) => void;
+  suggestedName?: string; // pre-fills Name for a new race (e.g. an imported category)
+  onClose: (saved: boolean, raceId?: string) => void;
 };
 
 const blank = (s: string) => (s.trim() ? s.trim() : null);
 const num = (s: string) => (s.trim() ? Number(s) : null);
 
-export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: Props) {
-  const [createRace] = useMutation<{ createRace: MutationResult }>(CREATE_RACE);
+export function RaceDialog({ eventId, race, startAtMs, canSetStart, suggestedName, onClose }: Props) {
+  const [createRace] = useMutation<{ createRace: MutationResult & { race: { id: string } | null } }>(CREATE_RACE);
   const [updateRace] = useMutation<{ updateRace: MutationResult }>(UPDATE_RACE);
   const [setRaceStart] = useMutation<{ setRaceStart: MutationResult }>(SET_RACE_START);
   const [category, setCategory] = useState(race?.category ?? "");
@@ -32,7 +33,9 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
   const [ageMin, setAgeMin] = useState(race?.ageMin?.toString() ?? "");
   const [ageMax, setAgeMax] = useState(race?.ageMax?.toString() ?? "");
   const [gender, setGender] = useState(race?.gender ?? "men");
-  const [name, setName] = useState(race?.nameOverride ?? "");
+  const [name, setName] = useState(race?.nameOverride ?? suggestedName ?? "");
+  const [bibFrom, setBibFrom] = useState(race?.bibFrom?.toString() ?? "");
+  const [bibTo, setBibTo] = useState(race?.bibTo?.toString() ?? "");
   const [scheduled, setScheduled] = useState(toLocalInput(race?.scheduledAtMs));
   const [minutes, setMinutes] = useState(race?.expectedDurationMs ? String(race.expectedDurationMs / 60_000) : "");
   const [laps, setLaps] = useState(race?.expectedLaps?.toString() ?? "");
@@ -55,19 +58,26 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
       expectedDurationMs: minutes.trim() ? Math.round(Number(minutes) * 60_000) : null,
       expectedLaps: num(laps),
       finishWithLeader: fwl === "inherit" ? null : fwl === "on",
+      bibFrom: num(bibFrom),
+      bibTo: num(bibTo),
     };
     try {
       if (fields.scheduledAtMs == null) throw new Error("Scheduled start is required");
-      const result = race
-        ? (await updateRace({ variables: { id: race.id, ...fields } })).data?.updateRace
-        : (await createRace({ variables: { eventId, ...fields } })).data?.createRace;
+      let createdId: string | undefined;
+      let result: MutationResult | undefined;
+      if (race) result = (await updateRace({ variables: { id: race.id, ...fields } })).data?.updateRace;
+      else {
+        const created = (await createRace({ variables: { eventId, ...fields } })).data?.createRace;
+        createdId = created?.race?.id;
+        result = created;
+      }
       const problems = result?.errors ?? [];
       const startMs = startCorrection(start, startAtMs);
       if (!problems.length && race && canSetStart && startMs != null) {
         problems.push(...((await setRaceStart({ variables: { raceId: race.id, atMs: startMs } })).data?.setRaceStart.errors ?? []));
       }
       if (problems.length) setErrors(problems);
-      else onClose(true);
+      else onClose(true, createdId ?? race?.id);
     } catch (e) {
       setErrors([(e as Error).message]);
     } finally {
@@ -107,6 +117,13 @@ export function RaceDialog({ eventId, race, startAtMs, canSetStart, onClose }: P
               <option value="on">On</option>
               <option value="off">Off</option>
             </TextField>
+          </Stack>
+          <Stack direction="row" spacing={2}>
+            <TextField label="First bib" type="number" value={bibFrom} onChange={(e) => setBibFrom(e.target.value)} fullWidth
+              slotProps={{ htmlInput: { style: { textAlign: "center" } } }} />
+            <TextField label="Last bib" type="number" value={bibTo} onChange={(e) => setBibTo(e.target.value)} fullWidth
+              slotProps={{ htmlInput: { style: { textAlign: "center" } } }}
+              helperText="Optional; races without a range use the event's" />
           </Stack>
           {race && canSetStart && (
             <TextField label="Start time" type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)}

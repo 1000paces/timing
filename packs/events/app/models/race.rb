@@ -2,8 +2,10 @@ class Race < ApplicationRecord
   GENDERS = { "men" => "Men", "women" => "Women", "open" => "Open" }.freeze
 
   include BroadcastsEventChange
+  include BibRange
   belongs_to :event
   has_many :registrations, dependent: :restrict_with_error
+  has_many :category_mappings, dependent: :destroy
 
   attribute :gender, default: nil
   attribute :scheduled_at_ms, default: nil # keep the bigint column type; no 0 default
@@ -22,6 +24,9 @@ class Race < ApplicationRecord
   def default_name = [category, age_group, GENDERS[gender]].compact.join(" ")
   def name = name_override || default_name
 
+  # This race's own range, else the event's.
+  def bib_range = own_bib_range || event.own_bib_range
+
   def effective_finish_with_leader = finish_with_leader.nil? ? event.finish_with_leader : finish_with_leader
 
   # The races that finish together with this one: finish-with-leader races at
@@ -32,6 +37,12 @@ class Race < ApplicationRecord
   end
 
   private
+
+  def other_bib_ranges
+    return [] unless event
+    others = event.races.where.not(id:).filter_map { |race| [race.name, race.own_bib_range] if race.own_bib_range }
+    event.own_bib_range ? others << ["the event range", event.own_bib_range] : others
+  end
 
   def ages_ordered
     errors.add(:age_max, "must be greater than or equal to the minimum age") if age_min && age_max && age_max < age_min

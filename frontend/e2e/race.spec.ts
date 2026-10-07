@@ -48,6 +48,8 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await page.reload();
   await expect(row("Masters 35+ Men")).toContainText("Started");
 
+  await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+
   // Wave 2, started by mistake, then unstarted and started again.
   await page.getByRole("checkbox", { name: "Select Women Open" }).check();
   await start.click();
@@ -87,7 +89,26 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   }
 
   await expect(page.getByTestId("suggestion")).toHaveCount(0, { timeout: 20_000 });
-  const statuses = page.getByTestId("rider-status");
+  const statuses = page.getByTestId("racer-status");
   await expect(statuses).toHaveCount(12);
-  await expect(statuses.filter({ hasNotText: "finished" })).toHaveCount(0);
+  await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
+
+  // A chief marks a racer DNF from the Results row menu, then clears it.
+  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  await page.getByRole("menuitem", { name: "Mark DNF" }).click();
+  const dnfRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DNF" }) });
+  await expect(dnfRow).toHaveCount(1);
+  await dnfRow.getByRole("button", { name: /^Status actions for / }).click();
+  await page.getByRole("menuitem", { name: "Clear DNF" }).click();
+  await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(0);
+
+  // DSQ the same way.
+  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  await page.getByRole("menuitem", { name: "Mark DSQ" }).click();
+  const dsqRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DSQ" }) });
+  await expect(dsqRow).toHaveCount(1);
+  await dsqRow.getByRole("button", { name: /^Status actions for / }).click();
+  await page.getByRole("menuitem", { name: "Clear DSQ" }).click();
+  await expect(statuses.filter({ hasText: "DSQ" })).toHaveCount(0);
+  await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
 });

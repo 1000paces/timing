@@ -9,11 +9,11 @@ module Results
       (sorted.size.odd? ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2.0).to_f
     end
 
-    def self.segments_for(rider)
-      return [] unless rider.race_start
+    def self.segments_for(racer)
+      return [] unless racer.race_start
       prev_ref = "start"
-      prev_at = rider.race_start
-      rider.counted.each_with_index.map do |c, i|
+      prev_at = racer.race_start
+      racer.counted.each_with_index.map do |c, i|
         seg = Segment.new(index: i + 1, from_ref: prev_ref, from_at: prev_at, to: c, ms: c.at_ms - prev_at)
         prev_ref = c.ref
         prev_at = c.at_ms
@@ -23,8 +23,8 @@ module Results
 
     # Typical lap times for one race (see spec §4.4 "Reference lap time").
     class RaceLaps
-      def initialize(riders)
-        @segments = riders.to_h { [it.entrant.bib, Anomalies.segments_for(it)] }
+      def initialize(racers)
+        @segments = racers.to_h { [it.entrant.bib, Anomalies.segments_for(it)] }
       end
 
       def segments(bib) = @segments.fetch(bib)
@@ -76,14 +76,14 @@ module Results
 
     def lap_suggestions
       @cohorts.flat_map do |cohort|
-        cohort.riders.group_by { it.entrant.race_id }.flat_map do |race_id, riders|
-          laps = RaceLaps.new(riders)
-          riders.flat_map { |r| rider_lap_suggestions(r.entrant.bib, race_id, laps) }
+        cohort.racers.group_by { it.entrant.race_id }.flat_map do |race_id, racers|
+          laps = RaceLaps.new(racers)
+          racers.flat_map { |r| racer_lap_suggestions(r.entrant.bib, race_id, laps) }
         end
       end
     end
 
-    def rider_lap_suggestions(bib, race_id, laps)
+    def racer_lap_suggestions(bib, race_id, laps)
       own = laps.segments(bib)
       own.filter_map do |seg|
         ref = laps.typical(bib, seg.index, [seg.index])
@@ -128,7 +128,7 @@ module Results
 
     def lapping_suggestions
       @cohorts.reject(&:finish_open_at).flat_map do |cohort|
-        racing = cohort.riders.select { it.status == :racing && it.counted.any? }
+        racing = cohort.racers.select { it.status == :racing && it.counted.any? }
         leader = racing.min_by { [-it.counted.size, it.counted.last.at_ms, it.counted.last.ref] }
         next [] unless leader
         lead_ref = lap_ref(leader)
@@ -136,25 +136,25 @@ module Results
       end
     end
 
-    def lap_ref(rider)
-      segs = Anomalies.segments_for(rider)
+    def lap_ref(racer)
+      segs = Anomalies.segments_for(racer)
       later = segs.select { it.index >= 2 }.map(&:ms)
       later.any? ? Anomalies.median(later) : segs.first.ms.to_f
     end
 
-    # Projects both riders forward at their typical pace; flags the rider if the
+    # Projects both racers forward at their typical pace; flags the racer if the
     # leader gains another whole lap on them before their next crossing.
-    def lapping(leader, lead_ref, rider)
-      ref = lap_ref(rider)
+    def lapping(leader, lead_ref, racer)
+      ref = lap_ref(racer)
       now = @input.now_ms
-      next_crossing = rider.counted.last.at_ms + ref
+      next_crossing = racer.counted.last.at_ms + ref
       return nil if next_crossing < now || lead_ref <= 0 || ref <= 0
       position = ->(r, r_ref, t) { r.counted.size + (t - r.counted.last.at_ms) / r_ref }
-      gap_now = position.(leader, lead_ref, now) - position.(rider, ref, now)
-      gap_next = position.(leader, lead_ref, next_crossing) - (rider.counted.size + 1)
+      gap_now = position.(leader, lead_ref, now) - position.(racer, ref, now)
+      gap_next = position.(leader, lead_ref, next_crossing) - (racer.counted.size + 1)
       return nil unless gap_next >= 1 && gap_next.floor > gap_now.floor
-      bib = rider.entrant.bib
-      Suggestion.new(key: "lapped:#{bib}:#{rider.counted.size}", kind: :about_to_be_lapped, bib:, race_id: rider.entrant.race_id,
+      bib = racer.entrant.bib
+      Suggestion.new(key: "lapped:#{bib}:#{racer.counted.size}", kind: :about_to_be_lapped, bib:, race_id: racer.entrant.race_id,
                      message: "Bib #{bib} will likely be lapped by the leader before their next crossing",
                      fix: { "kind" => "flag_finish", "bib" => bib })
     end
@@ -169,7 +169,7 @@ module Results
 
     def unassigned_suggestions
       @resolved.unassigned.map do |u|
-        message = u.bib ? "Unknown rider: bib #{u.bib}" : "No bib"
+        message = u.bib ? "Unknown racer: bib #{u.bib}" : "No bib"
         Suggestion.new(key: "unassigned:#{u.capture_id}", kind: :unassigned_capture, bib: u.bib, race_id: nil, message:,
                        fix: { "kind" => "assign_bib", "capture_id" => u.capture_id, "bib" => nil })
       end
