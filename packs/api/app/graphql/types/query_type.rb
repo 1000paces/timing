@@ -50,7 +50,7 @@ module Types
     end
 
     def devices(event_id:)
-      require_official!
+      require_official!("chief")
       Device.where(event_id:).order(:paired_at_ms, :id)
     end
 

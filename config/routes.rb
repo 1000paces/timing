@@ -3,6 +3,12 @@ Rails.application.routes.draw do
 
   resource :session, only: %i[create show destroy]
   post "devices/pair", to: "devices#pair"
+  scope "sync/v1", controller: :sync do
+    post "clock"
+    post "push"
+    get "roster"
+    get "status"
+  end
   post "graphql", to: "graphql#execute"
   get "console/*path", to: "console#show", format: false
   get "onboarding", to: "onboarding#show"
