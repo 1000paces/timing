@@ -107,7 +107,7 @@
 ### Task 3: Console — Phones panel
 
 **Files:**
-- `packs/api/app/graphql/types/device_type.rb` (+ lastSeenAtMs, lastSyncAtMs, clockOffsetMs, syncStoppedAtMs, revokedAtMs, pendingHint omitted); `event_type.rb` (`devices`, chief+; check whether it exists).
+- `packs/api/app/graphql/types/device_type.rb` (+ lastSeenAtMs, lastSyncAtMs, clockOffsetMs, syncStoppedAtMs, revokedAtMs); `event_type.rb` (`devices`, chief+; check whether it exists).
 - `frontend/src/queries.ts`; new `frontend/src/views/PhonesPanel.tsx` (QR via `qrcode`); `CaptureScreen.tsx` (renders the panel for chief+).
 - `frontend/package.json` (`qrcode`, `@types/qrcode`).
 - Test: `test/integration/api/devices_query_test.rb`, and an e2e step in `capture.spec.ts` (the chief sees Pair a phone and the QR link has `/capture-app/?pair=`).
