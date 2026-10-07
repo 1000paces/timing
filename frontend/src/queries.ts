@@ -190,7 +190,7 @@ export const UNSTART_RACE = gql`
 `;
 
 export type LapFlag = "missed" | "long" | "short";
-export type CaptureRow = { id: string; bib: string | null; enteredBib: string | null; capturedAtMs: number; lap: number | null; lapMs: number | null; typicalLapMs: number | null; lapFlag: LapFlag | null };
+export type CaptureRow = { id: string; bib: string | null; enteredBib: string | null; bibSource: "RULING" | "DEVICE" | "ENTERED"; capturedAtMs: number; lap: number | null; lapMs: number | null; typicalLapMs: number | null; lapFlag: LapFlag | null };
 export type CaptureScreenData = {
   event: {
     id: string;
@@ -206,7 +206,7 @@ export const CAPTURE_SCREEN = gql`
       id name
       races { id name }
       registrations { bib raceId racer { firstName lastName } }
-      myCaptures { id bib enteredBib capturedAtMs lap lapMs typicalLapMs lapFlag }
+      myCaptures { id bib enteredBib bibSource capturedAtMs lap lapMs typicalLapMs lapFlag }
     }
   }
 `;
@@ -214,7 +214,7 @@ export type RecordCaptureResult = { recordCapture: MutationResult & { capture: C
 export const RECORD_CAPTURE = gql`
   mutation RecordCapture($eventId: ID!, $bib: String) {
     recordCapture(eventId: $eventId, bib: $bib) {
-      capture { id bib enteredBib capturedAtMs lap lapMs typicalLapMs lapFlag } errors
+      capture { id bib enteredBib bibSource capturedAtMs lap lapMs typicalLapMs lapFlag } errors
     }
   }
 `;
@@ -313,4 +313,7 @@ export const SET_RACER_STATUS = gql`
 `;
 export const PROBLEM_COUNT = gql`
   query ProblemCount($eventId: ID!) { standings(eventId: $eventId) { suggestions { key } } }
+`;
+export const CORRECT_CAPTURE_BIB = gql`
+  mutation CorrectCaptureBib($captureId: ID!, $bib: String!) { correctCaptureBib(captureId: $captureId, bib: $bib) { capture { id } errors } }
 `;

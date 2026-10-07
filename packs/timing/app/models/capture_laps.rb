@@ -37,7 +37,11 @@ class CaptureLaps
     @start_by_bib = race_by_bib.transform_values { starts[it] }.compact
     device_bibs = BibAssignment.where(event:).order(:device_seq).pluck(:capture_id, :bib).to_h
     assigned = self.class.assigned_bibs(event)
-    @bibs = Capture.where(event:).pluck(:id, :bib).to_h { |id, bib| [id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence] }
+    @sources = {}
+    @bibs = Capture.where(event:).pluck(:id, :bib).to_h do |id, bib|
+      @sources[id] = assigned[id] ? :ruling : device_bibs[id] ? :device : :entered
+      [id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence]
+    end
     captures = Capture.where(event:).where.not(id: @voided.to_a).order(:captured_at_ms, :id).pluck(:id, :captured_at_ms)
                       .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [bib, at, id] }
     @info = {}
@@ -57,6 +61,9 @@ class CaptureLaps
   def lap(capture) = info(capture).lap
 
   def bib(capture) = @bibs.fetch(capture.id) { capture.bib }
+
+  # Where the shown bib comes from: :ruling (an official), :device (a later entry) or :entered.
+  def bib_source(capture) = @sources.fetch(capture.id, :entered)
 
   def voided?(capture) = @voided.include?(capture.id)
 

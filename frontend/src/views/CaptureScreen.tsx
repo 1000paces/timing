@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -12,12 +13,13 @@ import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatClock, formatElapsed } from "../format";
-import { CAPTURE_SCREEN, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
+import { CAPTURE_SCREEN, CORRECT_CAPTURE_BIB, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
 import { isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -111,8 +113,8 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           {event.myCaptures.map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
-              <Box sx={{ width: 80, textAlign: "center" }}>
-                <Typography sx={{ fontWeight: "bold" }}>{c.bib ?? "—"}</Typography>
+              <Box sx={{ width: 110, textAlign: "center" }}>
+                <CaptureBib capture={c} onChanged={refresh} />
                 {c.enteredBib !== c.bib && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.1 }}>
                     entered: {c.enteredBib ?? "no bib"}
@@ -167,5 +169,65 @@ function LapWarning({ capture }: { capture: CaptureRow }) {
         {label} {formatElapsed(capture.lapMs)} (typical {formatElapsed(capture.typicalLapMs)})
       </Typography>
     </Tooltip>
+  );
+}
+
+// The crossing's bib, with a pencil to correct or add it: Enter or Tab saves,
+// Escape cancels. Locked when an official assigned the bib in the review queue.
+function CaptureBib({ capture, onChanged }: { capture: CaptureRow; onChanged: () => void }) {
+  const [correct] = useMutation<{ correctCaptureBib: { errors: string[] } }>(CORRECT_CAPTURE_BIB);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const saving = useRef(false);
+  const locked = capture.bibSource === "RULING";
+
+  function open() {
+    setValue(capture.bib ?? "");
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save() {
+    if (saving.current) return;
+    if (value.trim() === (capture.bib ?? "")) return setEditing(false);
+    saving.current = true;
+    try {
+      const errors = (await correct({ variables: { captureId: capture.id, bib: value } })).data?.correctCaptureBib.errors ?? [];
+      if (errors.length) setError(errors.join("; "));
+      else {
+        setEditing(false);
+        onChanged();
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      saving.current = false;
+    }
+  }
+
+  if (editing) {
+    return (
+      <TextField size="small" autoFocus value={value} onChange={(e) => setValue(e.target.value)} error={error != null} helperText={error}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") void save();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        onBlur={() => void save()}
+        slotProps={{ htmlInput: { "aria-label": "Bib for crossing", inputMode: "numeric", style: { textAlign: "center", fontWeight: "bold" } } }}
+        sx={{ width: 100 }} />
+    );
+  }
+  return (
+    <Stack direction="row" sx={{ alignItems: "center", justifyContent: "center" }}>
+      <Typography sx={{ fontWeight: "bold" }}>{capture.bib ?? "—"}</Typography>
+      <Tooltip title={locked ? "An official assigned this bib; change it in the review queue" : capture.bib ? "Correct the bib" : "Add a bib"}>
+        <span>
+          <IconButton size="small" aria-label="Edit bib" disabled={locked} onClick={open}>
+            <EditIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Stack>
   );
 }

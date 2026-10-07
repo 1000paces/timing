@@ -24,6 +24,7 @@ module Types
     field :start_races, mutation: Mutations::StartRaces
     field :record_capture, mutation: Mutations::RecordCapture
     field :delete_capture, mutation: Mutations::DeleteCapture
+    field :correct_capture_bib, mutation: Mutations::CorrectCaptureBib
     field :unstart_race, mutation: Mutations::UnstartRace
     field :create_pairing_token, mutation: Mutations::CreatePairingToken
     field :revoke_device, mutation: Mutations::RevokeDevice

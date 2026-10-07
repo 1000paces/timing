@@ -73,4 +73,16 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   const resolved = rows.filter({ hasText: "entered: no bib" });
   await expect(resolved).toContainText("102");
   await expect(rows.filter({ hasText: "no bib" }).filter({ hasNotText: "entered" })).toHaveCount(0);
+  // An official's assignment locks the timer's own correction.
+  await expect(resolved.getByRole("button", { name: "Edit bib" })).toBeDisabled();
+
+  // The timer corrects a mistyped bib in the log; the tap keeps what was entered.
+  await rows.filter({ hasText: "unknown bib" }).getByRole("button", { name: "Edit bib" }).click();
+  const field = page.getByLabel("Bib for crossing");
+  await field.fill("103");
+  await field.press("Enter");
+  const corrected = rows.filter({ hasText: "entered: 999" });
+  await expect(corrected).toContainText("103");
+  await expect(corrected).toContainText("Masters 35+ Men");
+  await expect(page.getByLabel("Bib for crossing")).toHaveCount(0);
 });

@@ -3,6 +3,7 @@ module Types
     field :id, ID, null: false
     field :bib, String, description: "The resolved bib: an official's assignment, else the device's later entry, else what was typed"
     field :entered_bib, String, description: "The bib as typed at the line"
+    field :bib_source, String, null: false, description: "RULING (an official assigned it), DEVICE (corrected later) or ENTERED"
     field :captured_at_ms, Millis, null: false
     field :lap, Integer, description: "Captures for this bib since its race started, including this one; null when not started"
     field :lap_ms, Millis, description: "Time since this bib's previous capture (or its race's start for lap 1)"
@@ -11,6 +12,7 @@ module Types
 
     def bib = calculator.bib(object)
     def entered_bib = object.bib
+    def bib_source = calculator.bib_source(object).to_s.upcase
     def lap = laps.lap
     def lap_ms = laps.lap_ms
     def typical_lap_ms = laps.typical_ms
