@@ -217,4 +217,17 @@ class StandingsTest < Minitest::Test
                      "  - {kind: set_lap_count, race_id: r2, laps: 2}\n")
     assert_equal [2, 2], out.races.map(&:lap_count)
   end
+
+  # A race that starts after its group's finish opened isn't on course with that
+  # leader, so it finishes on its own leader instead of on its first crossing.
+  def test_race_started_after_its_cohorts_finish_opened_finishes_alone
+    races = "  - {id: r1, laps: 3, start: 0}\n  - {id: r2, laps: 3, start: 400}\n"
+    out = cohort_out(races, { "1" => "[100, 200, 300]", "2" => "[500, 600, 700, 800]" })
+    assert_equal [[1, "1", "finished", 3, 300]], rows_of(out, "r1")
+    assert_equal [[1, "2", "finished", 3, 300]], rows_of(out, "r2"), "r2 finishes on its own third lap, not its first crossing"
+
+    racing = cohort_out(races, { "1" => "[100, 200, 300]", "2" => "[500, 600]" })
+    assert_equal [[1, "2", "racing", 2, 200]], rows_of(racing, "r2")
+    assert_equal :in_progress, racing.races.find { it.race_id == "r2" }.state
+  end
 end
