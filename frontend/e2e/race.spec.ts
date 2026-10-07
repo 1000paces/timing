@@ -78,6 +78,7 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   const missed = page.getByTestId("suggestion").filter({ hasText: "missed crossing" });
   await expect(missed.first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("heading", { name: "Review Queue" })).toBeVisible();
+  await expect(missed.first().getByTestId("problem-type")).toHaveText("Missed crossing");
   await expect(page.getByTestId("issue-count").first()).toHaveText(/^\d+ issues?$/);
 
   // Problems tab: the same queue, full page, filterable by type (kept on refresh).

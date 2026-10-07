@@ -57,7 +57,9 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
           />
         ))}
       </Box>
-      <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} labels={unassignedLabels(report)} canAct={canAct} onChanged={refresh} />
+      <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} labels={unassignedLabels(report)} canAct={canAct} onChanged={refresh}
+        raceNames={new Map(races.map((r) => [r.race.id, r.race.name]))}
+        racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
     </Box>
   );
 }

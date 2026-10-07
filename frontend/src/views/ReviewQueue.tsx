@@ -10,11 +10,20 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState, type ReactNode } from "react";
 import { issuesLabel } from "../problems";
+import { ProblemMeta } from "./ProblemMeta";
 import { ACCEPT_SUGGESTION, DISMISS_SUGGESTION, type MutationResult, type Suggestion } from "../queries";
 
-type Props = { eventId: string; suggestions: Suggestion[]; labels: Map<string, string>; canAct: boolean; onChanged: () => void };
+type Props = {
+  eventId: string;
+  suggestions: Suggestion[];
+  labels: Map<string, string>;
+  raceNames: Map<string, string>;
+  racerNames: Map<string, string>;
+  canAct: boolean;
+  onChanged: () => void;
+};
 
-export function ReviewQueue({ eventId, suggestions, labels, canAct, onChanged }: Props) {
+export function ReviewQueue({ eventId, suggestions, labels, raceNames, racerNames, canAct, onChanged }: Props) {
   return (
     <Paper component="aside" sx={{ p: 2, position: "sticky", top: 16 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
@@ -24,7 +33,8 @@ export function ReviewQueue({ eventId, suggestions, labels, canAct, onChanged }:
       {suggestions.length === 0 && <Typography color="text.secondary">Nothing to review.</Typography>}
       <List disablePadding>
         {suggestions.map((s) => (
-          <SuggestionItem key={s.key} eventId={eventId} suggestion={s} label={labels.get(s.key)} canAct={canAct} onChanged={onChanged} />
+          <SuggestionItem key={s.key} eventId={eventId} suggestion={s} label={labels.get(s.key)} canAct={canAct} onChanged={onChanged}
+            meta={<ProblemMeta suggestion={s} raceName={s.raceId ? raceNames.get(s.raceId) : undefined} racerName={s.bib ? racerNames.get(s.bib) : null} />} />
         ))}
       </List>
     </Paper>

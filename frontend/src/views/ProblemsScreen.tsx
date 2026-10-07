@@ -3,7 +3,6 @@ import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import Paper from "@mui/material/Paper";
@@ -30,6 +29,7 @@ import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { FilterWithChips } from "./FilterWithChips";
+import { ProblemMeta } from "./ProblemMeta";
 import { IssueCount, SuggestionItem } from "./ReviewQueue";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
@@ -119,15 +119,7 @@ export function ProblemsScreen({ eventId, official, onSignedOut }: Props) {
         )}
         <List disablePadding>
           {shown.map((p) => {
-            const type = PROBLEM_TYPE[p.type];
-            const meta = (
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
-                <Chip data-testid="problem-type" size="small" color={type.color} label={type.label} />
-                <Typography variant="body2" color="text.secondary">
-                  {[raceName.get(p.raceId ?? "none"), p.suggestion.bib && `Bib ${p.suggestion.bib}${p.name ? ` · ${p.name}` : ""}`].filter(Boolean).join(" · ")}
-                </Typography>
-              </Stack>
-            );
+            const meta = <ProblemMeta suggestion={p.suggestion} raceName={p.raceId ? raceName.get(p.raceId) : undefined} racerName={p.name} />;
             return (
               <SuggestionItem key={p.suggestion.key} eventId={eventId} suggestion={p.suggestion} label={labels.get(p.suggestion.key)}
                 meta={meta} canAct={canAct} onChanged={refresh} />

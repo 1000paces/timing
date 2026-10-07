@@ -51,6 +51,6 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   // The bib-less crossing waits in the review queue on the Results tab.
   await page.getByRole("tab", { name: "Results" }).click();
   const queue = page.getByTestId("suggestion");
-  await expect(queue.filter({ hasText: /^No bib · \d\d:\d\d:\d\d · \+\d+:\d\d\.\d/ })).toHaveCount(1);
+  await expect(queue.filter({ hasText: /No bib · \d\d:\d\d:\d\d · \+\d+:\d\d\.\d/ })).toHaveCount(1);
   await expect(queue.filter({ hasText: "Unknown racer: bib 999 · " })).toHaveCount(1);
 });
