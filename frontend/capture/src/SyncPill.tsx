@@ -9,7 +9,8 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import type { SyncState } from "./sync";
 
-export function syncLabel(s: Pick<SyncState, "pending" | "online" | "stopped">): string {
+export function syncLabel(s: Pick<SyncState, "pending" | "online" | "stopped" | "revoked">): string {
+  if (s.revoked) return "Revoked";
   if (s.stopped) return "Sync stopped";
   if (!s.online) return s.pending ? `Offline · ${s.pending} to send` : "Offline";
   return s.pending ? `${s.pending} to send` : "Synced";
@@ -18,8 +19,8 @@ export function syncLabel(s: Pick<SyncState, "pending" | "online" | "stopped">):
 // Green synced, amber sending, red offline or stopped; plus the clock.
 export function SyncPill({ state }: { state: SyncState }) {
   const label = syncLabel(state);
-  const color = state.stopped || !state.online ? "error" : state.pending ? "warning" : "success";
-  const icon = state.stopped ? <ErrorIcon /> : !state.online ? <CloudOffIcon /> : state.pending ? <CloudUploadIcon /> : <CloudDoneIcon />;
+  const color = state.stopped || state.revoked || !state.online ? "error" : state.pending ? "warning" : "success";
+  const icon = state.stopped || state.revoked ? <ErrorIcon /> : !state.online ? <CloudOffIcon /> : state.pending ? <CloudUploadIcon /> : <CloudDoneIcon />;
   return (
     <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
       <Chip data-testid="sync-pill" size="small" color={color} icon={icon} label={label} />

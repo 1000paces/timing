@@ -1,4 +1,4 @@
-import type { Api, Roster, Status } from "./api";
+import { RevokedError, type Api, type Roster, type Status } from "./api";
 import { pickOffset, type ClockSample } from "./clock";
 import type { CaptureDb } from "./db";
 import { unsent } from "./log";
@@ -7,6 +7,8 @@ export type SyncState = {
   pending: number; // entries the hub hasn't stored yet
   online: boolean; // the last request reached the hub
   stopped: boolean; // the hub refused our chain: export and see an official
+  revoked: boolean; // the hub refused this phone's credential: export and re-pair
+  ackSeq: number; // the hub has stored entries up to here
   clockSynced: boolean;
   offsetMs: number | null; // hub time - phone time
   lastSyncAtMs: number | null;
@@ -42,7 +44,8 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
   let tickTimer: unknown = null;
   let pushing: Promise<void> | null = null;
   const due = { clock: 0, status: 0, roster: 0, push: 0 };
-  let state: SyncState = { pending: 0, online: true, stopped: false, clockSynced: false, offsetMs: null, lastSyncAtMs: null, roster: null, status: null, error: null };
+  let halted = false; // stop() was called: no more timers
+  let state: SyncState = { pending: 0, online: true, stopped: false, revoked: false, ackSeq: 0, clockSynced: false, offsetMs: null, lastSyncAtMs: null, roster: null, status: null, error: null };
   const listeners = new Set<(s: SyncState) => void>();
   const set = (patch: Partial<SyncState>) => {
     state = { ...state, ...patch };
@@ -52,7 +55,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
   async function countPending() {
     const cursor = await db.transaction("entries").store.openCursor(null, "prev");
     lastSeq = cursor?.value.device_seq ?? 0;
-    set({ pending: Math.max(0, lastSeq - ackSeq) });
+    set({ pending: Math.max(0, lastSeq - ackSeq), ackSeq });
   }
 
   async function load() {
@@ -68,9 +71,19 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
     await countPending();
   }
 
+  // A revoked phone can never sync again: say so, and stop trying.
+  function failed(e: unknown): boolean {
+    if (e instanceof RevokedError) {
+      set({ revoked: true, online: true, error: e.message });
+      return true;
+    }
+    set({ online: false, error: (e as Error).message });
+    return false;
+  }
+
   async function pushOnce() {
     await countPending();
-    if (state.stopped) return;
+    if (state.stopped || state.revoked) return;
     for (;;) {
       const batch = await unsent(db, ackSeq, BATCH);
       if (!batch.length) break;
@@ -78,7 +91,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       try {
         result = await api.push(batch);
       } catch (e) {
-        set({ online: false, error: (e as Error).message });
+        if (failed(e) || halted) return;
         backoffMs = nextBackoff(backoffMs);
         if (retryTimer) clearTimer(retryTimer);
         retryTimer = setTimer(() => void pushNow(), backoffMs);
@@ -119,7 +132,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
         samples.push({ t0, t1, t2, t3: now() });
       }
     } catch (e) {
-      set({ online: false, error: (e as Error).message });
+      failed(e);
       return;
     }
     const { offsetMs } = pickOffset(samples);
@@ -133,7 +146,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       await db.put("state", status, "status");
       set({ status, online: true });
     } catch (e) {
-      set({ online: false, error: (e as Error).message });
+      failed(e);
     }
   }
 
@@ -146,11 +159,25 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       }
       set({ online: true });
     } catch (e) {
-      set({ online: false, error: (e as Error).message });
+      failed(e);
     }
   }
 
+  // One pass of the loop. Whatever happens in it (a storage error, say), the
+  // next pass is scheduled — unless stop() was called.
   async function tick() {
+    if (halted) return;
+    try {
+      await step();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      if (!halted) tickTimer = setTimer(() => void tick(), 1000);
+    }
+  }
+
+  async function step() {
+    if (state.revoked) return;
     const t = now();
     if (t >= due.clock) {
       due.clock = t + CLOCK_EVERY_MS;
@@ -168,7 +195,6 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       due.status = t + STATUS_EVERY_MS;
       await refreshStatus();
     }
-    tickTimer = setTimer(() => void tick(), 1000);
   }
 
   return {
@@ -194,10 +220,12 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       due.clock = due.status = due.roster = due.push = 0;
     },
     async start() {
+      halted = false;
       await load();
       void tick();
     },
     stop() {
+      halted = true;
       if (tickTimer) clearTimer(tickTimer);
       if (retryTimer) clearTimer(retryTimer);
     },

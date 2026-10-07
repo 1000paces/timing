@@ -25,4 +25,12 @@ describe("captureRows", () => {
     const [row] = captureRows(entries, roster, status);
     expect([row.bib, row.name, row.lap, row.lapFlag, row.enteredNote, row.locked]).toEqual(["101", "Ann Lee", 3, "long", "entered: no bib", true]);
   });
+
+  // Review I1: a correction made offline shows straight away, even on a crossing the hub already knows.
+  it("an unsent local correction wins over the hub's cached view", () => {
+    const entries = [e(1, "capture", { captured_at_ms: 1000, bib: "12" }), e(2, "bib_assignment", { capture_id: "e1", bib: "21" })];
+    const status = { captures: [{ id: "e1", bib: "12", entered_bib: "12", bib_source: "entered", lap: 1, lap_ms: 1, typical_lap_ms: null, lap_flag: null, voided: false }] } satisfies Status;
+    expect(captureRows(entries, roster, status, 1)[0].bib).toBe("21");
+    expect(captureRows(entries, roster, status, 2)[0].bib).toBe("12"); // sent: the hub's view again
+  });
 });

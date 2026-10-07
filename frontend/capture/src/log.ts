@@ -1,4 +1,4 @@
-import type { CaptureDb } from "./db";
+import type { CaptureDb, Pairing } from "./db";
 import { digest, genesis, uuidv7 } from "./hash";
 
 export type Entry = {
@@ -32,7 +32,10 @@ async function append(db: CaptureDb, body: Body): Promise<Entry> {
     } as Omit<Entry, "hash">;
     const entry = { ...draft, hash: await digest(draft) } as Entry;
     // add (not put): a second writer for the same seq fails instead of overwriting.
-    await db.add("entries", entry);
+    // "strict": the tap is flushed to disk before we confirm it.
+    const tx = db.transaction("entries", "readwrite", { durability: "strict" });
+    await tx.store.add(entry);
+    await tx.done;
     return entry;
   });
   queue = run.catch(() => undefined);
@@ -56,3 +59,16 @@ export const unsent = (db: CaptureDb, ackSeq: number, limit: number) =>
 
 // The phone never drops entries the hub hasn't stored.
 export const canUnpair = (lastSeq: number, ackSeq: number) => ackSeq >= lastSeq;
+
+// Re-pairing (a new event, or after a revoke) never deletes the old log: it is
+// archived on the phone, then a fresh log and sync state begin.
+export async function startNewPairing(db: CaptureDb, next: Pairing): Promise<void> {
+  const tx = db.transaction(["pairing", "entries", "state", "archive"], "readwrite");
+  const previous = await tx.objectStore("pairing").get("pairing");
+  const entries = await tx.objectStore("entries").getAll();
+  if (previous || entries.length) await tx.objectStore("archive").add({ pairing: previous ?? null, entries, archivedAtMs: Date.now() });
+  await tx.objectStore("entries").clear();
+  await tx.objectStore("state").clear();
+  await tx.objectStore("pairing").put(next, "pairing");
+  await tx.done;
+}

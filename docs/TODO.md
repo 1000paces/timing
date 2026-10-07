@@ -164,3 +164,10 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - Device check-in after the event (verify and archive each phone's full log).
 - Chip timing.
 - Run the hub in production mode before any venue test (see "Run the venue hub in production mode").
+- Mobile capture review minors (2026-10-07):
+  - `pushNow` follow-up pushes can overlap (harmless: the hub is idempotent); chain them and never lower the local ack.
+  - Correcting or deleting on the phone has no error message if the write itself fails.
+  - A remembered Results filter for a since-deleted race shows an empty page with no chip; drop unknown race ids.
+  - Phone rows show times with the current clock offset rather than each entry's own.
+  - Console devices ("Console – name") are listed in the Phones panel; hide them or label them.
+  - A phone's own delete (capture_void) can't be undone from the console's ruling history.

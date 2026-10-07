@@ -23,8 +23,16 @@ export interface Api {
   status(): Promise<Status>;
 }
 
-// The hub's /sync/v1 API, as the paired device.
-export function hubApi(device: () => { deviceId: string; credential: string; offsetMs: number | null } | null): Api {
+// The hub refused this phone's credential: it was revoked (or the hub forgot it).
+export class RevokedError extends Error {
+  constructor() {
+    super("This phone was revoked on the hub");
+  }
+}
+
+// The hub's /sync/v1 API, as the paired device. Every request gives up after
+// timeoutMs, so a half-open connection on venue Wi-Fi can't stall sync.
+export function hubApi(device: () => { deviceId: string; credential: string; offsetMs: number | null } | null, { timeoutMs = 10_000 } = {}): Api {
   const headers = (extra: Record<string, string> = {}) => {
     const d = device();
     const h: Record<string, string> = { "Content-Type": "application/json", ...extra };
@@ -33,13 +41,23 @@ export function hubApi(device: () => { deviceId: string; credential: string; off
     return h;
   };
   const call = async (method: string, path: string, body?: unknown, extra?: Record<string, string>) => {
-    const response = await fetch(path, { method, headers: headers(extra), body: body === undefined ? undefined : JSON.stringify(body) });
-    if (response.status === 401) throw new Error("This phone has been revoked or unpaired on the hub");
+    const response = await fetch(path, {
+      method,
+      headers: headers(extra),
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (response.status === 401) throw new RevokedError();
     return response;
   };
   return {
     async pair(token, name) {
-      const response = await fetch("/devices/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, name }) });
+      const response = await fetch("/devices/pair", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, name }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Pairing failed");
       return body;

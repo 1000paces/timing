@@ -73,4 +73,11 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await loose.getByLabel("Bib").fill("103");
   await loose.getByRole("button", { name: "Accept" }).click();
   await expect(rows.filter({ hasText: "entered: no bib" })).toContainText("103", { timeout: 20_000 });
+
+  // 5. Revoked on the console: the phone says so, rather than just "Offline".
+  await chief.getByRole("tab", { name: "Capture" }).click();
+  await chief.getByTestId("phone").filter({ hasText: "Finish phone" }).getByRole("button", { name: "Revoke Finish phone" }).click();
+  await chief.getByRole("dialog").getByRole("button", { name: "Revoke" }).click();
+  await expect(pill).toHaveText("Revoked", { timeout: 20_000 });
+  await expect(phone.getByText("This phone was revoked on the hub")).toBeVisible();
 });

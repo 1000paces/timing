@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Api } from "./api";
 import { openCaptureDb, type CaptureDb } from "./db";
 import { appendCapture, type Entry } from "./log";
+import { RevokedError } from "./api";
 import { createSync } from "./sync";
 
 let n = 0;
@@ -80,5 +81,40 @@ describe("sync", () => {
     const s = sync(db, fakeHub().api);
     await s.syncClock();
     expect(s.state()).toMatchObject({ clockSynced: true, offsetMs: 50 });
+  });
+
+  // Review I2: a revoked phone says so and stops retrying.
+  it("a revoked phone is marked revoked and stops retrying", async () => {
+    const db = await setup();
+    await appendCapture(db, { atMs: 1, offsetMs: 0, bib: "1" });
+    const { api } = fakeHub();
+    api.push = async () => { throw new RevokedError(); };
+    const timers: unknown[] = [];
+    const s = createSync({ db, api, now: () => 0, setTimer: (fn) => timers.push(fn), clearTimer: () => {} });
+    await s.pushNow();
+    expect(s.state().revoked).toBe(true);
+    expect(timers).toHaveLength(0);
+  });
+
+  // Review M1: the loop survives a failing step, and stops for good when stopped.
+  it("the tick loop keeps going after a storage error and stops when told", async () => {
+    const db = await setup();
+    const { api } = fakeHub();
+    let pending: (() => void) | null = null;
+    const s = createSync({ db, api, now: () => 0, setTimer: (fn) => { pending = fn as () => void; return 1; }, clearTimer: () => {} });
+    await s.start();
+    await new Promise((r) => setTimeout(r, 20));
+    db.close(); // every storage call now throws
+    const fire = pending!;
+    pending = null;
+    fire();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(pending).not.toBeNull(); // rescheduled despite the error
+    s.stop();
+    const late = pending!;
+    pending = null;
+    late(); // a timer that fires just after stop()
+    await new Promise((r) => setTimeout(r, 20));
+    expect(pending).toBeNull();
   });
 });

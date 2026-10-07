@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
 import { openCaptureDb } from "./db";
 import { digest, genesis } from "./hash";
-import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, unsent } from "./log";
+import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, startNewPairing, unsent } from "./log";
 
 let n = 0;
 const fresh = async () => {
@@ -44,5 +44,18 @@ describe("the phone's log", () => {
     expect((await unsent(db, 0, 2)).map((e) => e.device_seq)).toEqual([1, 2]);
     expect(canUnpair(3, 2)).toBe(false);
     expect(canUnpair(3, 3)).toBe(true);
+  });
+
+  // Review I4: re-pairing keeps the old log (archived), never deletes it.
+  it("re-pairing archives the old log and starts a fresh one", async () => {
+    const db = await fresh();
+    await appendCapture(db, { atMs: 1, offsetMs: 0, bib: "1" });
+    await startNewPairing(db, { deviceId: "dev-2", credential: "c2", eventId: "e2", name: "Phone" });
+    expect(await allEntries(db)).toEqual([]);
+    const archived = await db.getAll("archive");
+    expect(archived).toHaveLength(1);
+    expect(archived[0].pairing?.deviceId).toBe("dev-1");
+    expect(archived[0].entries.map((e: { bib?: string }) => e.bib)).toEqual(["1"]);
+    expect((await appendCapture(db, { atMs: 2, offsetMs: 0, bib: "2" })).device_seq).toBe(1);
   });
 });

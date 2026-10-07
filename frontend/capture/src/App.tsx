@@ -27,7 +27,7 @@ import { formatClock, formatElapsed } from "../../src/format";
 import { hubApi } from "./api";
 import { openCaptureDb, type CaptureDb, type Pairing } from "./db";
 import { Keypad } from "./Keypad";
-import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, type Entry } from "./log";
+import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, startNewPairing, type Entry } from "./log";
 import { captureRows, type Row } from "./rows";
 import { createSync, type Sync, type SyncState } from "./sync";
 import { SyncPill } from "./SyncPill";
@@ -60,7 +60,10 @@ export function App() {
         </Alert>
       )}
       {token ? (
-        <PairScreen db={db} token={token} paired={pairing} onPaired={setPairing} />
+        <PairScreen db={db} token={token} paired={pairing} onPaired={setPairing} onCancel={() => {
+          window.history.replaceState(null, "", window.location.pathname);
+          setPairing(pairing ? { ...pairing } : null);
+        }} />
       ) : pairing ? (
         <CaptureScreen db={db} pairing={pairing} onUnpaired={() => setPairing(null)} />
       ) : (
@@ -73,25 +76,44 @@ export function App() {
   );
 }
 
-function PairScreen({ db, token, paired, onPaired }: { db: CaptureDb; token: string; paired: Pairing | null; onPaired: (p: Pairing) => void }) {
+// Download the phone's whole log as JSON (a last-resort backup).
+async function exportLog(db: CaptureDb) {
+  const pairing = await db.get("pairing", "pairing");
+  const body = { pairing: pairing ? { deviceId: pairing.deviceId, eventId: pairing.eventId, name: pairing.name } : null, entries: await allEntries(db), archive: await db.getAll("archive") };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(body, null, 2)], { type: "application/json" }));
+  a.download = `capture-log-${(pairing?.name ?? "phone").replace(/\W+/g, "-")}-${new Date().toISOString().slice(0, 19)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function PairScreen({ db, token, paired, onPaired, onCancel }: {
+  db: CaptureDb;
+  token: string;
+  paired: Pairing | null;
+  onPaired: (p: Pairing) => void;
+  onCancel: () => void;
+}) {
   const [name, setName] = useState(paired?.name ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [unsentCount, setUnsentCount] = useState(0);
+  const [confirmed, setConfirmed] = useState(false);
+  useEffect(() => {
+    void (async () => {
+      const entries = await allEntries(db);
+      const ack = ((await db.get("state", "ackSeq")) as number | undefined) ?? 0;
+      setUnsentCount(Math.max(0, (entries.at(-1)?.device_seq ?? 0) - ack));
+    })();
+  }, [db]);
 
   async function pair() {
     setBusy(true);
     setError(null);
     try {
-      const entries = await allEntries(db);
-      const ack = ((await db.get("state", "ackSeq")) as number | undefined) ?? 0;
-      if (!canUnpair(entries.at(-1)?.device_seq ?? 0, ack)) throw new Error("This phone has crossings the hub hasn't received yet. Sync (or export) them before pairing again.");
       const result = await hubApi(() => null).pair(token, name.trim() || "Phone");
       const next = { deviceId: result.device_id, credential: result.credential, eventId: result.event_id, name: name.trim() || "Phone" };
-      const tx = db.transaction(["pairing", "entries", "state"], "readwrite");
-      await tx.objectStore("entries").clear(); // all acknowledged by the hub (checked above)
-      await tx.objectStore("state").clear();
-      await tx.objectStore("pairing").put(next, "pairing");
-      await tx.done;
+      await startNewPairing(db, next); // the old log is archived on the phone, never deleted
       window.history.replaceState(null, "", window.location.pathname);
       onPaired(next);
     } catch (e) {
@@ -101,13 +123,25 @@ function PairScreen({ db, token, paired, onPaired }: { db: CaptureDb; token: str
     }
   }
 
+  const blocked = unsentCount > 0 && !confirmed;
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>Pair this phone</Typography>
       <Stack spacing={2}>
+        {unsentCount > 0 && (
+          <Alert severity="warning">
+            {unsentCount} crossing{unsentCount === 1 ? "" : "s"} on this phone haven't reached the hub. Export the log and give it to an official before pairing again.
+            The old log stays on this phone either way.
+            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+              <Button size="small" variant="outlined" onClick={() => void exportLog(db)}>Export log</Button>
+              <Button size="small" onClick={() => setConfirmed(true)}>Pair anyway</Button>
+            </Stack>
+          </Alert>
+        )}
         <TextField label="Phone name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Finish line phone 2" autoFocus />
         {error && <Alert severity="error">{error}</Alert>}
-        <Button variant="contained" size="large" disabled={busy} onClick={() => void pair()}>Pair</Button>
+        <Button variant="contained" size="large" disabled={busy || blocked} onClick={() => void pair()}>Pair</Button>
+        {paired && <Button onClick={onCancel}>Back to capture</Button>}
       </Stack>
     </Box>
   );
@@ -183,7 +217,7 @@ function CaptureScreen({ db, pairing, onUnpaired }: { db: CaptureDb; pairing: Pa
     return () => window.removeEventListener("keydown", onKey);
   }, [record, bib, editing, deleting]);
 
-  const rows = useMemo(() => captureRows(entries, state?.roster ?? null, state?.status ?? null), [entries, state?.roster, state?.status]);
+  const rows = useMemo(() => captureRows(entries, state?.roster ?? null, state?.status ?? null, state?.ackSeq ?? 0), [entries, state?.roster, state?.status, state?.ackSeq]);
   const visible = onlyBib ? rows.filter((r) => r.bib === onlyBib) : rows;
   const offset = state?.offsetMs ?? 0;
   const lastSeq = entries.at(-1)?.device_seq ?? 0;
@@ -201,15 +235,6 @@ function CaptureScreen({ db, pairing, onUnpaired }: { db: CaptureDb; pairing: Pa
     await appendVoid(db, row.id);
     await reload();
     void syncRef.current?.kick();
-  }
-
-  function exportLog() {
-    const blob = new Blob([JSON.stringify({ pairing: { deviceId: pairing.deviceId, eventId: pairing.eventId, name: pairing.name }, entries }, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `capture-log-${pairing.name.replace(/\W+/g, "-")}-${new Date().toISOString().slice(0, 19)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
   }
 
   async function unpair() {
@@ -232,11 +257,14 @@ function CaptureScreen({ db, pairing, onUnpaired }: { db: CaptureDb; pairing: Pa
         <MenuItem disabled>{pairing.name}</MenuItem>
         <MenuItem disabled>Last sync: {state?.lastSyncAtMs ? formatClock(state.lastSyncAtMs) : "never"}</MenuItem>
         <MenuItem disabled>Clock: {state?.clockSynced ? `${offset > 0 ? "+" : ""}${offset} ms` : "not synced"}</MenuItem>
-        <MenuItem onClick={() => { setMenu(null); exportLog(); }}>Export log</MenuItem>
+        <MenuItem onClick={() => { setMenu(null); void exportLog(db); }}>Export log</MenuItem>
         <MenuItem onClick={() => void unpair()}>Unpair</MenuItem>
       </Menu>
 
       {state?.stopped && <Alert severity="error" square>Sync stopped — export the log (menu) and see an official.</Alert>}
+      {state?.revoked && (
+        <Alert severity="error" square>This phone was revoked on the hub, so new crossings can't be sent. Export the log (menu), give it to an official, and pair again.</Alert>
+      )}
       {error && <Alert severity="error" square onClose={() => setError(null)}>{error}</Alert>}
 
       <Box sx={{ p: 2 }}>
