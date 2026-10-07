@@ -96,9 +96,17 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
         <DialogTitle>Pair a phone</DialogTitle>
         <DialogContent>
           <Stack spacing={1} sx={{ alignItems: "center" }}>
+            <Typography variant="body2" sx={{ textAlign: "center" }}>
+              <strong>Scan with the phone's camera</strong> (on the hub's Wi-Fi) to open the Capture app — in a browser tab this pairs it too.
+            </Typography>
             {pairing && <img src={pairing.qr} alt="Pairing QR code" width={280} height={280} />}
+            <Typography variant="body2" sx={{ textAlign: "center" }}>
+              <strong>Or type this code in the Capture app</strong> — needed for an iPhone home-screen app:
+            </Typography>
             <Typography data-testid="pairing-code" sx={{ fontFamily: "monospace", fontSize: 36, fontWeight: 700, letterSpacing: 4 }}>{pairing?.code}</Typography>
-            <Typography variant="body2">Scan with the phone's camera on the hub's Wi-Fi, or type the code in the Capture app (needed for an iPhone home-screen app). {left > 0 ? `Expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}.` : "Expired — make a new one."}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {left > 0 ? `Expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}, and works once.` : "Expired — make a new one."}
+            </Typography>
             <Typography data-testid="pairing-link" variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>{pairing?.url}</Typography>
           </Stack>
         </DialogContent>

@@ -84,6 +84,19 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await loose.getByRole("button", { name: "Accept" }).click();
   await expect(rows.filter({ hasText: "entered: no bib" })).toContainText("103", { timeout: 20_000 });
 
+  // Layout: only the log scrolls; in landscape the keypad sits beside it.
+  const enterKey = phone.getByRole("button", { name: "Enter" });
+  const log = phone.getByTestId("crossing-log");
+  const pageScrolls = () => phone.evaluate(() => document.scrollingElement!.scrollHeight > window.innerHeight + 1);
+  expect(await pageScrolls()).toBe(false);
+  await expect(log).toHaveCSS("overflow-y", "auto");
+  await phone.setViewportSize({ width: 915, height: 412 });
+  expect(await pageScrolls()).toBe(false);
+  const keypadBox = (await enterKey.boundingBox())!;
+  const logBox = (await log.boundingBox())!;
+  expect(keypadBox.x + keypadBox.width).toBeLessThanOrEqual(logBox.x + 1);
+  await phone.setViewportSize({ width: 412, height: 915 });
+
   // 5. Revoked on the console: the phone says so, rather than just "Offline".
   await chief.getByRole("tab", { name: "Capture" }).click();
   await chief.getByTestId("phone").filter({ hasText: "Finish phone" }).getByRole("button", { name: "Revoke Finish phone" }).click();

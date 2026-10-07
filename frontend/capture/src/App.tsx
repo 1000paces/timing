@@ -79,7 +79,7 @@ export function App() {
   if (!db || pairing === undefined) return <LinearProgress />;
   const token = new URLSearchParams(window.location.search).get("pair");
   return (
-    <>
+    <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
       {warning === "not-permanent" && !dismissed && (
         <Alert severity="info" square onClose={dismiss}>
           This browser hasn't promised to keep the phone's crossings permanently (they're saved, and safe on the hub once synced). Add the app to your home screen to make them permanent.
@@ -93,7 +93,7 @@ export function App() {
       ) : (
         <CaptureScreen db={db} pairing={pairing} health={health} onUnpaired={() => setPairing(null)} />
       )}
-    </>
+    </Box>
   );
 }
 
@@ -147,7 +147,7 @@ function PairScreen({ db, token, paired, onPaired, onCancel }: {
 
   const blocked = unsentCount > 0 && !confirmed;
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, overflowY: "auto" }}>
       <Typography variant="h5" gutterBottom>Pair this phone</Typography>
       <Stack spacing={2}>
         {unsentCount > 0 && (
@@ -272,8 +272,10 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   }
 
   return (
-    <Box sx={{ pb: 2, bgcolor: flash ? "success.dark" : "background.default", transition: "background-color 150ms", minHeight: "100vh" }}>
-      <AppBar position="sticky" color="default" elevation={1}>
+    // A fixed-height frame: the top bar and keypad stay put; only the log scrolls.
+    // Portrait stacks keypad over log; landscape puts them side by side.
+    <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", bgcolor: flash ? "success.dark" : "background.default", transition: "background-color 150ms" }}>
+      <AppBar position="static" color="default" elevation={1}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
           <Typography noWrap sx={{ flex: 1, fontWeight: 600 }}>{state?.roster?.event.name ?? "Capture"}</Typography>
           {state && <SyncPill state={state} />}
@@ -297,12 +299,21 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
       )}
       {error && <Alert severity="error" square onClose={() => setError(null)}>{error}</Alert>}
 
-      <Box sx={{ p: 2 }}>
+      <Box sx={{
+        flex: 1,
+        minHeight: 0,
+        display: "grid",
+        gridTemplateRows: "auto minmax(0, 1fr)",
+        "@media (orientation: landscape)": { gridTemplateRows: "minmax(0, 1fr)", gridTemplateColumns: "minmax(260px, 40%) minmax(0, 1fr)" },
+      }}>
+      <Box sx={{ p: 2, overflowY: "auto" }}>
         <Typography data-testid="bib-display" sx={{ fontSize: 56, fontWeight: 700, textAlign: "center", lineHeight: 1.2, minHeight: 68, letterSpacing: 4 }}>
           {bib || <Box component="span" sx={{ color: "text.disabled", fontSize: 24, letterSpacing: 0 }}>bib (blank = no bib)</Box>}
         </Typography>
         <Keypad onDigit={(d) => setBib((b) => (b + d).slice(0, 6))} onBack={() => setBib((b) => b.slice(0, -1))} onEnter={enter} />
       </Box>
+      <Box data-testid="crossing-log" sx={{ overflowY: "auto", minHeight: 0, borderTop: 1, borderColor: "divider",
+        "@media (orientation: landscape)": { borderTop: 0, borderLeft: 1, borderColor: "divider" } }}>
 
       {onlyBib && (
         <Box sx={{ px: 2 }}>
@@ -343,6 +354,8 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
         )}
       </List>
       {visible.length > shown && <Button fullWidth onClick={() => setShown(shown + PAGE)}>Show more</Button>}
+      </Box>
+      </Box>
 
       {editing && <BibSheet row={editing} onCancel={() => setEditing(null)} onSave={(v) => void correct(editing, v)} />}
       <Dialog open={deleting != null} onClose={() => setDeleting(null)}>

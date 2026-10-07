@@ -11,6 +11,8 @@ test("a chief pairs a phone from Capture, sees it listed, and revokes it", async
   await page.getByRole("button", { name: "Pair a phone" }).click();
   const dialog = page.getByRole("dialog", { name: "Pair a phone" });
   await expect(dialog.getByRole("img", { name: "Pairing QR code" })).toBeVisible();
+  await expect(dialog).toContainText("Scan with the phone's camera");
+  await expect(dialog).toContainText("Or type this code in the Capture app");
   const link = await dialog.getByTestId("pairing-link").textContent();
   expect(link).toMatch(/\/capture-app\/\?pair=/);
   await dialog.getByRole("button", { name: "Done" }).click();
