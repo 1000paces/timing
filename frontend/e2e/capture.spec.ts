@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("a timer records crossings by bib, or with no bib for review", async ({ page }) => {
+test("a timer records crossings by bib, or with no bib for review", async ({ page, browser }) => {
   await page.goto("/console/");
   await page.getByLabel("Name").fill("E2E Timer");
   await page.getByLabel("PIN").fill("1357");
@@ -53,4 +53,24 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   const queue = page.getByTestId("suggestion");
   await expect(queue.filter({ hasText: /No bib · \d\d:\d\d:\d\d · \+\d+:\d\d\.\d/ })).toHaveCount(1);
   await expect(queue.filter({ hasText: "Unknown racer: bib 999 · " })).toHaveCount(1);
+
+  // A chief resolves the no-bib crossing; the timer's Capture list updates live.
+  await page.getByRole("tab", { name: "Capture" }).click();
+  const chiefContext = await browser.newContext();
+  const chief = await chiefContext.newPage();
+  await chief.goto("/console/");
+  await chief.getByLabel("Name").fill("E2E Chief");
+  await chief.getByLabel("PIN").fill("2468");
+  await chief.getByRole("button", { name: "Sign in" }).click();
+  await chief.getByRole("link", { name: /E2E Capture/ }).click();
+  await chief.getByRole("tab", { name: "Results" }).click();
+  const loose = chief.getByTestId("suggestion").filter({ hasText: /No bib · / });
+  await loose.getByLabel("Bib").fill("102");
+  await loose.getByRole("button", { name: "Accept" }).click();
+  await expect(loose).toHaveCount(0);
+  await chiefContext.close();
+
+  const resolved = rows.filter({ hasText: "entered: no bib" });
+  await expect(resolved).toContainText("102");
+  await expect(rows.filter({ hasText: "no bib" }).filter({ hasNotText: "entered" })).toHaveCount(0);
 });

@@ -111,7 +111,14 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           {event.myCaptures.map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
-              <Typography sx={{ fontWeight: "bold", width: 80, textAlign: "center" }}>{c.bib ?? "—"}</Typography>
+              <Box sx={{ width: 80, textAlign: "center" }}>
+                <Typography sx={{ fontWeight: "bold" }}>{c.bib ?? "—"}</Typography>
+                {c.enteredBib !== c.bib && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.1 }}>
+                    entered: {c.enteredBib ?? "no bib"}
+                  </Typography>
+                )}
+              </Box>
               <Typography sx={{ width: 70 }}>{c.lap != null ? `Lap ${c.lap}` : ""}</Typography>
               <Typography sx={{ flex: 1 }} color={c.bib && racers.has(c.bib) ? "text.primary" : "warning.main"}>
                 {c.bib ? (racers.get(c.bib) ?? "unknown bib") : "no bib"}
