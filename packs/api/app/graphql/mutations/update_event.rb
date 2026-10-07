@@ -10,6 +10,7 @@ module Mutations
     argument :age_next_year, Boolean, required: false
     argument :bib_from, Integer, required: false
     argument :bib_to, Integer, required: false
+    argument :timezone, String, required: false
 
     field :event, Types::EventType
 

@@ -4,6 +4,9 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type { Discipline, EventInput } from "../queries";
 
+export const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+const ZONES = Intl.supportedValuesOf("timeZone");
+
 // Event details form, shared by "New event" and the Setup screen. Picking a
 // discipline pre-fills "finish with leader" from its default.
 export function EventFields({ value, onChange, disciplines, bibRange = false }: { value: EventInput; onChange: (v: EventInput) => void; disciplines: Discipline[]; bibRange?: boolean }) {
@@ -49,6 +52,20 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
           ))}
         </TextField>
       )}
+      <TextField
+        select
+        label="Time zone"
+        value={value.timezone}
+        onChange={(e) => set({ timezone: e.target.value })}
+        helperText={value.timezone === browserTimeZone() ? "Times in History use this zone" : `This browser is in ${browserTimeZone()}`}
+        slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
+      >
+        {(ZONES.includes(value.timezone) ? ZONES : [value.timezone, ...ZONES]).map((z) => (
+          <option key={z} value={z}>
+            {z}
+          </option>
+        ))}
+      </TextField>
       <FormControlLabel
         control={<Checkbox checked={value.finishWithLeader} onChange={(e) => set({ finishWithLeader: e.target.checked })} />}
         label="Finish with leader"

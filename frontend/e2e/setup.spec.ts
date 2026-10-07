@@ -15,6 +15,8 @@ async function addRace(page: Page, fields: { category?: string; ageGroup?: strin
   await dialog.getByRole("button", { name: "Save" }).click();
 }
 
+test.use({ timezoneId: "America/Denver" });
+
 test("admin sets up a CX event and its races; lap count follows finish-with-leader cohorts", async ({ page }) => {
   await page.goto("/console/");
   await page.getByLabel("Name").fill("E2E Admin");
@@ -29,8 +31,11 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await create.getByLabel("Discipline").selectOption("cyclocross");
   await expect(create.getByLabel("Finish with leader")).toBeChecked();
   await expect(create.getByLabel("Age as of next year (cross season)")).toBeChecked();
+  // The event's time zone (for History times) starts as the browser's.
+  await expect(create.getByLabel("Time zone")).toHaveValue("America/Denver");
   await create.getByRole("button", { name: "Create" }).click();
   await expect(page).toHaveURL(/\/console\/event\/[0-9a-f-]+\/setup$/);
+  await expect(page.getByLabel("Time zone")).toHaveValue("America/Denver");
 
   await addRace(page, { category: "Cat 3", ageGroup: "Masters 35+", gender: "men" });
   await expect(page.getByRole("row").filter({ hasText: "Cat 3 Masters 35+ Men" })).toBeVisible();

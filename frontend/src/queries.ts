@@ -32,6 +32,7 @@ export type EventInfo = {
   name: string;
   date: string;
   location: string | null;
+  timezone: string;
   discipline: string;
   subDiscipline: string | null;
   finishWithLeader: boolean;
@@ -48,7 +49,7 @@ const RACE_FIELDS = `id name defaultName nameOverride category ageGroup ageMin a
 export const EVENT = gql`
   query Event($id: ID!) {
     event(id: $id) {
-      id name date location discipline subDiscipline finishWithLeader ageNextYear bibFrom bibTo
+      id name date location discipline subDiscipline finishWithLeader ageNextYear timezone bibFrom bibTo
       races { ${RACE_FIELDS} }
     }
   }
@@ -68,23 +69,24 @@ export type EventInput = {
   subDiscipline: string | null;
   finishWithLeader: boolean;
   ageNextYear: boolean;
+  timezone: string;
   bibFrom?: number | null;
   bibTo?: number | null;
 };
 export const CREATE_EVENT = gql`
   mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String,
-                       $finishWithLeader: Boolean, $ageNextYear: Boolean) {
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String) {
     createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
-                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear) {
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone) {
       event { id } errors
     }
   }
 `;
 export const UPDATE_EVENT = gql`
   mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String,
-                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $bibFrom: Int, $bibTo: Int) {
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String, $bibFrom: Int, $bibTo: Int) {
     updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
-                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, bibFrom: $bibFrom, bibTo: $bibTo) {
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone, bibFrom: $bibFrom, bibTo: $bibTo) {
       event { id } errors
     }
   }

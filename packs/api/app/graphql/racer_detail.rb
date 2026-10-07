@@ -14,9 +14,9 @@ module RacerDetail
     devices = Capture.where(id: refs).includes(:device).to_h { [it.id, it.device.name] }
     history = RulingHistory.new(event)
     inserts = history.rulings.select { refs.include?(it.id) }.to_h { [it.id, it.official_id] }
-    concerns = refs.to_set + Capture.where(event:, bib:).pluck(:id)
+    concerns = refs.to_set
     fixes = history.rulings.reject { it.kind == "revert" }
-                   .select { history.describer.bib_for(it) == bib || concerns.include?(it.payload["capture_id"]) }
+                   .select { history.describer.bibs_for(it).include?(bib) || concerns.include?(it.payload["capture_id"]) }
 
     { bib:, name: registration.racer.full_name, race: registration.race, status: row&.status || :racing, place: row&.place,
       laps: row&.laps || 0, elapsed_ms: row&.elapsed_ms, gap_laps_down: row&.gap&.laps_down, gap_ms: row&.gap&.ms,

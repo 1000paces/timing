@@ -18,11 +18,12 @@ class RulingDescriberTest < ActiveSupport::TestCase
       { "kind" => "set_lap_count", "race_id" => race.id, "laps" => 3 } => "Lap count 3 for Masters 35+ Men",
       { "kind" => "set_race_start", "race_id" => race.id, "at_ms" => t } => "Start Masters 35+ Men at 10:42:09"
     }
-    describer = RulingDescriber.new(event)
     lines.each do |attrs, line|
       ruling = Ruling.create!(event:, kind: attrs["kind"], payload: attrs.except("kind"))
+      revert = Ruling.create!(event:, kind: "revert", payload: { "ruling_id" => ruling.id })
+      describer = RulingDescriber.new(event) # it loads the event's rulings when built
       assert_equal line, describer.describe(ruling)
-      assert_equal "Undo: #{line}", describer.describe(Ruling.create!(event:, kind: "revert", payload: { "ruling_id" => ruling.id }))
+      assert_equal "Undo: #{line}", describer.describe(revert)
     end
   end
 end

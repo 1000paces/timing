@@ -56,8 +56,7 @@ module Types
       if (needle = search.to_s.strip.downcase).present?
         names = event.registrations.includes(:racer).to_h { [it.bib, it.racer.full_name.downcase] }
         rulings = rulings.select do |r|
-          bib = history.describer.bib_for(r)
-          bib && (bib.downcase == needle || names[bib]&.include?(needle))
+          history.describer.bibs_for(r).any? { it.downcase == needle || names[it]&.include?(needle) }
         end
       end
       rulings.drop(offset.clamp(0, nil)).first(limit.clamp(1, 500))

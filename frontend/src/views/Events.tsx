@@ -14,6 +14,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
+import { browserTimeZone } from "./EventFields";
 import { CREATE_EVENT, DISCIPLINES, EVENTS, type DisciplinesData, type EventInput, type EventsData, type MutationResult } from "../queries";
 import { isSignedOutError } from "../roles";
 import { linkTo, navigate, setupHref, startsHref } from "../route";
@@ -75,7 +76,7 @@ function NewEventDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (list && !value) {
       const first = list[0];
-      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader, ageNextYear: first.ageNextYear });
+      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader, ageNextYear: first.ageNextYear, timezone: browserTimeZone() });
     }
   }, [list, value]);
 

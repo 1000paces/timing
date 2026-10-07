@@ -75,11 +75,15 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
   const [error, setError] = useState<string | null>(null);
 
   const { refetch } = racer;
-  const refresh = useCallback(() => {
+  const reload = useCallback(() => {
     refetch().catch(() => {});
+  }, [refetch]);
+  // Broadcasts already refresh the standings behind the panel; only our own fixes need to.
+  useEventChanges(eventId, reload);
+  const refresh = useCallback(() => {
+    reload();
     onChanged();
-  }, [refetch, onChanged]);
-  useEventChanges(eventId, refresh);
+  }, [reload, onChanged]);
 
   async function run(action: () => Promise<{ data?: FixResults | null }>) {
     setError(null);
