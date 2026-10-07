@@ -21,7 +21,14 @@ export default defineConfig({
         theme_color: "#121212",
         icons: [{ src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
       },
-      workbox: { globPatterns: ["**/*.{js,css,html,svg}"], navigateFallback: "/capture-app/index.html", maximumFileSizeToCacheInBytes: 3_000_000 },
+      // A new version takes over open pages at once (clientsClaim); main.tsx then reloads once.
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg}"],
+        navigateFallback: "/capture-app/index.html",
+        maximumFileSizeToCacheInBytes: 3_000_000,
+        skipWaiting: true,
+        clientsClaim: true,
+      },
     }),
   ],
   build: { outDir: "../../public/capture-app", emptyOutDir: true, chunkSizeWarningLimit: 1000 },
