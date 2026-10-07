@@ -23,6 +23,7 @@ import {
   type Problem,
   type ProblemFilter,
 } from "../problems";
+import { initialSearch, showSearch } from "../rememberedSearch";
 import { EVENT, STANDINGS, type EventData, type StandingsData } from "../queries";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
@@ -39,12 +40,11 @@ const NO_RACE = { id: "none", name: "No race" };
 export function ProblemsScreen({ eventId, official, onSignedOut }: Props) {
   const event = useQuery<EventData>(EVENT, { variables: { id: eventId } });
   const standings = useQuery<StandingsData>(STANDINGS, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
-  const [filter, setFilter] = useState<ProblemFilter>(() => problemFilterFromSearch(window.location.search));
+  const filterKey = `problems:${eventId}`;
+  const [filter, setFilter] = useState<ProblemFilter>(() => problemFilterFromSearch(initialSearch(filterKey, window.location.search)));
   const [typing, setTyping] = useState("");
   const setPart = (part: Partial<ProblemFilter>) => setFilter((current) => ({ ...current, ...part }));
-  useEffect(() => {
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${problemFilterToSearch(filter)}`);
-  }, [filter]);
+  useEffect(() => showSearch(filterKey, problemFilterToSearch(filter)), [filterKey, filter]);
 
   const { refetch } = standings;
   const refresh = useCallback(() => {

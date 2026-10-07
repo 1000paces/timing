@@ -59,6 +59,7 @@ import {
 import { STATUS_COLOR } from "../races";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
+import { initialSearch, showSearch } from "../rememberedSearch";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { FilterWithChips } from "./FilterWithChips";
@@ -72,18 +73,19 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   const screen = useQuery<RegistrationScreenData>(REGISTRATION_SCREEN, { variables: { id: eventId }, fetchPolicy: "cache-and-network" });
   const [assignBibs] = useMutation<AssignBibsResult>(ASSIGN_BIBS);
   const [removeRegistration] = useMutation<{ removeRegistration: { errors: string[] } }>(REMOVE_REGISTRATION);
-  const [filter, setFilter] = useState<RegistrationFilter>(() => filterFromSearch(window.location.search));
+  const filterKey = `registration:${eventId}`;
+  const [filter, setFilter] = useState<RegistrationFilter>(() => filterFromSearch(initialSearch(filterKey, window.location.search)));
   const setFilterPart = (part: Partial<RegistrationFilter>) => setFilter((current) => ({ ...current, ...part }));
   const [typing, setTyping] = useState(""); // search text not yet added as a chip; filters as you type
-  const [sort, setSort] = useState<RegistrationSort>(() => sortFromSearch(window.location.search));
+  const [sort, setSort] = useState<RegistrationSort>(() => sortFromSearch(initialSearch(filterKey, window.location.search)));
   // Filters and sort live in the address; replace (not push) so typing in
   // Search doesn't fill the Back button's history.
   useEffect(() => {
     const params = new URLSearchParams(filterToSearch(filter));
     if (sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir) sortToSearch(sort).forEach(([k, v]) => params.set(k, v));
     const query = params.toString();
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-  }, [filter, sort]);
+    showSearch(filterKey, query ? `?${query}` : "");
+  }, [filterKey, filter, sort]);
   const [editing, setEditing] = useState<RegistrationRow | "new" | null>(null);
   const [importing, setImporting] = useState(false);
   const [removing, setRemoving] = useState<RegistrationRow | null>(null);

@@ -14,6 +14,7 @@ import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { raceIdsFromSearch, raceIdsToSearch } from "../races";
+import { initialSearch, showSearch } from "../rememberedSearch";
 import { EventNav } from "./EventNav";
 import { FilterWithChips } from "./FilterWithChips";
 import { RaceControls } from "./RaceControls";
@@ -26,10 +27,9 @@ type Props = { eventId: string; official: Official; onSignedOut: () => void };
 export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   const event = useQuery<EventData>(EVENT, { variables: { id: eventId } });
   const standings = useQuery<StandingsData>(STANDINGS, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
-  const [raceFilter, setRaceFilter] = useState<string[]>(() => raceIdsFromSearch(window.location.search));
-  useEffect(() => {
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${raceIdsToSearch(raceFilter)}`);
-  }, [raceFilter]);
+  const filterKey = `results:${eventId}`;
+  const [raceFilter, setRaceFilter] = useState<string[]>(() => raceIdsFromSearch(initialSearch(filterKey, window.location.search)));
+  useEffect(() => showSearch(filterKey, raceIdsToSearch(raceFilter)), [filterKey, raceFilter]);
 
   const refresh = useCallback(() => {
     standings.refetch().catch(() => {});

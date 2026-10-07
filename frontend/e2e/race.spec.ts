@@ -73,6 +73,11 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await page.reload();
   await expect(page.getByRole("region", { name: "Women Open" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Masters 50+ Men" })).toHaveCount(0);
+  // ...and switching tabs and back keeps it too.
+  await page.getByRole("tab", { name: "Starts" }).click();
+  await page.getByRole("tab", { name: "Results" }).click();
+  await expect(page.getByRole("region", { name: "Women Open" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Masters 50+ Men" })).toHaveCount(0);
   await page.getByRole("button", { name: "Clear filters" }).click();
 
   const masters35 = page.getByRole("region", { name: "Masters 35+ Men" });
