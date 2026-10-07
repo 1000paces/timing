@@ -9,17 +9,18 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import type { SyncState } from "./sync";
 
-export function syncLabel(s: Pick<SyncState, "pending" | "online" | "stopped" | "revoked">): string {
+export function syncLabel(s: Pick<SyncState, "pending" | "online" | "contacted" | "stopped" | "revoked">): string {
   if (s.revoked) return "Revoked";
   if (s.stopped) return "Sync stopped";
   if (!s.online) return s.pending ? `Offline · ${s.pending} to send` : "Offline";
-  return s.pending ? `${s.pending} to send` : "Synced";
+  if (s.pending) return `${s.pending} to send`;
+  return s.contacted ? "Synced" : "Connecting…"; // never claim Synced before the hub has answered
 }
 
 // Green synced, amber sending, red offline or stopped; plus the clock.
 export function SyncPill({ state }: { state: SyncState }) {
   const label = syncLabel(state);
-  const color = state.stopped || state.revoked || !state.online ? "error" : state.pending ? "warning" : "success";
+  const color = state.stopped || state.revoked || !state.online ? "error" : state.pending ? "warning" : state.contacted ? "success" : "default";
   const icon = state.stopped || state.revoked ? <ErrorIcon /> : !state.online ? <CloudOffIcon /> : state.pending ? <CloudUploadIcon /> : <CloudDoneIcon />;
   return (
     <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>

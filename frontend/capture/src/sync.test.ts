@@ -117,4 +117,19 @@ describe("sync", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(pending).toBeNull();
   });
+
+  it("fetches the roster before the clock on start, and marks the hub contacted", async () => {
+    const db = await setup();
+    const { api } = fakeHub();
+    const calls: string[] = [];
+    api.roster = async () => { calls.push("roster"); return { event: { name: "CX", races: [] }, racers: [], version: "v" }; };
+    const clock = api.clock;
+    api.clock = async (t0) => { calls.push("clock"); return clock(t0); };
+    const s = createSync({ db, api, now: () => 0, setTimer: () => 0, clearTimer: () => {} });
+    expect(s.state().contacted).toBe(false);
+    await s.start();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls[0]).toBe("roster");
+    expect(s.state().contacted).toBe(true);
+  });
 });

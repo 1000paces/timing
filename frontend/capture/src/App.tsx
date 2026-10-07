@@ -188,6 +188,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const short = useMediaQuery("(orientation: landscape) and (max-height: 500px)"); // a phone in landscape
+  const landscape = useMediaQuery("(orientation: landscape)");
 
   const reload = useCallback(async () => setEntries(await allEntries(db)), [db]);
 
@@ -314,11 +315,13 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
         gridTemplateRows: "auto minmax(0, 1fr)",
         "@media (orientation: landscape)": { gridTemplateRows: "minmax(0, 1fr)", gridTemplateColumns: "minmax(260px, 40%) minmax(0, 1fr)" },
       }}>
-      <Box sx={{ p: short ? 1 : 2, overflowY: "auto" }}>
+      <Box sx={{ p: short ? 1 : 2, overflowY: "auto", ...(landscape && { display: "flex", flexDirection: "column", minHeight: 0 }) }}>
         <Typography data-testid="bib-display" sx={{ fontSize: short ? 36 : 56, fontWeight: 700, textAlign: "center", lineHeight: 1.2, minHeight: short ? 44 : 68, letterSpacing: 4 }}>
-          {bib || <Box component="span" sx={{ color: "text.disabled", fontSize: 24, letterSpacing: 0 }}>bib (blank = no bib)</Box>}
+          {bib || <Box component="span" sx={{ color: "text.disabled", fontSize: 24, letterSpacing: 0 }}>Bib (or Enter for no bib)</Box>}
         </Typography>
-        <Keypad compact={short} onDigit={(d) => setBib((b) => (b + d).slice(0, 6))} onBack={() => setBib((b) => b.slice(0, -1))} onEnter={enter} />
+        <Box sx={landscape ? { flex: 1, minHeight: 0 } : undefined}>
+          <Keypad compact={short} fill={landscape} onDigit={(d) => setBib((b) => (b + d).slice(0, 6))} onBack={() => setBib((b) => b.slice(0, -1))} onEnter={enter} />
+        </Box>
       </Box>
       <Box data-testid="crossing-log" sx={{ overflowY: "auto", minHeight: 0, borderTop: 1, borderColor: "divider",
         "@media (orientation: landscape)": { borderTop: 0, borderLeft: 1, borderColor: "divider" } }}>
@@ -365,7 +368,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
       </Box>
       </Box>
 
-      {editing && <BibSheet row={editing} racerFor={racerFor} onCancel={() => setEditing(null)} onSave={(v) => void correct(editing, v)} />}
+      {editing && <BibSheet row={editing} racerFor={racerFor} rosterLoaded={state?.roster != null} onCancel={() => setEditing(null)} onSave={(v) => void correct(editing, v)} />}
       <Dialog open={deleting != null} onClose={() => setDeleting(null)}>
         <DialogTitle>Delete {deleting?.bib ? `bib ${deleting.bib}` : "the no-bib crossing"} at {deleting ? formatClock(deleting.atMs + offset) : ""}?</DialogTitle>
         <DialogActions>
@@ -381,7 +384,13 @@ type RacerLookup = (bib: string) => { name: string; race: string | null } | null
 
 // Correct a crossing's bib with the same keypad: a big number, who that bib is,
 // and Save where Enter sits on the main screen.
-function BibSheet({ row, racerFor, onCancel, onSave }: { row: Row; racerFor: RacerLookup; onCancel: () => void; onSave: (bib: string) => void }) {
+function BibSheet({ row, racerFor, rosterLoaded, onCancel, onSave }: {
+  row: Row;
+  racerFor: RacerLookup;
+  rosterLoaded: boolean;
+  onCancel: () => void;
+  onSave: (bib: string) => void;
+}) {
   const [value, setValue] = useState(row.bib ?? "");
   // The current bib shows dimmed; the first digit typed replaces it (Backspace edits it).
   const [touched, setTouched] = useState(false);
@@ -402,8 +411,8 @@ function BibSheet({ row, racerFor, onCancel, onSave }: { row: Row; racerFor: Rac
     <Box sx={{ textAlign: "center" }}>
       <Typography data-testid="sheet-bib" color={touched ? "text.primary" : "text.disabled"}
         sx={{ fontSize: wide ? 96 : 72, fontWeight: 700, lineHeight: 1, letterSpacing: 4 }}>{value || "—"}</Typography>
-      <Typography data-testid="sheet-racer" sx={{ mt: 1, minHeight: 24 }} color={typed && !racer ? "error.main" : "text.secondary"} noWrap>
-        {!typed ? "Type the bib" : racer ? [racer.name, racer.race].filter(Boolean).join(" · ") : "Unknown bib"}
+      <Typography data-testid="sheet-racer" sx={{ mt: 1, minHeight: 24 }} color={typed && !racer && rosterLoaded ? "error.main" : "text.secondary"} noWrap>
+        {!typed ? "Type the bib" : racer ? [racer.name, racer.race].filter(Boolean).join(" · ") : rosterLoaded ? "Unknown bib" : "No roster yet"}
       </Typography>
       {row.bib && row.bib !== typed && <Typography variant="caption" color="text.secondary">was {row.bib}</Typography>}
     </Box>

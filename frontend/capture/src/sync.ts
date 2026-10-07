@@ -6,6 +6,7 @@ import { unsent } from "./log";
 export type SyncState = {
   pending: number; // entries the hub hasn't stored yet
   online: boolean; // the last request reached the hub
+  contacted: boolean; // the hub has answered at least once since the app started
   stopped: boolean; // the hub refused our chain: export and see an official
   revoked: boolean; // the hub refused this phone's credential: export and re-pair
   ackSeq: number; // the hub has stored entries up to here
@@ -45,10 +46,10 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
   let pushing: Promise<void> | null = null;
   const due = { clock: 0, status: 0, roster: 0, push: 0 };
   let halted = false; // stop() was called: no more timers
-  let state: SyncState = { pending: 0, online: true, stopped: false, revoked: false, ackSeq: 0, clockSynced: false, offsetMs: null, lastSyncAtMs: null, roster: null, status: null, error: null };
+  let state: SyncState = { pending: 0, online: true, contacted: false, stopped: false, revoked: false, ackSeq: 0, clockSynced: false, offsetMs: null, lastSyncAtMs: null, roster: null, status: null, error: null };
   const listeners = new Set<(s: SyncState) => void>();
   const set = (patch: Partial<SyncState>) => {
-    state = { ...state, ...patch };
+    state = { ...state, ...patch, ...(patch.online === true ? { contacted: true } : {}) };
     listeners.forEach((fn) => fn(state));
   };
 
@@ -179,13 +180,14 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
   async function step() {
     if (state.revoked) return;
     const t = now();
-    if (t >= due.clock) {
-      due.clock = t + CLOCK_EVERY_MS;
-      await syncClock();
-    }
+    // The roster first: a freshly paired phone needs names before anything else.
     if (t >= due.roster) {
       due.roster = t + ROSTER_EVERY_MS;
       await refreshRoster();
+    }
+    if (t >= due.clock) {
+      due.clock = t + CLOCK_EVERY_MS;
+      await syncClock();
     }
     if (state.pending > 0 && t >= due.push) {
       due.push = t + PUSH_EVERY_MS;

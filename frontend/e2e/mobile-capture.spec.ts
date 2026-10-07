@@ -26,6 +26,7 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await expect(phone.getByRole("button", { name: "Enter" })).toBeVisible();
   expect(phone.url()).not.toContain("pair=");
   await expect(phone.getByTestId("sync-pill")).toHaveText("Synced", { timeout: 20_000 });
+  await expect(phone.getByRole("banner")).toContainText("E2E Capture"); // the roster has arrived
 
   const key = (k: string) => phone.getByRole("button", { name: k, exact: true }).click();
   const type = async (digits: string) => { for (const d of digits) await key(d); };
@@ -104,6 +105,9 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
     const box = (await phone.getByRole("button", { name, exact: true }).first().boundingBox())!;
     expect(box.y + box.height, `main ${name} is on screen`).toBeLessThanOrEqual(390);
   }
+  // ...and the keypad stretches to use the height (no empty band below it).
+  const enterBottom = await phone.getByRole("button", { name: "Enter", exact: true }).boundingBox().then((b) => b!.y + b!.height);
+  expect(enterBottom).toBeGreaterThan(390 - 24);
   await rows.filter({ hasText: "entered: 999" }).getByRole("button", { name: "Edit bib" }).click();
   const editSheet = phone.getByRole("dialog", { name: "Correct bib" });
   for (const name of ["1", "0", "Backspace", "Save", "Cancel"]) {
