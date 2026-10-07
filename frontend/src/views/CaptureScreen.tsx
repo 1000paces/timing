@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -36,6 +37,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
   const [recordCapture] = useMutation<RecordCaptureResult>(RECORD_CAPTURE);
   const [deleteCapture] = useMutation<{ deleteCapture: { errors: string[] } }>(DELETE_CAPTURE);
   const [deleting, setDeleting] = useState<CaptureRow | null>(null);
+  const [onlyBib, setOnlyBib] = useState<string | null>(null);
   const [bib, setBib] = useState("");
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -105,15 +107,19 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           autoFocus
           fullWidth
           autoComplete="off"
-          helperText="Enter records the crossing now; leave blank for a racer whose bib you missed"
+          helperText="Type the bib and press Enter as the racer crosses. Missed the number? Press Enter with the box empty."
           slotProps={{ htmlInput: { inputMode: "numeric", style: { fontSize: 40, textAlign: "center" } } }}
         />
       </form>
       {error && <Alert severity="error" sx={{ mt: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+      {onlyBib && <Chip label={`Bib ${onlyBib}`} color="primary" size="small" onDelete={() => setOnlyBib(null)} sx={{ mt: 2 }} />}
       <Paper sx={{ mt: 2 }}>
         <List dense>
-          {event.myCaptures.map((c) => (
+          {(onlyBib ? event.myCaptures.filter((c) => c.bib === onlyBib) : event.myCaptures).map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
+              <IconButton size="small" aria-label="Show only this bib" disabled={!c.bib} onClick={() => setOnlyBib(c.bib)} sx={{ mr: 1 }}>
+                <FilterAltIcon fontSize="small" />
+              </IconButton>
               <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
               <Box sx={{ width: 110, textAlign: "center" }}>
                 <CaptureBib capture={c} onChanged={refresh} />

@@ -8,7 +8,7 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await page.getByRole("link", { name: /E2E Capture/ }).click();
   await page.getByRole("tab", { name: "Capture" }).click();
 
-  const bib = page.getByLabel("Bib");
+  const bib = page.getByLabel("Bib", { exact: true });
   await expect(bib).toBeFocused();
   await bib.fill("101");
   await bib.press("Enter");
@@ -39,6 +39,13 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await expect(lap3).toContainText("Masters 35+ Men");
   await expect(lap3.getByTestId("lap-warning")).toContainText("Long lap");
   await expect(lap3.getByTestId("lap-warning")).toHaveAccessibleName(/typical 1:00\.0/);
+
+  // Filter to one bib from the icon at the start of a row; the chip clears it.
+  await expect(page.getByText("Type the bib and press Enter as the racer crosses")).toBeVisible();
+  await lap4.getByRole("button", { name: "Show only this bib" }).click();
+  await expect(rows).toHaveCount(2);
+  await page.getByRole("button", { name: "Bib 101" }).locator("svg").click();
+  await expect(rows).toHaveCount(5);
 
   // Deleting the earlier 101 crossing (after a confirm) renumbers the later one.
   await lap3.getByRole("button", { name: "Delete capture" }).click();
