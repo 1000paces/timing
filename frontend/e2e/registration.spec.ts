@@ -56,7 +56,7 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(page.getByTestId("registration")).toHaveCount(5);
 
   // Assign bibs for one race from Setup: Cat 3 Men from its 100–199.
-  await page.getByRole("tab", { name: "Setup" }).click();
+  await page.getByRole("tab", { name: "Event" }).click();
   await page.getByRole("button", { name: "Assign bibs for Cat 3 Men" }).click();
   await expect(page.getByText("Cat 3 Men: assigned 1 bib")).toBeVisible();
   await page.getByRole("tab", { name: "Registration" }).click();

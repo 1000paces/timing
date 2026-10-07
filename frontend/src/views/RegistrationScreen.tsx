@@ -61,6 +61,7 @@ import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
+import { FilterWithChips } from "./FilterWithChips";
 import { ImportDialog } from "./ImportDialog";
 import { RacerDialog } from "./RacerDialog";
 
@@ -351,24 +352,6 @@ function BibField({ reg, name, onChanged }: { reg: RegistrationRow; name: string
   return locked ? <Tooltip title="Checked in: undo check-in to change the bib"><span>{field}</span></Tooltip> : field;
 }
 
-// A filter control with its chosen values as chips underneath, so the control
-// keeps its size however many values are picked.
-function FilterWithChips({ chips, onDelete, children }: {
-  chips: { key: string; label: string }[];
-  onDelete: (key: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Stack spacing={0.5}>
-      {children}
-      {chips.length > 0 && (
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, maxWidth: 260 }}>
-          {chips.map((c) => <Chip key={c.key} size="small" label={c.label} onDelete={() => onDelete(c.key)} />)}
-        </Stack>
-      )}
-    </Stack>
-  );
-}
 
 // Racers shown, check-in progress, and racers still needing a bib. The last two
 // are shortcuts to their filters; "need a bib" turns amber while it's above 0.

@@ -77,6 +77,21 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
 
   const missed = page.getByTestId("suggestion").filter({ hasText: "missed crossing" });
   await expect(missed.first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: "Review Queue" })).toBeVisible();
+  await expect(page.getByTestId("issue-count").first()).toHaveText(/^\d+ issues?$/);
+
+  // Problems tab: the same queue, full page, filterable by type (kept on refresh).
+  await page.getByRole("tab", { name: /Problems/ }).click();
+  await expect(page.getByTestId("issue-count").first()).toHaveText(/^\d+ issues?$/);
+  await page.getByRole("combobox", { name: "Type" }).click();
+  await page.getByRole("option", { name: /^Missed crossing/ }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("issue-count").first()).toHaveText(/^\d+ of \d+ issues$/);
+  await expect(page.getByTestId("problem-type").filter({ hasNotText: "Missed crossing" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Missed crossing", exact: true })).toBeVisible();
+  await expect(page.getByTestId("problem-type").filter({ hasNotText: "Missed crossing" })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Results" }).click();
   await timer.getByRole("tab", { name: "Results" }).click();
   await expect(timer.getByTestId("suggestion").first()).toBeVisible({ timeout: 20_000 });
   await expect(timer.getByRole("button", { name: "Accept" })).toHaveCount(0);

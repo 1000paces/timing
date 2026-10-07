@@ -12,6 +12,7 @@ import { eventsHref, linkTo, useRoute } from "./route";
 import { currentOfficial, signOut, type Official } from "./session";
 import { CaptureScreen } from "./views/CaptureScreen";
 import { Events } from "./views/Events";
+import { ProblemsScreen } from "./views/ProblemsScreen";
 import { RaceScreen } from "./views/RaceScreen";
 import { RegistrationScreen } from "./views/RegistrationScreen";
 import { SetupScreen } from "./views/SetupScreen";
@@ -65,6 +66,7 @@ export function App() {
       {route.view === "events" && <Events official={official} onSignedOut={signedOut} />}
       {route.view === "starts" && <StartScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "registration" && <RegistrationScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
+      {route.view === "problems" && <ProblemsScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "capture" && <CaptureScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "setup" && <SetupScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}
       {route.view === "race" && <RaceScreen eventId={route.eventId} official={official} onSignedOut={signedOut} />}

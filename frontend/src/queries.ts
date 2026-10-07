@@ -142,7 +142,7 @@ export type RaceStandings = {
   startAtMs: number | null;
   rows: Row[];
 };
-export type Suggestion = { key: string; kind: string; bib: string | null; message: string; needs: string[] };
+export type Suggestion = { key: string; kind: string; bib: string | null; raceId: string | null; message: string; needs: string[] };
 export type Unassigned = { captureId: string; atMs: number; bib: string | null };
 export type StandingsData = {
   standings: { stale: boolean; error: string | null; races: RaceStandings[]; suggestions: Suggestion[]; unassigned: Unassigned[] };
@@ -160,7 +160,7 @@ export const STANDINGS = gql`
         startAtMs
         rows { place bib name status laps elapsedMs gapLapsDown gapMs }
       }
-      suggestions { key kind bib message needs }
+      suggestions { key kind bib raceId message needs }
       unassigned { captureId atMs bib }
     }
   }
@@ -310,4 +310,7 @@ export const SET_RACER_STATUS = gql`
   mutation SetRacerStatus($eventId: ID!, $bib: String!, $status: RacerStatusChange!) {
     setRacerStatus(eventId: $eventId, bib: $bib, status: $status) { errors }
   }
+`;
+export const PROBLEM_COUNT = gql`
+  query ProblemCount($eventId: ID!) { standings(eventId: $eventId) { suggestions { key } } }
 `;
