@@ -2,6 +2,20 @@
 
 Items deliberately deferred. Each has enough context to pick up cold.
 
+## Priorities for a real (manual, no-chip) race — 2026-10-07
+
+1. **Race-day officiating** (in progress on `officiating`): rider detail with
+   crossings (void / move / insert), pull and flag finish, ruling history with
+   Undo, Publish, results CSV export and printable results.
+2. **Hardening:** run the hub in production mode, back up `storage/` during the
+   event, session expiry (see below).
+3. **Engine:** "no finish crossing" suggestion; fewer early-lap false alarms
+   (field comparison / pace-scaled fallback — see Results engine).
+4. **Registration on Starts:** "N of M checked in" per race; DNS suggestions.
+5. Operational: dedicated router (fixed hub IP), power, phones paired and
+   certificates installed the day before, console built before leaving, a paper
+   backup at the line, a dry run.
+
 ## Results engine
 
 ### Compare early laps against the field, not just the rider's own laps
@@ -84,16 +98,13 @@ Items deliberately deferred. Each has enough context to pick up cold.
   standings rows, or a crossings query). Without them the console can't void a
   bad tap, reassign a counted crossing, or flag-finish a specific crossing — and
   "about to be lapped" fixes can't be completed. First API task of the plan.
-- **Guard against a second GO:** `fireStart` on an already-started group should
-  refuse unless `restart: true` (console confirm dialog). Today a second GO
-  silently moves the gun and shifts every elapsed time.
 - **Sessions:** expire after 12–24 h; `updateOfficial(id, active, role, pin)`
   (admin); invalidate existing sessions on deactivation or PIN change (check in
   `CurrentOfficial` and the cable connection). Today a copied cookie keeps
   working after sign-out and there's no way to deactivate an official via the API.
-- **Pairing QR URL** must use the hub's LAN address (`LocalCa.lan_ips` +
-  `HUB_TLS_PORT`) or a configured hub URL — not the admin's request host
-  (`localhost` QR codes are unreachable from tablets).
+- **Pairing QR URL** (partly done): it uses the address the console is open on;
+  the dialog and runbook say to open the console on the hub's LAN address. Could
+  instead build it from `LocalCa.lan_ips` + `HUB_TLS_PORT` so it can't be wrong.
 - **Coalesce broadcasts** during CSV import (one "changed" at the end, not one
   per row); broadcast device pair/revoke so the device list is live.
 - **Simulator virtual clock:** taps are stamped ahead of the wall clock
@@ -106,25 +117,15 @@ Items deliberately deferred. Each has enough context to pick up cold.
   names per event; `revokeDevice` shouldn't overwrite the first revocation time;
   CSV import row cap and per-row error resilience; runbook notes (restart
   `bin/hub` after a network change; delete `storage/certs/server.*` if corrupt).
-- Clients must never set `Ruling#created_at_ms` ("latest wins" ordering depends
-  on hub time) — the API sets it.
 - Suggestion `fix` hashes are *templates*: `flag_finish` lacks `capture_id`,
   unassigned-capture fixes have `bib: nil`. The console must complete them before
   creating a ruling.
-- Lap-count changes: the console must let officials set the lap count on ANY start
-  group (fixed or timed) — decided 2026-10-01: a `set_lap_count` ruling overrides
-  the finish rule.
-- Show last good standings with an error banner if computing results fails (spec §9).
 
 ### Sync + capture plan
 - **Before any tablet/venue test:** run the hub in production mode (see "Run the
   venue hub in production mode") and constrain the root CA (nameConstraints).
-- Strip the pairing token from the capture app URL after reading it
-  (`history.replaceState`); bound device name length.
-- Device entries must take their `event_id` from the authenticated device, never
-  from the payload (and add a model check that it matches `device.event_id`).
+- Bound device name length (pairing).
 - Consider storing each raw device entry so hash chains can be re-verified later.
-- Normalize empty-string bibs to nil on captures.
 
 ### Event & race setup (review minors, 2026-10-02)
 - Warn in Setup when moving a race into a cohort (new scheduled start or finish
