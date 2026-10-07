@@ -24,6 +24,7 @@ import { formatClock, formatElapsed } from "../format";
 import { CAPTURE_SCREEN, CORRECT_CAPTURE_BIB, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
+import { initialSearch, showSearch } from "../rememberedSearch";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { PhonesPanel } from "./PhonesPanel";
@@ -38,6 +39,9 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
   const [deleteCapture] = useMutation<{ deleteCapture: { errors: string[] } }>(DELETE_CAPTURE);
   const [deleting, setDeleting] = useState<CaptureRow | null>(null);
   const [onlyBib, setOnlyBib] = useState<string | null>(null);
+  const deviceKey = `capture-device:${eventId}`;
+  const [device, setDevice] = useState(() => new URLSearchParams(initialSearch(deviceKey, window.location.search)).get("device") ?? "all");
+  useEffect(() => showSearch(deviceKey, device === "all" ? "" : `?device=${encodeURIComponent(device)}`), [deviceKey, device]);
   const [bib, setBib] = useState("");
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -95,6 +99,11 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
       .finally(refresh);
   }
 
+  const chief = roleCanAct(official.role);
+  const deviceNames = [...new Set(event.captures.filter((c) => !c.mine).map((c) => c.deviceName))].sort();
+  const shown = event.captures.filter((c) =>
+    (device === "all" || (device === "mine" ? c.mine : c.deviceName === device)) && (!onlyBib || c.bib === onlyBib));
+
   return (
     <Box sx={{ p: 2, maxWidth: 720 }}>
       <EventNav eventId={eventId} eventName={event.name} current="capture" admin={official.role === "admin"} />
@@ -112,17 +121,25 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
         />
       </form>
       {error && <Alert severity="error" sx={{ mt: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+      <Stack direction="row" spacing={2} sx={{ mt: 2, alignItems: "center" }}>
+        <TextField select size="small" label="Device" value={device} onChange={(e) => setDevice(e.target.value)} sx={{ minWidth: 200 }}
+          slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}>
+          <option value="all">All devices</option>
+          <option value="mine">Mine (this console)</option>
+          {deviceNames.map((n) => <option key={n} value={n}>{n}</option>)}
+        </TextField>
+      </Stack>
       {onlyBib && <Chip label={`Bib ${onlyBib}`} color="primary" size="small" onDelete={() => setOnlyBib(null)} sx={{ mt: 2 }} />}
       <Paper sx={{ mt: 2 }}>
         <List dense>
-          {(onlyBib ? event.myCaptures.filter((c) => c.bib === onlyBib) : event.myCaptures).map((c) => (
+          {shown.map((c) => (
             <ListItem key={c.id} data-testid="capture" divider>
               <IconButton size="small" aria-label="Show only this bib" disabled={!c.bib} onClick={() => setOnlyBib(c.bib)} sx={{ mr: 1 }}>
                 <FilterAltIcon fontSize="small" />
               </IconButton>
-              <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.capturedAtMs)}</Typography>
+              <Typography sx={{ fontFamily: "monospace", width: 100 }}>{formatClock(c.atMs)}</Typography>
               <Box sx={{ width: 110, textAlign: "center" }}>
-                <CaptureBib capture={c} onChanged={refresh} />
+                <CaptureBib capture={c} chief={chief} onChanged={refresh} />
                 {c.enteredBib !== c.bib && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.1 }}>
                     entered: {c.enteredBib ?? "no bib"}
@@ -139,17 +156,19 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
                 )}
               </Box>
               <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                {!c.mine && <Chip data-testid="device" size="small" variant="outlined" label={c.deviceName} />}
                 {(!c.bib || !racers.has(c.bib)) && (
                   <Chip data-testid="bib-problem" size="small" color="error" label={c.bib ? "Unknown bib" : "No bib"} />
                 )}
                 <LapWarning capture={c} />
               </Stack>
-              <IconButton aria-label="Delete capture" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleting(c)}>
+              <IconButton aria-label="Delete capture" color="error" size="small" sx={{ ml: 1, visibility: c.mine || chief ? "visible" : "hidden" }}
+                disabled={!(c.mine || chief)} onClick={() => setDeleting(c)}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </ListItem>
           ))}
-          {event.myCaptures.length === 0 && (
+          {shown.length === 0 && (
             <ListItem>
               <Typography color="text.secondary">No crossings recorded yet.</Typography>
             </ListItem>
@@ -193,13 +212,15 @@ function LapWarning({ capture }: { capture: CaptureRow }) {
 
 // The crossing's bib; click it to correct or add one: Enter or Tab saves,
 // Escape cancels. Locked when an official assigned the bib in the review queue.
-function CaptureBib({ capture, onChanged }: { capture: CaptureRow; onChanged: () => void }) {
+// chief: chiefs and admins may correct any device's crossing (an official ruling).
+function CaptureBib({ capture, chief, onChanged }: { capture: CaptureRow; chief: boolean; onChanged: () => void }) {
   const [correct] = useMutation<{ correctCaptureBib: { errors: string[] } }>(CORRECT_CAPTURE_BIB);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const saving = useRef(false);
-  const locked = capture.bibSource === "RULING";
+  const allowed = capture.mine || chief;
+  const locked = !allowed || (capture.bibSource === "RULING" && !chief);
 
   function open() {
     setValue(capture.bib ?? "");
@@ -238,7 +259,7 @@ function CaptureBib({ capture, onChanged }: { capture: CaptureRow; onChanged: ()
     );
   }
   return (
-    <Tooltip title={locked ? "An official assigned this bib; change it in the review queue" : capture.bib ? "Click to correct the bib" : "Click to add a bib"}>
+    <Tooltip title={!allowed ? `Recorded on ${capture.deviceName}` : locked ? "An official assigned this bib; change it in the review queue" : capture.bib ? "Click to correct the bib" : "Click to add a bib"}>
       <span>
         <ButtonBase aria-label="Edit bib" disabled={locked} onClick={open}
           sx={{ px: 1, borderRadius: 1, minWidth: 48, "&:hover": { bgcolor: "action.hover" } }}>

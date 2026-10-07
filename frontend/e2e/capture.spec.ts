@@ -8,6 +8,8 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await page.getByRole("link", { name: /E2E Capture/ }).click();
   await page.getByRole("tab", { name: "Capture" }).click();
 
+  // The log shows every device's crossings; this timer looks at their own.
+  await page.getByLabel("Device").selectOption("mine");
   const bib = page.getByLabel("Bib", { exact: true });
   await expect(bib).toBeFocused();
   await bib.fill("101");

@@ -41,6 +41,7 @@ import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { EventFields } from "./EventFields";
 import { EventNav } from "./EventNav";
+import { PhonesPanel } from "./PhonesPanel";
 import { RaceDialog } from "./RaceDialog";
 
 const GENDER: Record<string, string> = { men: "Men", women: "Women", open: "Open" };
@@ -193,6 +194,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
         </Paper>
       </Stack>
 
+      <PhonesPanel eventId={eventId} />
       {editing && (
         <RaceDialog
           eventId={eventId}

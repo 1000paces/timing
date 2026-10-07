@@ -67,6 +67,8 @@ test("admin sets up a CX event and its races; lap count follows finish-with-lead
   await expect(bibRange).toHaveCSS("text-align", "center");
   await expect(novice.getByRole("button", { name: "Delete Novice Open" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+  // Phones can be paired from the Event tab too.
+  await expect(page.getByRole("button", { name: "Pair a phone" })).toBeVisible();
   await expect(startedCell).toHaveText(recorded!);
 
   // Review Focus 1/5: laps set on one finish-with-leader race apply to its cohort only.

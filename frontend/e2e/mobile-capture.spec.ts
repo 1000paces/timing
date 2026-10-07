@@ -62,6 +62,16 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await expect(pill).toHaveText("Synced", { timeout: 30_000 });
   await chief.reload();
   await expect(chief.getByTestId("phone").filter({ hasText: "Finish phone" })).toBeVisible();
+  // The console log shows the phone's crossings; a chief corrects one as an official.
+  const consoleRows = chief.getByTestId("capture").filter({ hasText: "Finish phone" });
+  await expect(consoleRows).toHaveCount(2);
+  await consoleRows.filter({ hasText: "101" }).getByRole("button", { name: "Edit bib" }).click();
+  await chief.getByLabel("Bib for crossing").fill("103");
+  await chief.getByLabel("Bib for crossing").press("Enter");
+  await expect(consoleRows.filter({ hasText: "entered: 101" })).toContainText("103");
+  await expect(rows.filter({ hasText: "entered: 101" })).toContainText("103", { timeout: 20_000 });
+  await expect(rows.filter({ hasText: "entered: 101" }).getByRole("button", { name: "Edit bib" })).toBeDisabled();
+
   await chief.getByRole("tab", { name: "Results" }).click();
   await expect(chief.getByTestId("suggestion").filter({ hasText: /No bib · / })).toHaveCount(0);
 

@@ -15,11 +15,20 @@ module Types
     field :registration_counts, RegistrationCountsType, null: false
     field :bib_from, Integer, description: "Event-wide bib range, for races without their own"
     field :bib_to, Integer
+    field :captures, [CaptureType], null: false, description: "Every device's crossings, newest first by hub time (deleted ones left out)" do
+      argument :limit, Integer, required: false, default_value: 100
+    end
     field :my_captures, [CaptureType], null: false, description: "The signed-in official's console captures, newest first" do
       argument :limit, Integer, required: false, default_value: 20
     end
 
     def races = object.races.to_a.sort_by { [it.scheduled_at_ms, it.name] }
+    def captures(limit:)
+      voided = CaptureLaps.voided_ids(object).to_a
+      Capture.where(event: object).where.not(id: voided).includes(:device)
+             .order(Arel.sql("captured_at_ms + COALESCE(clock_offset_ms, 0) DESC"), id: :desc).limit(limit.clamp(1, 500))
+    end
+
     def my_captures(limit:)
       device = ConsoleDevice.find(event: object, official: context[:current_official])
       return [] unless device

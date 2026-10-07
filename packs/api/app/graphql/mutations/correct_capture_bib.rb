@@ -1,9 +1,10 @@
 module Mutations
-  # Any official may correct or add the bib on their own console crossings. The
-  # tap itself is never edited: a bib entry is appended to the device's log, as
-  # a tablet does for "tap now, bib later". An official's assign_bib ruling wins.
+  # Any official may correct or add the bib on their own console crossings: a
+  # bib entry is appended to their console's log (the tap itself is never
+  # edited). Chiefs and admins may correct any device's crossing: that is an
+  # official assign_bib ruling, which wins everywhere and reaches phones on sync.
   class CorrectCaptureBib < BaseMutation
-    description "Correct or add the bib on one of the signed-in official's own console captures"
+    description "Correct or add a crossing's bib: your own console captures, or any device's for chiefs"
     argument :capture_id, ID
     argument :bib, String
 
@@ -12,14 +13,23 @@ module Mutations
     def resolve(capture_id:, bib:)
       official = require_official!("timer")
       capture = Capture.find(capture_id)
-      return refuse("You can only change your own captures") unless capture.device == ConsoleDevice.find(event: capture.event, official:)
+      mine = capture.device == ConsoleDevice.find(event: capture.event, official:)
+      chief = official.at_least?("chief")
+      return refuse("You can only change your own captures") unless mine || chief
       return refuse("Enter a bib (delete the crossing to take it back)") if bib.strip.empty?
       return refuse("That capture is deleted") if CaptureLaps.voided_ids(capture.event).include?(capture.id)
-      if (assigned = CaptureLaps.assigned_bibs(capture.event)[capture.id])
+
+      assigned = CaptureLaps.assigned_bibs(capture.event)[capture.id]
+      if mine && !assigned
+        BibAssignment.record!(capture:, bib:)
+      elsif chief
+        # The console is the master copy: a chief's fix to another device's
+        # crossing (or over an official's earlier one) is an official ruling.
+        ruling = RulingWriter.write(event: capture.event, official:, kind: "assign_bib", payload: { capture_id: capture.id, bib: bib.strip })
+        return refuse(ruling.errors.full_messages.join("; ")) unless ruling.persisted?
+      else
         return refuse("An official assigned bib #{assigned} to this crossing; change it in the review queue")
       end
-
-      BibAssignment.record!(capture:, bib:)
       { capture:, errors: [] }
     end
 
