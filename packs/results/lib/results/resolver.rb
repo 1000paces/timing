@@ -1,7 +1,8 @@
 module Results
   # Spec §4.1: turns the raw log into per-bib crossings plus unassigned captures.
   class Resolver
-    Resolved = Data.define(:crossings_by_bib, :unassigned, :aliases, :rulings, :unsynced_devices)
+    # dropped: bib => crossings the debounce dropped (shown as duplicates on the racer panel).
+    Resolved = Data.define(:crossings_by_bib, :unassigned, :aliases, :dropped, :rulings, :unsynced_devices)
 
     def initialize(input)
       @input = input
@@ -35,27 +36,30 @@ module Results
         crossings << Crossing.new(bib:, at_ms: r.payload["at_ms"], ref: r.id, inserted: true) if registered.include?(bib)
       end
 
-      by_bib, aliases = debounce(crossings)
+      by_bib, aliases, dropped = debounce(crossings)
       Resolved.new(crossings_by_bib: by_bib, unassigned: unassigned.sort_by { [it.at_ms, it.capture_id] },
-                   aliases:, rulings:, unsynced_devices: unsynced.to_a.sort)
+                   aliases:, dropped:, rulings:, unsynced_devices: unsynced.to_a.sort)
     end
 
     private
 
     # Collapses taps for the same bib that fall within the debounce window of the
-    # last kept crossing, keeping the earliest. Returns [by_bib, dropped_ref => kept_ref].
+    # last kept crossing, keeping the earliest. Returns
+    # [by_bib, dropped_ref => kept_ref, bib => dropped crossings].
     def debounce(crossings)
       aliases = {}
+      dropped = Hash.new { |h, k| h[k] = [] }
       by_bib = crossings.group_by(&:bib).transform_values do |list|
         list.sort_by { [it.at_ms, it.ref] }.each_with_object([]) do |c, kept|
           if kept.any? && c.at_ms - kept.last.at_ms < @input.config.debounce_ms
             aliases[c.ref] = kept.last.ref
+            dropped[c.bib] << c
           else
             kept << c
           end
         end
       end
-      [by_bib, aliases]
+      [by_bib, aliases, dropped.to_h]
     end
   end
 end

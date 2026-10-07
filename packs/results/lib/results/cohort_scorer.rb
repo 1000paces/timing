@@ -7,7 +7,9 @@ module Results
   class CohortScorer
     STATUS_KINDS = %w[dnf dns dsq].freeze
 
-    RacerState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at)
+    # crossings: post-start crossings; seen: every kept crossing for the bib (pre-start too);
+    # dropped: crossings the debounce dropped.
+    RacerState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at, :seen, :dropped)
     Scored = Data.define(:races, :lap_count, :finish_open_at, :racers, :race_results)
 
     def initialize(input, races, resolved)
@@ -84,7 +86,8 @@ module Results
                 elsif finish then crossings[0..crossings.index(finish)]
                 else crossings
                 end
-      RacerState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:)
+      RacerState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:,
+                     seen: @resolved.crossings_by_bib.fetch(entrant.bib, []), dropped: @resolved.dropped.fetch(entrant.bib, []))
     end
 
     # Earliest of: the flagged crossing (early checkered flag) and the first

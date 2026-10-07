@@ -24,7 +24,11 @@ module Results
   UnassignedCrossing = Data.define(:capture_id, :at_ms, :bib)
 
   # --- Output ---
-  RacerResult = Data.define(:place, :bib, :name, :status, :laps, :elapsed_ms, :gap, :lap_times_ms)
+  # kind: :lap, :finish, :duplicate, :before_start, :after_finish, :after_pull;
+  # lap / lap_ms only for counted crossings (lap and finish).
+  CrossingView = Data.define(:ref, :at_ms, :inserted, :kind, :lap, :lap_ms)
+  RacerResult = Data.define(:place, :bib, :name, :status, :laps, :elapsed_ms, :gap, :lap_times_ms,
+                            :crossings, :lap_positions, :pull_at_ms, :finish_ref)
   Gap = Data.define(:laps_down, :ms) # ms only when on the same lap as the race leader
   RaceResult = Data.define(:race_id, :state, :lap_count, :publication, :rows, :digest, :start_at_ms)
   Suggestion = Data.define(:key, :kind, :bib, :race_id, :message, :fix) # fix: ruling-shaped string-keyed hash, or nil
