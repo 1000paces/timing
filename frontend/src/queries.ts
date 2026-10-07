@@ -317,3 +317,24 @@ export const PROBLEM_COUNT = gql`
 export const CORRECT_CAPTURE_BIB = gql`
   mutation CorrectCaptureBib($captureId: ID!, $bib: String!) { correctCaptureBib(captureId: $captureId, bib: $bib) { capture { id } errors } }
 `;
+export type PhoneRow = {
+  id: string;
+  name: string;
+  pairedAtMs: number;
+  revokedAtMs: number | null;
+  lastSeenAtMs: number | null;
+  lastSyncAtMs: number | null;
+  syncStoppedAtMs: number | null;
+  clockOffsetMs: number | null;
+};
+export const DEVICES = gql`
+  query Devices($eventId: ID!) {
+    devices(eventId: $eventId) { id name pairedAtMs revokedAtMs lastSeenAtMs lastSyncAtMs syncStoppedAtMs clockOffsetMs }
+  }
+`;
+export const CREATE_PAIRING_TOKEN = gql`
+  mutation CreatePairingToken($eventId: ID!) { createPairingToken(eventId: $eventId) { pairingUrl expiresAtMs errors } }
+`;
+export const REVOKE_DEVICE = gql`
+  mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
+`;

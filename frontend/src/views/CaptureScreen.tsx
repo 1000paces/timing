@@ -21,10 +21,11 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatClock, formatElapsed } from "../format";
 import { CAPTURE_SCREEN, CORRECT_CAPTURE_BIB, DELETE_CAPTURE, RECORD_CAPTURE, type CaptureRow, type CaptureScreenData, type LapFlag, type RecordCaptureResult } from "../queries";
-import { isSignedOutError } from "../roles";
+import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
+import { PhonesPanel } from "./PhonesPanel";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
 
@@ -149,6 +150,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           )}
         </List>
       </Paper>
+      {roleCanAct(official.role) && <PhonesPanel eventId={eventId} />}
       <Dialog open={deleting != null} onClose={() => setDeleting(null)}>
         <DialogTitle>
           Delete {deleting?.bib ? `bib ${deleting.bib}` : "the no-bib crossing"} at {deleting ? formatClock(deleting.capturedAtMs) : ""}?

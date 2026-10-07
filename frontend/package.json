@@ -17,6 +17,7 @@
     "@mui/material": "^9.4.0",
     "@rails/actioncable": "^8.1.400",
     "graphql": "^16.11.0",
+    "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "rxjs": "^7.8.2"
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
     "@types/rails__actioncable": "^8.0.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
