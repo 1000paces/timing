@@ -49,6 +49,8 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await rows.filter({ hasText: "999" }).getByRole("button", { name: "Edit bib" }).click();
   const sheet = phone.getByRole("dialog", { name: "Correct bib" });
   for (const d of "102") await sheet.getByRole("button", { name: d, exact: true }).click();
+  await expect(sheet.getByTestId("sheet-bib")).toHaveText("102"); // the first digit replaces the old bib
+  await expect(sheet.getByTestId("sheet-racer")).toContainText("Masters 35+ Men"); // who the typed bib is
   await sheet.getByRole("button", { name: "Save" }).click();
   await expect(rows.filter({ hasText: "entered: 999" })).toContainText("102");
 

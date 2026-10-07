@@ -1,3 +1,4 @@
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -10,7 +11,6 @@ import ButtonBase from "@mui/material/ButtonBase";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -248,6 +248,12 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
 
   const rows = useMemo(() => captureRows(entries, state?.roster ?? null, state?.status ?? null, state?.ackSeq ?? 0), [entries, state?.roster, state?.status, state?.ackSeq]);
   const visible = onlyBib ? rows.filter((r) => r.bib === onlyBib) : rows;
+  const racerFor = useMemo(() => {
+    const roster = state?.roster;
+    const races = new Map((roster?.event.races ?? []).map((r) => [r.id, r.name]));
+    const racers = new Map((roster?.racers ?? []).map((r) => [r.bib, { name: r.name, race: races.get(r.race_id) ?? null }]));
+    return (bib: string) => racers.get(bib) ?? null;
+  }, [state?.roster]);
   const offset = state?.offsetMs ?? 0;
   const lastSeq = entries.at(-1)?.device_seq ?? 0;
 
@@ -359,7 +365,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
       </Box>
       </Box>
 
-      {editing && <BibSheet row={editing} onCancel={() => setEditing(null)} onSave={(v) => void correct(editing, v)} />}
+      {editing && <BibSheet row={editing} racerFor={racerFor} onCancel={() => setEditing(null)} onSave={(v) => void correct(editing, v)} />}
       <Dialog open={deleting != null} onClose={() => setDeleting(null)}>
         <DialogTitle>Delete {deleting?.bib ? `bib ${deleting.bib}` : "the no-bib crossing"} at {deleting ? formatClock(deleting.atMs + offset) : ""}?</DialogTitle>
         <DialogActions>
@@ -371,30 +377,54 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   );
 }
 
-function BibSheet({ row, onCancel, onSave }: { row: Row; onCancel: () => void; onSave: (bib: string) => void }) {
+type RacerLookup = (bib: string) => { name: string; race: string | null } | null;
+
+// Correct a crossing's bib with the same keypad: a big number, who that bib is,
+// and Save where Enter sits on the main screen.
+function BibSheet({ row, racerFor, onCancel, onSave }: { row: Row; racerFor: RacerLookup; onCancel: () => void; onSave: (bib: string) => void }) {
   const [value, setValue] = useState(row.bib ?? "");
-  // Short, wide screens (a phone in landscape): full screen, value and buttons
-  // beside the keypad, shorter keys — so everything fits without scrolling.
+  // The current bib shows dimmed; the first digit typed replaces it (Backspace edits it).
+  const [touched, setTouched] = useState(false);
+  const digit = (d: string) => {
+    setValue((v) => (touched ? v + d : d).slice(0, 6));
+    setTouched(true);
+  };
+  const back = () => {
+    setValue((v) => v.slice(0, -1));
+    setTouched(true);
+  };
+  // A phone in landscape: full screen, number on the left, keypad on the right.
   const wide = useMediaQuery("(orientation: landscape) and (max-height: 500px)");
-  const display = <Typography sx={{ fontSize: wide ? 36 : 40, fontWeight: 700, textAlign: "center", minHeight: 52 }}>{value || "—"}</Typography>;
-  const keypad = <Keypad compact={wide} onDigit={(d) => setValue((v) => (v + d).slice(0, 6))} onBack={() => setValue((v) => v.slice(0, -1))} />;
-  const buttons = (
-    <>
-      <Button onClick={onCancel}>Cancel</Button>
-      <Button variant="contained" disabled={!value.trim()} onClick={() => onSave(value)}>Save</Button>
-    </>
+  const typed = value.trim();
+  const racer = typed ? racerFor(typed) : null;
+  const save = () => typed && onSave(typed);
+  const number = (
+    <Box sx={{ textAlign: "center" }}>
+      <Typography data-testid="sheet-bib" color={touched ? "text.primary" : "text.disabled"}
+        sx={{ fontSize: wide ? 96 : 72, fontWeight: 700, lineHeight: 1, letterSpacing: 4 }}>{value || "—"}</Typography>
+      <Typography data-testid="sheet-racer" sx={{ mt: 1, minHeight: 24 }} color={typed && !racer ? "error.main" : "text.secondary"} noWrap>
+        {!typed ? "Type the bib" : racer ? [racer.name, racer.race].filter(Boolean).join(" · ") : "Unknown bib"}
+      </Typography>
+      {row.bib && row.bib !== typed && <Typography variant="caption" color="text.secondary">was {row.bib}</Typography>}
+    </Box>
+  );
+  const keypad = (
+    <Keypad compact={wide} enterLabel="Save" onEnter={save}
+      onDigit={digit} onBack={back} />
+  );
+  const header = (
+    <Stack direction="row" sx={{ alignItems: "center" }}>
+      <Typography id="correct-bib-title" variant="h6" sx={{ flex: 1 }}>Correct bib</Typography>
+      <IconButton aria-label="Cancel" onClick={onCancel} edge="end"><CloseIcon /></IconButton>
+    </Stack>
   );
   if (wide) {
     return (
       <Dialog open onClose={onCancel} fullScreen aria-labelledby="correct-bib-title">
         <Box sx={{ height: "100%", display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 3fr)", gap: 2, p: 2, boxSizing: "border-box" }}>
-          <Stack sx={{ justifyContent: "space-between" }}>
-            <Box>
-              <Typography id="correct-bib-title" variant="h6">Correct bib</Typography>
-              {row.enteredNote && <Typography variant="caption" color="text.secondary">{row.enteredNote}</Typography>}
-              {display}
-            </Box>
-            <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>{buttons}</Stack>
+          <Stack sx={{ minHeight: 0 }}>
+            {header}
+            <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>{number}</Box>
           </Stack>
           <Box sx={{ alignSelf: "center" }}>{keypad}</Box>
         </Box>
@@ -402,13 +432,12 @@ function BibSheet({ row, onCancel, onSave }: { row: Row; onCancel: () => void; o
     );
   }
   return (
-    <Dialog open onClose={onCancel} fullWidth>
-      <DialogTitle>Correct bib</DialogTitle>
-      <DialogContent>
-        {display}
+    <Dialog open onClose={onCancel} fullWidth aria-labelledby="correct-bib-title">
+      <Box sx={{ p: 2 }}>
+        {header}
+        <Box sx={{ my: 2 }}>{number}</Box>
         {keypad}
-      </DialogContent>
-      <DialogActions>{buttons}</DialogActions>
+      </Box>
     </Dialog>
   );
 }
