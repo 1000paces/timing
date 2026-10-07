@@ -11,8 +11,11 @@ module Types
       argument :event_id, ID
     end
 
-    field :rulings, [RulingType], null: false, description: "Newest first" do
+    field :rulings, [RulingType], null: false, description: "History: newest first; search by bib or racer name" do
       argument :event_id, ID
+      argument :search, String, required: false
+      argument :limit, Integer, required: false, default_value: 50
+      argument :offset, Integer, required: false, default_value: 0
     end
 
     field :racer, RacerDetailType, description: "One racer's race: crossings, lap positions, fixes" do
@@ -45,12 +48,19 @@ module Types
       StandingsService.report(Event.find(event_id))
     end
 
-    def rulings(event_id:)
+    def rulings(event_id:, search: nil, limit: 50, offset: 0)
       require_official!
-      rulings = Ruling.where(event_id:).order(created_at_ms: :desc, id: :desc).to_a
-      engine_rulings = rulings.map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
-      context[:cancelled_ruling_ids] = Results::ActiveRulings.new(engine_rulings).cancelled_ids
-      rulings
+      event = Event.find(event_id)
+      history = context[:ruling_history] = RulingHistory.new(event)
+      rulings = history.rulings
+      if (needle = search.to_s.strip.downcase).present?
+        names = event.registrations.includes(:racer).to_h { [it.bib, it.racer.full_name.downcase] }
+        rulings = rulings.select do |r|
+          bib = history.describer.bib_for(r)
+          bib && (bib.downcase == needle || names[bib]&.include?(needle))
+        end
+      end
+      rulings.drop(offset.clamp(0, nil)).first(limit.clamp(1, 500))
     end
 
     def racer(event_id:, bib:)
