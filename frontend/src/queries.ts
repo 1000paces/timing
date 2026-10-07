@@ -190,14 +190,14 @@ export const UNSTART_RACE = gql`
 `;
 
 export type LapFlag = "missed" | "long" | "short";
-export type CaptureRow = { id: string; bib: string | null; enteredBib: string | null; bibSource: "RULING" | "DEVICE" | "ENTERED"; capturedAtMs: number; lap: number | null; lapMs: number | null; typicalLapMs: number | null; lapFlag: LapFlag | null };
+export type CaptureRow = { id: string; bib: string | null; enteredBib: string | null; bibSource: "RULING" | "DEVICE" | "ENTERED"; capturedAtMs: number; atMs: number; deviceName: string; mine: boolean; lap: number | null; lapMs: number | null; typicalLapMs: number | null; lapFlag: LapFlag | null };
 export type CaptureScreenData = {
   event: {
     id: string;
     name: string;
     races: { id: string; name: string }[];
     registrations: { bib: string; raceId: string; racer: { firstName: string; lastName: string } }[];
-    myCaptures: CaptureRow[];
+    captures: CaptureRow[];
   };
 };
 export const CAPTURE_SCREEN = gql`
@@ -206,7 +206,7 @@ export const CAPTURE_SCREEN = gql`
       id name
       races { id name }
       registrations { bib raceId racer { firstName lastName } }
-      myCaptures { id bib enteredBib bibSource capturedAtMs lap lapMs typicalLapMs lapFlag }
+      captures { id bib enteredBib bibSource capturedAtMs atMs deviceName mine lap lapMs typicalLapMs lapFlag }
     }
   }
 `;
@@ -214,7 +214,7 @@ export type RecordCaptureResult = { recordCapture: MutationResult & { capture: C
 export const RECORD_CAPTURE = gql`
   mutation RecordCapture($eventId: ID!, $bib: String) {
     recordCapture(eventId: $eventId, bib: $bib) {
-      capture { id bib enteredBib bibSource capturedAtMs lap lapMs typicalLapMs lapFlag } errors
+      capture { id bib enteredBib bibSource capturedAtMs atMs deviceName mine lap lapMs typicalLapMs lapFlag } errors
     }
   }
 `;
@@ -316,4 +316,25 @@ export const PROBLEM_COUNT = gql`
 `;
 export const CORRECT_CAPTURE_BIB = gql`
   mutation CorrectCaptureBib($captureId: ID!, $bib: String!) { correctCaptureBib(captureId: $captureId, bib: $bib) { capture { id } errors } }
+`;
+export type PhoneRow = {
+  id: string;
+  name: string;
+  pairedAtMs: number;
+  revokedAtMs: number | null;
+  lastSeenAtMs: number | null;
+  lastSyncAtMs: number | null;
+  syncStoppedAtMs: number | null;
+  clockOffsetMs: number | null;
+};
+export const DEVICES = gql`
+  query Devices($eventId: ID!) {
+    devices(eventId: $eventId) { id name pairedAtMs revokedAtMs lastSeenAtMs lastSyncAtMs syncStoppedAtMs clockOffsetMs }
+  }
+`;
+export const CREATE_PAIRING_TOKEN = gql`
+  mutation CreatePairingToken($eventId: ID!) { createPairingToken(eventId: $eventId) { token pairingUrl expiresAtMs errors } }
+`;
+export const REVOKE_DEVICE = gql`
+  mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
 `;

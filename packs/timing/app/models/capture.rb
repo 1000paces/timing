@@ -11,6 +11,6 @@ class Capture < DeviceEntry
   # Appends a crossing to a hub-side device's log (the console, the simulator).
   def self.record!(device:, at_ms:, bib:)
     bib = bib.to_s.strip.presence
-    append!(device:, hash_parts: [at_ms, bib], captured_at_ms: at_ms, clock_offset_ms: 0, bib:)
+    append!(device:, captured_at_ms: at_ms, clock_offset_ms: 0, bib:)
   end
 end

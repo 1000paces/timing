@@ -13,7 +13,7 @@ class DevicePairingTest < ActionDispatch::IntegrationTest
 
   test "admin issues a pairing code; a tablet redeems it once; admin sees and revokes the device" do
     issued = pairing_token
-    assert_equal "http://www.example.com/capture/pair?token=#{issued['token']}", issued["pairingUrl"]
+    assert_equal "http://www.example.com/capture-app/?pair=#{issued['token'].delete('-')}", issued["pairingUrl"]
 
     delete "/session" # the tablet has no official session
     post "/devices/pair", params: { token: issued["token"], name: "Finish tablet" }.to_json, headers: ApiHelpers::JSON_HEADERS
@@ -33,11 +33,15 @@ class DevicePairingTest < ActionDispatch::IntegrationTest
     assert_nil Device.authenticate(paired["device_id"], paired["credential"])
   end
 
-  test "pairing requires the admin role" do
+  test "pairing, listing and revoking phones need the chief role" do
     delete "/session"
     sign_in(create_official(role: "chief", pin: "2222"), "2222")
+    assert pairing_token["token"].present?
+    assert_equal [], gql("query($id: ID!) { devices(eventId: $id) { id } }", id: @event.id).dig("data", "devices")
+    delete "/session"
+    sign_in(create_official(role: "timer", pin: "3333"), "3333")
     body = gql("mutation($id: ID!) { createPairingToken(eventId: $id) { token } }", id: @event.id)
-    assert_equal "Requires the admin role", body["errors"].first["message"]
+    assert_equal "Requires the chief role", body["errors"].first["message"]
   end
 
   # Review Focus 4 (guess-flooding the pairing endpoint)

@@ -20,7 +20,8 @@ class CaptureLaps
   def self.voided_ids(event)
     rulings = Ruling.where(event:, kind: %w[void_capture revert])
                     .map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
-    Results::ActiveRulings.new(rulings).of("void_capture").to_set { it.payload["capture_id"] }
+    Results::ActiveRulings.new(rulings).of("void_capture").to_set { it.payload["capture_id"] } +
+      CaptureVoid.where(event:).pluck(:capture_id)
   end
 
   # capture id => bib from the latest active assign_bib ruling (reverts applied).

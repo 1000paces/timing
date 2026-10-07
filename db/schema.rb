@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
   create_table "category_mappings", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "external_category", null: false
@@ -50,6 +50,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000003) do
     t.string "credential_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "last_seen_at_ms"
+    t.bigint "last_sync_at_ms"
+    t.bigint "clock_offset_ms"
+    t.bigint "sync_stopped_at_ms"
     t.index ["event_id"], name: "index_devices_on_event_id"
   end
 

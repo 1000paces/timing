@@ -5,7 +5,7 @@ module Mutations
     field :device, Types::DeviceType
 
     def resolve(device_id:)
-      require_official!("admin")
+      require_official!("chief")
       device = Device.find(device_id)
       device.revoke!
       { device:, errors: [] }

@@ -17,8 +17,16 @@ class ResultsSnapshot
       bib_assignments: BibAssignment.where(event:).map do
         Results::BibAssignment.new(id: it.id, capture_id: it.capture_id, bib: it.bib, device_seq: it.device_seq)
       end,
-      rulings: Ruling.where(event:).map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) },
+      rulings: Ruling.where(event:).map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) } +
+               device_voids(event),
       now_ms:
     )
+  end
+
+  # A device's own void counts as a void_capture ruling for the engine.
+  def self.device_voids(event)
+    CaptureVoid.where(event:).map do
+      Results::Ruling.new(id: "dv-#{it.id}", kind: "void_capture", payload: { "capture_id" => it.capture_id }, created_at_ms: it.received_at_ms)
+    end
   end
 end

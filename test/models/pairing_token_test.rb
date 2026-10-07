@@ -33,4 +33,12 @@ class PairingTokenTest < ActiveSupport::TestCase
     assert_in_delta Clock.now_ms + 600_000, record.expires_at_ms, 2_000
     refute_equal raw, record.token_digest
   end
+
+  test "the pairing code is short and typeable, and redeems however it is typed" do
+    _record, code = PairingToken.issue!(event: create_event, official: create_official)
+    assert_match(/\A[#{PairingToken::ALPHABET}]{3}-[#{PairingToken::ALPHABET}]{3}\z/o, code)
+    refute_match(/[01OIL]/, code)
+    device, = PairingToken.redeem!("  #{code.downcase.delete('-')} ", device_name: "Phone")
+    assert device.persisted?
+  end
 end
