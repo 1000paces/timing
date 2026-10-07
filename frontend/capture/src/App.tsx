@@ -347,7 +347,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
             <Box sx={{ flex: 1, minWidth: 0 }}>
               {row.name && <Typography noWrap>{row.name}</Typography>}
               {row.race && <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>{row.race}</Typography>}
-              <Stack direction="row" spacing={0.5} sx={{ mt: 0.25, flexWrap: "wrap" }}>
+              <Stack direction="row" sx={{ mt: 0.5, flexWrap: "wrap", gap: 0.75 }}>
                 {row.chips.map((c) => <Chip key={c} size="small" color="error" label={c} />)}
                 <Chip size="small" variant="outlined" label={row.lap != null ? `Lap ${row.lap}` : "Lap —"} />
                 {row.lapFlag && row.lapMs != null && (

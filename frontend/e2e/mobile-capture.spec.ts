@@ -87,6 +87,27 @@ test("a phone records offline, syncs when back, and picks up the hub's fixes", a
   await loose.getByRole("button", { name: "Accept" }).click();
   await expect(rows.filter({ hasText: "entered: no bib" })).toContainText("103", { timeout: 20_000 });
 
+  // Chips in a row never touch (an unregistered bib gives "Unknown bib" + "Lap —").
+  await type("888");
+  await key("Enter");
+  await expect(rows.filter({ hasText: "888" })).toContainText("Unknown bib");
+  const { tightest, pairs } = await phone.evaluate(() => {
+    let min = Infinity;
+    let count = 0;
+    for (const row of document.querySelectorAll('[data-testid="crossing"]')) {
+      const chips = [...row.querySelectorAll(".MuiChip-root")].map((c) => c.getBoundingClientRect()).sort((a, b) => a.top - b.top || a.left - b.left);
+      for (let i = 1; i < chips.length; i++) {
+        if (Math.abs(chips[i].top - chips[i - 1].top) < 2) {
+          min = Math.min(min, chips[i].left - chips[i - 1].right);
+          count++;
+        }
+      }
+    }
+    return { tightest: min, pairs: count };
+  });
+  expect(pairs).toBeGreaterThan(0);
+  expect(tightest).toBeGreaterThanOrEqual(5);
+
   // Layout: only the log scrolls; in landscape the keypad sits beside it.
   const enterKey = phone.getByRole("button", { name: "Enter" });
   const log = phone.getByTestId("crossing-log");

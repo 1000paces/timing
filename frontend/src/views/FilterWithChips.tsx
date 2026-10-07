@@ -13,7 +13,7 @@ export function FilterWithChips({ chips, onDelete, children }: {
     <Stack spacing={0.5}>
       {children}
       {chips.length > 0 && (
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, maxWidth: 260 }}>
+        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75, maxWidth: 260 }}>
           {chips.map((c) => <Chip key={c.key} size="small" label={c.label} onDelete={() => onDelete(c.key)} />)}
         </Stack>
       )}

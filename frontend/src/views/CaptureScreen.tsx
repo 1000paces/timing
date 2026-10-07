@@ -155,7 +155,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
                   </>
                 )}
               </Box>
-              <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+              <Stack direction="row" sx={{ flexShrink: 0, gap: 0.75 }}>
                 {!c.mine && <Chip data-testid="device" size="small" variant="outlined" label={c.deviceName} />}
                 {(!c.bib || !racers.has(c.bib)) && (
                   <Chip data-testid="bib-problem" size="small" color="error" label={c.bib ? "Unknown bib" : "No bib"} />
