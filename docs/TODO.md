@@ -69,6 +69,13 @@ Items deliberately deferred. Each has enough context to pick up cold.
   official has to untick the setting for those. Could default it from the event
   date (Sep–Dec → next year; Jan–Aug → this year).
 
+### Intermediate timing (split points on course)
+- Capture at points other than the finish line (e.g. a mid-course split), so
+  officials see positions and gaps between laps. Not in the first race-day slices.
+- Would need a capture "point" per device (finish / split N), splits per lap in
+  the engine and on the racer panel, and missed-split handling.
+- **Raised:** 2026-10-07.
+
 ## Hub operations & hardening
 
 ### Run the venue hub in production mode (not development)
