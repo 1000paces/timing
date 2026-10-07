@@ -33,12 +33,12 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await expect(rows.filter({ hasText: "201" })).not.toContainText("Lap");
   await expect(lap4).toContainText("101");
   await expect(lap4.getByTestId("lap-warning")).toContainText("Short lap");
-  await expect(rows.filter({ hasText: "999" })).toContainText("unknown bib");
+  await expect(rows.filter({ hasText: "999" }).getByTestId("bib-problem")).toHaveText("Unknown bib");
   await expect(rows.filter({ hasText: "no bib" })).toHaveCount(1);
   await expect(lap3).toContainText("101");
   await expect(lap3).toContainText("Masters 35+ Men");
   await expect(lap3.getByTestId("lap-warning")).toContainText("Long lap");
-  await expect(lap3.getByTestId("lap-warning")).toContainText("typical 1:00.0");
+  await expect(lap3.getByTestId("lap-warning")).toHaveAccessibleName(/typical 1:00\.0/);
 
   // Deleting the earlier 101 crossing (after a confirm) renumbers the later one.
   await lap3.getByRole("button", { name: "Delete capture" }).click();
