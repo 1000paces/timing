@@ -100,11 +100,11 @@ Items deliberately deferred. Each has enough context to pick up cold.
 
 ## Carry into upcoming plans
 
+### Officiating follow-ups (after part 1, 2026-10-07)
+- Open the racer panel from Problems and Capture rows (today: Results and History only).
+- Redo (undoing an undo). Today an undo can't be undone; re-apply the fix instead.
+
 ### Ops console / API plan
-- **Expose crossing ids per rider** (`crossings { ref atMs inserted counted }` on
-  standings rows, or a crossings query). Without them the console can't void a
-  bad tap, reassign a counted crossing, or flag-finish a specific crossing — and
-  "about to be lapped" fixes can't be completed. First API task of the plan.
 - **Sessions:** expire after 12–24 h; `updateOfficial(id, active, role, pin)`
   (admin); invalidate existing sessions on deactivation or PIN change (check in
   `CurrentOfficial` and the cable connection). Today a copied cookie keeps

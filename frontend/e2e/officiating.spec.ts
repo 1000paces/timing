@@ -62,6 +62,25 @@ test("a chief fixes a racer's race from the racer panel; a timer sees it read-on
   await page.reload();
   await expect(page.getByTestId("racer-panel")).toContainText("Bib 103");
 
+  // History (Problems tab): every fix, searchable, with Undo and a link to the racer.
+  await page.getByTestId("racer-panel").getByRole("button", { name: "Close" }).click();
+  await page.getByRole("tab", { name: /Problems/ }).click();
+  await page.getByRole("button", { name: "History" }).click();
+  const history = page.getByTestId("history-entry");
+  await expect(history.filter({ hasText: "Pull bib 103" })).toContainText("E2E Chief");
+  await expect(history.filter({ hasText: "Void crossing" })).toHaveCount(1);
+  await page.getByLabel("Search history").fill("103");
+  await expect(history).toHaveCount(1);
+  const pull = history.filter({ hasText: "Pull bib 103" }).filter({ hasNotText: "Undo:" });
+  await pull.getByRole("button", { name: "Undo" }).click();
+  await page.getByRole("dialog", { name: /Undo/ }).getByRole("button", { name: "Undo" }).click();
+  await expect(pull).toContainText("undone by E2E Chief");
+  await expect(history.filter({ hasText: "Undo: Pull bib 103" })).toHaveCount(1);
+  await expect(history.filter({ hasText: "Undo: Pull bib 103" }).getByRole("button", { name: "Undo" })).toHaveCount(0);
+  await pull.getByRole("button", { name: "Bib 103" }).click();
+  await expect(page.getByTestId("racer-panel")).toContainText("Bib 103");
+  await expect(page.getByTestId("racer-panel").getByTestId("panel-status")).toHaveText("Racing");
+
   // An unknown bib says so.
   await page.goto(page.url().replace(/racer=103/, "racer=999"));
   await expect(page.getByTestId("racer-panel")).toContainText("No racer with bib 999 in this event");

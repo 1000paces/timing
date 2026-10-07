@@ -381,3 +381,9 @@ export const INSERT_CROSSING = gql`mutation InsertCrossing($eventId: ID!, $bib: 
 export const PULL_RACER = gql`mutation PullRacer($eventId: ID!, $bib: String!, $atMs: Millis!) { pullRacer(eventId: $eventId, bib: $bib, atMs: $atMs) { ruling { id } errors } }`;
 export const FLAG_FINISH = gql`mutation FlagFinish($eventId: ID!, $bib: String!, $ref: String!) { flagFinish(eventId: $eventId, bib: $bib, ref: $ref) { ruling { id } errors } }`;
 export const REVERT_RULING = gql`mutation RevertRuling($id: ID!) { revertRuling(rulingId: $id) { ruling { id } errors } }`;
+export type HistoryEntry = { id: string; kind: string; description: string; bib: string | null; officialName: string | null; createdAtMs: number; undone: boolean; undoneBy: string | null; undoneAtMs: number | null };
+export const RULINGS = gql`
+  query Rulings($eventId: ID!, $search: String, $limit: Int) {
+    rulings(eventId: $eventId, search: $search, limit: $limit) { id kind description bib officialName createdAtMs undone undoneBy undoneAtMs }
+  }
+`;
