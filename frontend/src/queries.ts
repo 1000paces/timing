@@ -338,3 +338,46 @@ export const CREATE_PAIRING_TOKEN = gql`
 export const REVOKE_DEVICE = gql`
   mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
 `;
+export type RacerCrossing = { ref: string; atMs: number; inserted: boolean; kind: string; lap: number | null; lapMs: number | null; source: string };
+export type RacerFix = { id: string; kind: string; description: string; officialName: string | null; createdAtMs: number; undone: boolean; undoneBy: string | null };
+export type RacerDetail = {
+  bib: string;
+  name: string;
+  race: { id: string; name: string };
+  status: string;
+  place: number | null;
+  laps: number;
+  elapsedMs: number | null;
+  gapLapsDown: number | null;
+  gapMs: number | null;
+  startAtMs: number | null;
+  pullAtMs: number | null;
+  finishRef: string | null;
+  lapPositions: number[];
+  crossings: RacerCrossing[];
+  rulings: RacerFix[];
+};
+export const RACER = gql`
+  query Racer($eventId: ID!, $bib: String!) {
+    racer(eventId: $eventId, bib: $bib) {
+      bib name race { id name } status place laps elapsedMs gapLapsDown gapMs startAtMs pullAtMs finishRef lapPositions
+      crossings { ref atMs inserted kind lap lapMs source }
+      rulings { id kind description officialName createdAtMs undone undoneBy }
+    }
+  }
+`;
+type FixResult = { ruling: { id: string } | null; errors: string[] };
+export type FixResults = {
+  voidCrossing?: FixResult;
+  moveCrossing?: FixResult;
+  insertCrossing?: FixResult;
+  pullRacer?: FixResult;
+  flagFinish?: FixResult;
+  revertRuling?: FixResult;
+};
+export const VOID_CROSSING = gql`mutation VoidCrossing($eventId: ID!, $ref: String!) { voidCrossing(eventId: $eventId, ref: $ref) { ruling { id } errors } }`;
+export const MOVE_CROSSING = gql`mutation MoveCrossing($eventId: ID!, $captureId: ID!, $bib: String!) { moveCrossing(eventId: $eventId, captureId: $captureId, bib: $bib) { ruling { id } errors } }`;
+export const INSERT_CROSSING = gql`mutation InsertCrossing($eventId: ID!, $bib: String!, $atMs: Millis!) { insertCrossing(eventId: $eventId, bib: $bib, atMs: $atMs) { ruling { id } errors } }`;
+export const PULL_RACER = gql`mutation PullRacer($eventId: ID!, $bib: String!, $atMs: Millis!) { pullRacer(eventId: $eventId, bib: $bib, atMs: $atMs) { ruling { id } errors } }`;
+export const FLAG_FINISH = gql`mutation FlagFinish($eventId: ID!, $bib: String!, $ref: String!) { flagFinish(eventId: $eventId, bib: $bib, ref: $ref) { ruling { id } errors } }`;
+export const REVERT_RULING = gql`mutation RevertRuling($id: ID!) { revertRuling(rulingId: $id) { ruling { id } errors } }`;

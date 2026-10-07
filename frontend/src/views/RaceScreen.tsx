@@ -14,12 +14,12 @@ import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
 import { raceIdsFromSearch, raceIdsToSearch } from "../races";
-import { initialSearch, showSearch } from "../rememberedSearch";
+import { initialSearch, rememberSearch } from "../rememberedSearch";
 import { EventNav } from "./EventNav";
 import { FilterWithChips } from "./FilterWithChips";
 import { RaceControls } from "./RaceControls";
 import { ReviewQueue } from "./ReviewQueue";
-import { RacerStatusMenu } from "./RacerStatusMenu";
+import { RacerPanel } from "./RacerPanel";
 import { Standings } from "./Standings";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
@@ -29,7 +29,15 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   const standings = useQuery<StandingsData>(STANDINGS, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
   const filterKey = `results:${eventId}`;
   const [raceFilter, setRaceFilter] = useState<string[]>(() => raceIdsFromSearch(initialSearch(filterKey, window.location.search)));
-  useEffect(() => showSearch(filterKey, raceIdsToSearch(raceFilter)), [filterKey, raceFilter]);
+  // The open racer panel is in the address too (?racer=101), but isn't remembered across tabs.
+  const [racer, setRacer] = useState<string | null>(() => new URLSearchParams(window.location.search).get("racer"));
+  useEffect(() => {
+    rememberSearch(filterKey, raceIdsToSearch(raceFilter));
+    const params = new URLSearchParams(raceIdsToSearch(raceFilter));
+    if (racer) params.set("racer", racer);
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, [filterKey, raceFilter, racer]);
 
   const refresh = useCallback(() => {
     standings.refetch().catch(() => {});
@@ -79,13 +87,17 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
             key={race.race.id}
             race={race}
             controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} canAct={canAct} onChanged={refresh} />}
-            rowActions={canAct ? (row) => <RacerStatusMenu eventId={eventId} row={row} onChanged={refresh} /> : undefined}
+            onRowClick={(row) => setRacer(row.bib)}
           />
         ))}
       </Box>
       <ReviewQueue eventId={eventId} suggestions={report?.suggestions ?? []} labels={unassignedLabels(report)} canAct={canAct} onChanged={refresh}
         raceNames={new Map(races.map((r) => [r.race.id, r.race.name]))}
         racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
+      {racer && (
+        <RacerPanel key={racer} eventId={eventId} bib={racer} canAct={canAct} onClose={() => setRacer(null)} onChanged={refresh}
+          racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
+      )}
     </Box>
   );
 }

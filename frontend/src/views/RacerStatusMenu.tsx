@@ -10,7 +10,12 @@ import { SET_RACER_STATUS, type MutationResult, type Row } from "../queries";
 const OFFICIAL = ["DNF", "DNS", "DSQ"];
 
 // Mark a racer DNF, DNS or DSQ, or clear it (the hub records a ruling either way).
-export function RacerStatusMenu({ eventId, row, onChanged }: { eventId: string; row: Row; onChanged: () => void }) {
+export function RacerStatusMenu({ eventId, row, label, onChanged }: {
+  eventId: string;
+  row: Pick<Row, "bib" | "name" | "status">;
+  label?: string;
+  onChanged: () => void;
+}) {
   const [setStatus] = useMutation<{ setRacerStatus: MutationResult }>(SET_RACER_STATUS);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +34,7 @@ export function RacerStatusMenu({ eventId, row, onChanged }: { eventId: string; 
   return (
     <>
       <Tooltip title={error ?? ""} open={error != null} onClose={() => setError(null)}>
-        <IconButton size="small" color={error ? "error" : "default"} aria-label={`Status actions for ${row.name}`} onClick={(e) => setAnchor(e.currentTarget)}>
+        <IconButton size="small" color={error ? "error" : "default"} aria-label={label ?? `Status actions for ${row.name}`} onClick={(e) => setAnchor(e.currentTarget)}>
           <MoreVertIcon fontSize="small" />
         </IconButton>
       </Tooltip>

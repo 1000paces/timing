@@ -124,21 +124,22 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await expect(statuses).toHaveCount(12);
   await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
 
-  // A chief marks a racer DNF from the Results row menu, then clears it.
-  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  // A chief marks a racer DNF from the racer panel's menu, then clears it; then DSQ.
+  await page.getByRole("region", { name: "Masters 35+ Men" }).getByRole("row").nth(1).click();
+  const panel = page.getByTestId("racer-panel");
+  const racerActions = panel.getByRole("button", { name: "Racer actions" });
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Mark DNF" }).click();
-  const dnfRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DNF" }) });
-  await expect(dnfRow).toHaveCount(1);
-  await dnfRow.getByRole("button", { name: /^Status actions for / }).click();
+  await expect(panel.getByTestId("panel-status")).toHaveText("DNF");
+  await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(1);
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Clear DNF" }).click();
   await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(0);
 
-  // DSQ the same way.
-  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Mark DSQ" }).click();
-  const dsqRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DSQ" }) });
-  await expect(dsqRow).toHaveCount(1);
-  await dsqRow.getByRole("button", { name: /^Status actions for / }).click();
+  await expect(panel.getByTestId("panel-status")).toHaveText("DSQ");
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Clear DSQ" }).click();
   await expect(statuses.filter({ hasText: "DSQ" })).toHaveCount(0);
   await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
