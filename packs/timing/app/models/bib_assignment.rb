@@ -7,8 +7,7 @@ class BibAssignment < DeviceEntry
 
   # A later bib for one of a hub-side device's own crossings (a correction).
   def self.record!(capture:, bib:)
-    bib = bib.to_s.strip
-    append!(device: capture.device, hash_parts: [capture.id, bib], capture:, bib:)
+    append!(device: capture.device, capture:, bib: bib.to_s.strip)
   end
 
   private
