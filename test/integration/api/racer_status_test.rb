@@ -29,6 +29,18 @@ class RacerStatusTest < ActionDispatch::IntegrationTest
     assert_equal %w[dnf dns revert revert], Ruling.where(event: @event).order(:created_at_ms, :id).pluck(:kind).sort
   end
 
+  test "DSQ too; registrations show the racer's official status" do
+    sign_in(create_official(role: "chief", pin: "1111"), "1111")
+    assert_equal [], set("1", "DSQ")
+    assert_equal "DSQ", status_of("1")
+    assert_equal [], set("2", "DNS")
+    regs = gql("query($id: ID!) { event(id: $id) { registrations { bib officialStatus } } }", id: @event.id).dig("data", "event", "registrations")
+    assert_equal({ "1" => "DSQ", "2" => "DNS" }, regs.to_h { [it["bib"], it["officialStatus"]] })
+    set("2", "NONE")
+    regs = gql("query($id: ID!) { event(id: $id) { registrations { bib officialStatus } } }", id: @event.id).dig("data", "event", "registrations")
+    assert_nil regs.find { it["bib"] == "2" }["officialStatus"]
+  end
+
   test "an unknown bib is refused, and timers can't set statuses" do
     sign_in(create_official(role: "chief", pin: "1111"), "1111")
     assert_equal ["Bib 99 is not registered in this event"], set("99", "DNF")

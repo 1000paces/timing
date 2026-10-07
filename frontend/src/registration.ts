@@ -5,6 +5,7 @@ export type RegistrationRow = {
   racingAge: number | null; // age, else from the birth date by the event's age rule
   source: string;
   checkedInAtMs: number | null;
+  officialStatus: string | null; // DNF, DNS or DSQ when an official has marked the racer
   eligibilityWarnings: string[];
   race: { id: string; name: string };
   racer: {

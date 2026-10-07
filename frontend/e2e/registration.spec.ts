@@ -118,6 +118,12 @@ test("admin imports a BikeReg export and assigns bibs; a chief adds a walk-up an
   await expect(row(page, "Walk Up")).toContainText("needs bib");
   await expect(row(page, "Walk Up").getByRole("checkbox", { name: "Checked in Walk Up" })).toBeChecked();
 
+  // A no-show is marked DNS from their row, and it can be cleared.
+  await row(page, "Bob Ray").getByRole("button", { name: "Mark DNS for Bob Ray" }).click();
+  await expect(row(page, "Bob Ray").getByTestId("official-status")).toHaveText("DNS");
+  await row(page, "Bob Ray").getByRole("button", { name: "Clear DNS for Bob Ray" }).click();
+  await expect(row(page, "Bob Ray").getByTestId("official-status")).toHaveCount(0);
+
   await row(page, "Ann Lee").getByRole("checkbox", { name: "Checked in Ann Lee" }).check();
   await expectStats(page, "6 racers", "2 of 6 checked in", "1 needs a bib");
 

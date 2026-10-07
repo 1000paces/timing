@@ -51,3 +51,13 @@ const STATUS_LABEL: Record<string, string> = { FINISHED: "Finished", RACING: "Ra
 export function statusLabel(status: string): string {
   return STATUS_LABEL[status] ?? status;
 }
+
+// Chip colours for statuses: finished green, official outcomes red/amber.
+export const STATUS_COLOR: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
+  FINISHED: "success",
+  RACING: "info",
+  PULLED: "default",
+  DNF: "warning",
+  DNS: "default",
+  DSQ: "error",
+};

@@ -222,7 +222,7 @@ export const DELETE_CAPTURE = gql`
   mutation DeleteCapture($captureId: ID!) { deleteCapture(captureId: $captureId) { errors } }
 `;
 
-const REGISTRATION_FIELDS = `id bib age racingAge source checkedInAtMs eligibilityWarnings race { id name }
+const REGISTRATION_FIELDS = `id bib age racingAge source checkedInAtMs officialStatus eligibilityWarnings race { id name }
   racer { firstName lastName gender team licenseNumber birthDate city state }`;
 export type RegistrationScreenData = {
   event: {

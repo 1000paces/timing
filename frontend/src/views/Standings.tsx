@@ -8,7 +8,8 @@ import Typography from "@mui/material/Typography";
 import { formatElapsed, formatGap } from "../format";
 import type { ReactNode } from "react";
 import type { RaceStandings, Row } from "../queries";
-import { statusLabel } from "../races";
+import Chip from "@mui/material/Chip";
+import { STATUS_COLOR, statusLabel } from "../races";
 
 const STATE_LABEL: Record<string, string> = { NOT_STARTED: "not started", IN_PROGRESS: "in progress", FINISH_OPEN: "finish open" };
 const num = { textAlign: "right", fontVariantNumeric: "tabular-nums" } as const;
@@ -40,7 +41,9 @@ export function Standings({ race, controls, rowActions }: { race: RaceStandings;
               <TableCell sx={num}>{row.place ?? "–"}</TableCell>
               <TableCell align="center">{row.bib}</TableCell>
               <TableCell>{row.name}</TableCell>
-              <TableCell data-testid="racer-status">{statusLabel(row.status)}</TableCell>
+              <TableCell>
+                <Chip data-testid="racer-status" size="small" color={STATUS_COLOR[row.status] ?? "default"} label={statusLabel(row.status)} />
+              </TableCell>
               <TableCell sx={num}>{row.laps}</TableCell>
               <TableCell sx={num}>{formatElapsed(row.elapsedMs)}</TableCell>
               <TableCell sx={num}>{formatGap(row.gapLapsDown, row.gapMs)}</TableCell>

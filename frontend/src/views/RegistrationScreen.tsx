@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import NotInterestedIcon from "@mui/icons-material/NotInterested";
 import NumbersIcon from "@mui/icons-material/Numbers";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
@@ -33,6 +34,7 @@ import {
   REGISTRATION_SCREEN,
   REMOVE_REGISTRATION,
   SET_CHECKED_IN,
+  SET_RACER_STATUS,
   UPDATE_BIB,
   type AssignBibsResult,
   type RegistrationResult,
@@ -54,6 +56,7 @@ import {
   type RegistrationSort,
   type SortKey,
 } from "../registration";
+import { STATUS_COLOR } from "../races";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -211,7 +214,7 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
           </TableHead>
           <TableBody>
             {rows.map((reg) => (
-              <RegistrationLine key={reg.id} reg={reg} canAct={canAct} onEdit={() => setEditing(reg)} onRemove={() => setRemoving(reg)} onChanged={refresh} />
+              <RegistrationLine key={reg.id} eventId={eventId} reg={reg} canAct={canAct} onEdit={() => setEditing(reg)} onRemove={() => setRemoving(reg)} onChanged={refresh} />
             ))}
             {rows.length === 0 && (
               <TableRow>
@@ -242,7 +245,8 @@ export function RegistrationScreen({ eventId, official, onSignedOut }: Props) {
   );
 }
 
-function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
+function RegistrationLine({ eventId, reg, canAct, onEdit, onRemove, onChanged }: {
+  eventId: string;
   reg: RegistrationRow;
   canAct: boolean;
   onEdit: () => void;
@@ -270,6 +274,10 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
       </TableCell>
       <TableCell>
         {name}
+        {reg.officialStatus && (
+          <Chip data-testid="official-status" size="small" color={STATUS_COLOR[reg.officialStatus] ?? "default"}
+            label={reg.officialStatus} sx={{ ml: 1 }} />
+        )}
         {reg.eligibilityWarnings.length > 0 && (
           <Tooltip title={reg.eligibilityWarnings.join("; ")}>
             <WarningAmberIcon fontSize="small" color="warning" sx={{ ml: 1, verticalAlign: "middle" }} aria-label={`Warnings for ${name}`} />
@@ -286,6 +294,7 @@ function RegistrationLine({ reg, canAct, onEdit, onRemove, onChanged }: {
       </TableCell>
       {canAct && (
         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+          <DnsButton eventId={eventId} reg={reg} name={name} onChanged={onChanged} />
           <IconButton size="small" aria-label={`Edit ${name}`} onClick={onEdit}>
             <EditIcon fontSize="small" />
           </IconButton>
@@ -416,4 +425,19 @@ function Tile({ testId, label, value, detail, caption, progress, warning, active
       </ButtonBase>
     </Tooltip>
   );
+}
+
+// Mark a no-show DNS (or clear it). Rulings are keyed by bib, so it needs one.
+function DnsButton({ eventId, reg, name, onChanged }: { eventId: string; reg: RegistrationRow; name: string; onChanged: () => void }) {
+  const [setStatus] = useMutation<{ setRacerStatus: { errors: string[] } }>(SET_RACER_STATUS);
+  if (reg.officialStatus && reg.officialStatus !== "DNS") return null; // DNF/DSQ are handled on Results
+  const clearing = reg.officialStatus === "DNS";
+  const label = `${clearing ? "Clear" : "Mark"} DNS for ${name}`;
+  const button = (
+    <IconButton size="small" color={clearing ? "warning" : "default"} aria-label={label} disabled={!reg.bib}
+      onClick={() => void setStatus({ variables: { eventId, bib: reg.bib, status: clearing ? "NONE" : "DNS" } }).finally(onChanged)}>
+      <NotInterestedIcon fontSize="small" />
+    </IconButton>
+  );
+  return <Tooltip title={reg.bib ? (clearing ? "Clear DNS" : "Mark DNS (did not start)") : "Give a bib first to mark DNS"}><span>{button}</span></Tooltip>;
 }

@@ -8,6 +8,7 @@ const row = (over: Partial<RegistrationRow>): RegistrationRow => ({
   racingAge: null,
   source: "import",
   checkedInAtMs: null,
+  officialStatus: null,
   eligibilityWarnings: [],
   race: { id: "cat3", name: "Cat 3 Men" },
   racer: { firstName: "Ann", lastName: "Lee", gender: "F", team: null, licenseNumber: null, birthDate: null, city: null, state: null },

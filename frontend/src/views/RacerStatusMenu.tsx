@@ -9,13 +9,13 @@ import { SET_RACER_STATUS, type MutationResult, type Row } from "../queries";
 
 const OFFICIAL = ["DNF", "DNS", "DSQ"];
 
-// Mark a racer DNF or DNS, or clear it (the hub records a ruling either way).
+// Mark a racer DNF, DNS or DSQ, or clear it (the hub records a ruling either way).
 export function RacerStatusMenu({ eventId, row, onChanged }: { eventId: string; row: Row; onChanged: () => void }) {
   const [setStatus] = useMutation<{ setRacerStatus: MutationResult }>(SET_RACER_STATUS);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function choose(status: "DNF" | "DNS" | "NONE") {
+  async function choose(status: "DNF" | "DNS" | "DSQ" | "NONE") {
     setAnchor(null);
     try {
       const errors = (await setStatus({ variables: { eventId, bib: row.bib, status } })).data?.setRacerStatus.errors ?? [];
@@ -36,6 +36,7 @@ export function RacerStatusMenu({ eventId, row, onChanged }: { eventId: string; 
       <Menu anchorEl={anchor} open={anchor != null} onClose={() => setAnchor(null)}>
         {row.status !== "DNF" && <MenuItem onClick={() => void choose("DNF")}>Mark DNF</MenuItem>}
         {row.status !== "DNS" && <MenuItem onClick={() => void choose("DNS")}>Mark DNS</MenuItem>}
+        {row.status !== "DSQ" && <MenuItem onClick={() => void choose("DSQ")}>Mark DSQ</MenuItem>}
         {OFFICIAL.includes(row.status) && <MenuItem onClick={() => void choose("NONE")}>Clear {row.status}</MenuItem>}
       </Menu>
     </>
