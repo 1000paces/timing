@@ -1,15 +1,21 @@
 import { useQuery } from "@apollo/client/react";
 import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { EVENT, STANDINGS, type EventData, type StandingsData } from "../queries";
 import { unassignedLabels } from "../problems";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
+import { raceIdsFromSearch, raceIdsToSearch } from "../races";
 import { EventNav } from "./EventNav";
+import { FilterWithChips } from "./FilterWithChips";
 import { RaceControls } from "./RaceControls";
 import { ReviewQueue } from "./ReviewQueue";
 import { RacerStatusMenu } from "./RacerStatusMenu";
@@ -20,6 +26,10 @@ type Props = { eventId: string; official: Official; onSignedOut: () => void };
 export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   const event = useQuery<EventData>(EVENT, { variables: { id: eventId } });
   const standings = useQuery<StandingsData>(STANDINGS, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
+  const [raceFilter, setRaceFilter] = useState<string[]>(() => raceIdsFromSearch(window.location.search));
+  useEffect(() => {
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${raceIdsToSearch(raceFilter)}`);
+  }, [raceFilter]);
 
   const refresh = useCallback(() => {
     standings.refetch().catch(() => {});
@@ -38,6 +48,8 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   // Races in the event's order (scheduled start, then name).
   const byId = new Map((report?.races ?? []).map((r) => [r.race.id, r]));
   const races = event.data.event.races.flatMap((r) => byId.get(r.id) ?? []);
+  const allRaces = event.data.event.races.map((r) => ({ id: r.id, name: r.name }));
+  const shown = raceFilter.length ? races.filter((r) => raceFilter.includes(r.race.id)) : races;
   const canAct = roleCanAct(official.role);
 
   return (
@@ -48,7 +60,21 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
         {report?.stale && <Alert severity="warning" sx={{ mb: 2 }}>Standings are out of date: {report.error}</Alert>}
         {!report && <LinearProgress />}
         {report && races.length === 0 && <Typography color="text.secondary">This event has no races yet.</Typography>}
-        {races.map((race) => (
+        <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", mb: 2 }}>
+          <FilterWithChips chips={raceFilter.flatMap((id) => allRaces.filter((r) => r.id === id).map((r) => ({ key: r.id, label: r.name })))}
+            onDelete={(id) => setRaceFilter(raceFilter.filter((x) => x !== id))}>
+            <Autocomplete multiple size="small" disableCloseOnSelect options={allRaces} getOptionLabel={(r) => r.name}
+              isOptionEqualToValue={(a, b) => a.id === b.id} value={allRaces.filter((r) => raceFilter.includes(r.id))}
+              onChange={(_, picked) => setRaceFilter(picked.map((r) => r.id))} renderValue={() => null} sx={{ width: 260 }}
+              renderInput={(params) => <TextField {...params} label="Race" placeholder={raceFilter.length ? "Add a race" : "All races"} />} />
+          </FilterWithChips>
+          {raceFilter.length > 0 && (
+            <Stack sx={{ justifyContent: "center", minHeight: 40 }}>
+              <Button size="small" onClick={() => setRaceFilter([])}>Clear filters</Button>
+            </Stack>
+          )}
+        </Stack>
+        {shown.map((race) => (
           <Standings
             key={race.race.id}
             race={race}

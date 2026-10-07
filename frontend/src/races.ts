@@ -61,3 +61,15 @@ export const STATUS_COLOR: Record<string, "success" | "info" | "warning" | "erro
   DNS: "default",
   DSQ: "error",
 };
+
+// The Results race filter lives in the page address (?race=..&race=..).
+export function raceIdsFromSearch(search: string): string[] {
+  return new URLSearchParams(search).getAll("race").filter(Boolean);
+}
+
+export function raceIdsToSearch(raceIds: string[]): string {
+  const params = new URLSearchParams();
+  raceIds.forEach((id) => params.append("race", id));
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}

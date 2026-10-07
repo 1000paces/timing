@@ -65,6 +65,16 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await page.getByRole("tab", { name: "Results" }).click();
   // The demo races all finish with the leader and share a scheduled start, so
   // one lap count covers all three.
+  // The race filter shows just the picked races, and survives a refresh.
+  await page.getByRole("combobox", { name: "Race" }).click();
+  await page.getByRole("option", { name: "Women Open" }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("region", { name: "Masters 35+ Men" })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Women Open" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Masters 50+ Men" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear filters" }).click();
+
   const masters35 = page.getByRole("region", { name: "Masters 35+ Men" });
   await masters35.getByLabel("Laps").fill("3");
   await masters35.getByRole("button", { name: "Set laps" }).click();

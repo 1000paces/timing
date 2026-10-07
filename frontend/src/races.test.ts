@@ -57,3 +57,13 @@ describe("statusLabel", () => {
     expect(["FINISHED", "RACING", "PULLED", "DNF", "DNS", "DSQ"].map(statusLabel)).toEqual(["Finished", "Racing", "Pulled", "DNF", "DNS", "DSQ"]);
   });
 });
+
+describe("results race filter in the page address", () => {
+  it("reads and writes repeated race ids", async () => {
+    const { raceIdsFromSearch, raceIdsToSearch } = await import("./races");
+    expect(raceIdsFromSearch("?race=a&race=b")).toEqual(["a", "b"]);
+    expect(raceIdsFromSearch("")).toEqual([]);
+    expect(raceIdsToSearch(["a", "b"])).toBe("?race=a&race=b");
+    expect(raceIdsToSearch([])).toBe("");
+  });
+});
