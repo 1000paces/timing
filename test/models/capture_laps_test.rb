@@ -20,7 +20,7 @@ class CaptureLapsTest < ActiveSupport::TestCase
     second = Capture.record!(device: @console, at_ms: 130_000, bib: "101")
     third = Capture.record!(device: @tablet, at_ms: 190_000, bib: "101")
     laps = CaptureLaps.new(@event)
-    assert_equal [nil, 1, 2, 3], [early, first, second, third].map { laps.lap(it) }
+    assert_equal [ nil, 1, 2, 3 ], [ early, first, second, third ].map { laps.lap(it) }
   end
 
   test "no lap for a race that hasn't started, an unknown bib, or no bib" do
@@ -40,18 +40,18 @@ class CaptureLapsTest < ActiveSupport::TestCase
     lap_at("103", 70, 130, 190)
     normal, missed, long, short = lap_at("101", 60, 120, 240, 340, 355).last(4)
     laps = CaptureLaps.new(@event)
-    info = ->(c) { laps.info(c).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] } }
-    assert_equal [2, 60_000, 60_000, nil], info.(normal)
-    assert_equal [3, 120_000, 60_000, "missed"], info.(missed)
-    assert_equal [4, 100_000, 60_000, "long"], info.(long)
-    assert_equal [5, 15_000, 60_000, "short"], info.(short)
+    info = ->(c) { laps.info(c).then { [ it.lap, it.lap_ms, it.typical_ms, it.flag ] } }
+    assert_equal [ 2, 60_000, 60_000, nil ], info.(normal)
+    assert_equal [ 3, 120_000, 60_000, "missed" ], info.(missed)
+    assert_equal [ 4, 100_000, 60_000, "long" ], info.(long)
+    assert_equal [ 5, 15_000, 60_000, "short" ], info.(short)
   end
 
   test "no flag on lap 1 or before the race has three laps to compare" do
     first, second = lap_at("101", 200, 400)
     laps = CaptureLaps.new(@event)
-    assert_equal [1, 200_000, nil, nil], laps.info(first).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
-    assert_equal [2, 200_000, nil, nil], laps.info(second).then { [it.lap, it.lap_ms, it.typical_ms, it.flag] }
+    assert_equal [ 1, 200_000, nil, nil ], laps.info(first).then { [ it.lap, it.lap_ms, it.typical_ms, it.flag ] }
+    assert_equal [ 2, 200_000, nil, nil ], laps.info(second).then { [ it.lap, it.lap_ms, it.typical_ms, it.flag ] }
   end
 
   test "a voided capture doesn't count; reverting the void restores it" do
@@ -60,7 +60,7 @@ class CaptureLapsTest < ActiveSupport::TestCase
     later = Capture.record!(device: @tablet, at_ms: 130_000, bib: "101")
     void = Ruling.create!(event: @event, kind: "void_capture", payload: { "capture_id" => extra.id })
     laps = CaptureLaps.new(@event)
-    assert_equal [1, nil, 2], [first, extra, later].map { laps.lap(it) }
+    assert_equal [ 1, nil, 2 ], [ first, extra, later ].map { laps.lap(it) }
     assert laps.voided?(extra)
     Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => void.id })
     assert_equal 3, CaptureLaps.new(@event).lap(later)
@@ -72,13 +72,13 @@ class CaptureLapsTest < ActiveSupport::TestCase
     typo = Capture.record!(device: @tablet, at_ms: 190_000, bib: "999")
     BibAssignment.create!(event: @event, device: @tablet, capture: typo, bib: "101", device_seq: 4, prev_hash: "x", entry_hash: "y")
     laps = CaptureLaps.new(@event)
-    assert_equal ["101", nil, "101"], [first, loose, typo].map { laps.bib(it) }
-    assert_equal [1, nil, 2], [first, loose, typo].map { laps.lap(it) }
+    assert_equal [ "101", nil, "101" ], [ first, loose, typo ].map { laps.bib(it) }
+    assert_equal [ 1, nil, 2 ], [ first, loose, typo ].map { laps.lap(it) }
 
     assign = Ruling.create!(event: @event, kind: "assign_bib", payload: { "capture_id" => loose.id, "bib" => "101" })
     laps = CaptureLaps.new(@event)
-    assert_equal ["101", "101", "101"], [first, loose, typo].map { laps.bib(it) }
-    assert_equal [1, 2, 3], [first, loose, typo].map { laps.lap(it) }
+    assert_equal [ "101", "101", "101" ], [ first, loose, typo ].map { laps.bib(it) }
+    assert_equal [ 1, 2, 3 ], [ first, loose, typo ].map { laps.lap(it) }
 
     Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => assign.id })
     assert_nil CaptureLaps.new(@event).bib(loose)

@@ -24,7 +24,7 @@ module RaceSimulator
         @differences ||= results.flat_map do |name, rows|
           start = @dataset.races.find { it.name == name }
           shift_ms = (@dataset.wave_of(name).arm_s - start.start_s) * 1000
-          @dataset.results_for([name]).flat_map { compare(name, it, rows[it.bib], shift_ms) }
+          @dataset.results_for([ name ]).flat_map { compare(name, it, rows[it.bib], shift_ms) }
         end
       end
 
@@ -32,15 +32,16 @@ module RaceSimulator
       def mismatches = differences.reject(&:stopped_early?)
 
       def report
-        lines = results.keys.map do |name|
-          found = mismatches.select { it.race == name }
+        lines = results.keys.flat_map do |name|
+          found = mismatches.select { it.race == name }.map { "    #{it}" }
           early = stopped_early.select { it.race == name }.map(&:bib)
-          [found.empty? ? "✓ #{name}" : "✗ #{name}", *found.map { "    #{it}" },
-           *("    quit before the flag (an official marks them DNF): #{early.join(', ')}" if early.any?)]
+          found << "    quit before the flag (an official marks them DNF): #{early.join(', ')}" if early.any?
+          mark = mismatches.any? { it.race == name } ? "✗" : "✓"
+          [ "#{mark} #{name}", *found ]
         end
-        [*lines.flatten, "",
-         "#{races_checked} races: #{mismatches.size} mismatch#{'es' unless mismatches.size == 1}, " \
-         "#{stopped_early.size} riders quit before the flag"].join("\n")
+        summary = "#{races_checked} races: #{mismatches.size} mismatch#{'es' unless mismatches.size == 1}, " \
+                  "#{stopped_early.size} riders quit before the flag"
+        [ *lines, "", summary ].join("\n")
       end
 
       private
@@ -48,16 +49,16 @@ module RaceSimulator
       # race name => { bib => RacerResult }
       def results
         @results ||= begin
-          names = @event.races.to_h { [it.id, it.name] }
+          names = @event.races.to_h { [ it.id, it.name ] }
           StandingsService.report(@event, now_ms: @now_ms).output.races
-                          .to_h { [names.fetch(it.race_id), it.rows.index_by(&:bib)] }
+                          .to_h { [ names.fetch(it.race_id), it.rows.index_by(&:bib) ] }
                           .sort_by { |name, _| @dataset.races.index { it.name == name } }.to_h
         end
       end
 
       def compare(race, theirs, ours, shift_ms)
         diff = ->(what, mine, real) { Difference.new(race:, bib: theirs.bib, what:, ours: mine, theirs: real) }
-        return [diff.("result", "missing", "place #{theirs.place}")] unless ours
+        return [ diff.("result", "missing", "place #{theirs.place}") ] unless ours
 
         found = []
         found << diff.("status", ours.status, "finished") unless ours.status.to_s == "finished"

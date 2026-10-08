@@ -35,6 +35,6 @@ module Mutations
 
     private
 
-    def refuse(message) = { capture: nil, errors: [message] }
+    def refuse(message) = { capture: nil, errors: [ message ] }
   end
 end

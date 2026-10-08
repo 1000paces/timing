@@ -11,7 +11,7 @@ class GraphqlController < ApplicationController
     )
     render json: result
   rescue JSON::ParserError, InvalidVariables
-    render json: { errors: [{ message: "variables must be a JSON object" }] }, status: :bad_request
+    render json: { errors: [ { message: "variables must be a JSON object" } ] }, status: :bad_request
   end
 
   class InvalidVariables < StandardError; end

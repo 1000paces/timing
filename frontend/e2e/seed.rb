@@ -10,7 +10,7 @@ capture = RaceSimulator::Demo.create!(racers_per_race: 3, name: "E2E Capture")
 masters35 = capture.races.find { it.name == "Masters 35+ Men" }
 writer = RaceSimulator::Writer.new(event: capture, device_name: "Tablet")
 start = Clock.now_ms - 600_000
-writer.start_races([masters35], at_ms: start)
+writer.start_races([ masters35 ], at_ms: start)
 { "101" => 2, "102" => 3, "103" => 3 }.each { |bib, laps| (1..laps).each { writer.capture(at_ms: start + it * 60_000, bib:) } }
 puts "Seeded #{capture.name} (#{capture.id})"
 
@@ -26,8 +26,8 @@ officiating = RaceSimulator::Demo.create!(racers_per_race: 3, name: "E2E Officia
 m35 = officiating.races.find { it.name == "Masters 35+ Men" }
 tablet = RaceSimulator::Writer.new(event: officiating, device_name: "Finish phone")
 go = Clock.now_ms - 600_000
-tablet.start_races([m35], at_ms: go)
-{ "101" => [60, 120, 123, 180], "102" => [65, 130], "103" => [70] }.each do |bib, secs|
+tablet.start_races([ m35 ], at_ms: go)
+{ "101" => [ 60, 120, 123, 180 ], "102" => [ 65, 130 ], "103" => [ 70 ] }.each do |bib, secs|
   secs.each { tablet.capture(at_ms: go + it * 1000, bib:) }
 end
 puts "Seeded #{officiating.name} (#{officiating.id})"

@@ -8,7 +8,7 @@ module Types
     field :elapsed_ms, Millis
     field :gap_laps_down, Integer
     field :gap_ms, Millis
-    field :lap_times_ms, [Millis], null: false
+    field :lap_times_ms, [ Millis ], null: false
 
     def gap_laps_down = object.gap&.laps_down
     def gap_ms = object.gap&.ms

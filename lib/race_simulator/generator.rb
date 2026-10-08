@@ -25,7 +25,7 @@ module RaceSimulator
           crossings = Array.new(@laps + 3) do |i|
             t += (pace * (i.zero? ? @start_lap_factor : 1) * (1 + rng.rand(-@jitter..@jitter))).round
           end
-          [bib.to_s, race.race_id, crossings]
+          [ bib.to_s, race.race_id, crossings ]
         end
       end
       leader_finish = raw.map { |_, _, crossings| crossings[@laps - 1] }.min
@@ -52,7 +52,7 @@ module RaceSimulator
             pick = index
           end
         end
-        [truth.bib, truth.with(untagged: pick ? [pick] : [])]
+        [ truth.bib, truth.with(untagged: pick ? [ pick ] : []) ]
       end.then { |by_bib| truths.map { by_bib.fetch(it.bib) } }
     end
   end

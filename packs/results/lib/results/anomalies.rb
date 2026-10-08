@@ -24,7 +24,7 @@ module Results
     # Typical lap times for one race (see spec §4.4 "Reference lap time").
     class RaceLaps
       def initialize(racers)
-        @segments = racers.to_h { [it.entrant.bib, Anomalies.segments_for(it)] }
+        @segments = racers.to_h { [ it.entrant.bib, Anomalies.segments_for(it) ] }
       end
 
       def segments(bib) = @segments.fetch(bib)
@@ -86,7 +86,7 @@ module Results
     def racer_lap_suggestions(bib, race_id, laps)
       own = laps.segments(bib)
       own.filter_map do |seg|
-        ref = laps.typical(bib, seg.index, [seg.index])
+        ref = laps.typical(bib, seg.index, [ seg.index ])
         next unless ref&.positive?
         ratio = seg.ms / ref
         if ratio.between?(@config.missed_low, @config.missed_high) && neighbors_normal?(bib, seg, own, laps)
@@ -101,7 +101,7 @@ module Results
 
     def neighbors_normal?(bib, seg, own, laps)
       own.select { (it.index - seg.index).abs == 1 }.all? do |n|
-        ref = laps.typical(bib, n.index, [seg.index, n.index])
+        ref = laps.typical(bib, n.index, [ seg.index, n.index ])
         ref.nil? || (n.ms / ref).between?(@config.neighbor_low, @config.neighbor_high)
       end
     end
@@ -109,7 +109,7 @@ module Results
     # A long adjacent lap means a missed crossing is distorting the reference.
     def long_neighbor?(bib, seg, own, laps)
       own.select { (it.index - seg.index).abs == 1 }.any? do |n|
-        ref = laps.typical(bib, n.index, [n.index])
+        ref = laps.typical(bib, n.index, [ n.index ])
         ref&.positive? && n.ms / ref >= @config.missed_low
       end
     end
@@ -117,10 +117,10 @@ module Results
     def missed(bib, race_id, seg, ref)
       mid = (seg.from_at + seg.to.at_ms) / 2
       window = ref * @config.match_window_ratio
-      match = @resolved.unassigned.select { (it.at_ms - mid).abs <= window }.min_by { [(it.at_ms - mid).abs, it.capture_id] }
+      match = @resolved.unassigned.select { (it.at_ms - mid).abs <= window }.min_by { [ (it.at_ms - mid).abs, it.capture_id ] }
       fix = if match then { "kind" => "assign_bib", "capture_id" => match.capture_id, "bib" => bib }
-            else { "kind" => "insert_capture", "bib" => bib, "at_ms" => mid }
-            end
+      else { "kind" => "insert_capture", "bib" => bib, "at_ms" => mid }
+      end
       Suggestion.new(key: "missed:#{bib}:#{seg.from_ref}:#{seg.to.ref}", kind: :suspected_missed_crossing, bib:, race_id:,
                      message: "Bib #{bib} lap #{seg.index} took #{fmt(seg.ms)}, about #{(seg.ms / ref).round(1)}× typical #{fmt(ref)} — missed crossing?",
                      fix:)
@@ -129,7 +129,7 @@ module Results
     def lapping_suggestions
       @cohorts.reject { it.finish_open_at || it.flag_out_at }.flat_map do |cohort|
         racing = cohort.racers.select { it.status == :racing && it.counted.any? }
-        leader = racing.min_by { [-it.counted.size, it.counted.last.at_ms, it.counted.last.ref] }
+        leader = racing.min_by { [ -it.counted.size, it.counted.last.at_ms, it.counted.last.ref ] }
         next [] unless leader
         lead_ref = lap_ref(leader)
         racing.reject { it.equal?(leader) }.filter_map { lapping(leader, lead_ref, it) }

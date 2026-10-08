@@ -19,8 +19,8 @@ class RaceDayTest < ActionDispatch::IntegrationTest
 
   def perfect_rows(races, truths, gun)
     rulings = races.flat_map do |race|
-      [Results::Ruling.new(id: "start-#{race.id}", kind: "set_race_start", payload: { "race_id" => race.id, "at_ms" => gun }, created_at_ms: 0),
-       Results::Ruling.new(id: "laps-#{race.id}", kind: "set_lap_count", payload: { "race_id" => race.id, "laps" => 5 }, created_at_ms: 1)]
+      [ Results::Ruling.new(id: "start-#{race.id}", kind: "set_race_start", payload: { "race_id" => race.id, "at_ms" => gun }, created_at_ms: 0),
+       Results::Ruling.new(id: "laps-#{race.id}", kind: "set_lap_count", payload: { "race_id" => race.id, "laps" => 5 }, created_at_ms: 1) ]
     end
     captures = truths.flat_map do |t|
       t.crossings_ms.each_with_index.map do |ms, i|
@@ -29,7 +29,7 @@ class RaceDayTest < ActionDispatch::IntegrationTest
     end
     input = ResultsSnapshot.for(@event, now_ms: Clock.now_ms).with(captures:, bib_assignments: [], rulings:)
     Results.compute(input).races.to_h do |race|
-      [race.race_id, race.rows.map { [it.place, it.bib, it.status.to_s.upcase, it.laps, it.elapsed_ms] }]
+      [ race.race_id, race.rows.map { [ it.place, it.bib, it.status.to_s.upcase, it.laps, it.elapsed_ms ] } ]
     end
   end
 
@@ -59,7 +59,7 @@ class RaceDayTest < ActionDispatch::IntegrationTest
 
     expected = perfect_rows(races, truths, gun)
     standings["races"].each do |race|
-      actual = race["rows"].map { [it["place"], it["bib"], it["status"], it["laps"], it["elapsedMs"]] }
+      actual = race["rows"].map { [ it["place"], it["bib"], it["status"], it["laps"], it["elapsedMs"] ] }
       assert_equal expected.fetch(race.dig("race", "id")), actual
       published = gql("mutation($id: ID!) { publishResults(raceId: $id) { errors } }", id: race.dig("race", "id"))
       assert_empty published.dig("data", "publishResults", "errors")

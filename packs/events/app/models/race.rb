@@ -21,7 +21,7 @@ class Race < ApplicationRecord
   validate :ages_ordered
   validate :name_unique_in_event
 
-  def default_name = [category, age_group, GENDERS[gender]].compact.join(" ")
+  def default_name = [ category, age_group, GENDERS[gender] ].compact.join(" ")
   def name = name_override || default_name
 
   # This race's own range, else the event's.
@@ -32,7 +32,7 @@ class Race < ApplicationRecord
   # The races that finish together with this one: finish-with-leader races at
   # the same scheduled start; otherwise just this race.
   def cohort
-    return [self] unless effective_finish_with_leader
+    return [ self ] unless effective_finish_with_leader
     event.races.select { it.scheduled_at_ms == scheduled_at_ms && it.effective_finish_with_leader }
   end
 
@@ -40,8 +40,8 @@ class Race < ApplicationRecord
 
   def other_bib_ranges
     return [] unless event
-    others = event.races.where.not(id:).filter_map { |race| [race.name, race.own_bib_range] if race.own_bib_range }
-    event.own_bib_range ? others << ["the event range", event.own_bib_range] : others
+    others = event.races.where.not(id:).filter_map { |race| [ race.name, race.own_bib_range ] if race.own_bib_range }
+    event.own_bib_range ? others << [ "the event range", event.own_bib_range ] : others
   end
 
   def ages_ordered

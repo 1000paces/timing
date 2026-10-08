@@ -18,7 +18,7 @@ class BibAssignerTest < ActiveSupport::TestCase
     entry(@late, "Bo", "Brown")
     result = BibAssigner.call(@event)
     assert_equal({ "Adams" => "100", "Young" => "101", "Brown" => "1" }, bibs)
-    assert_equal [%w[Adams 100], %w[Young 101], %w[Brown 1]], result.assigned.map { |reg, bib| [reg.racer.last_name, bib] }
+    assert_equal [ %w[Adams 100], %w[Young 101], %w[Brown 1] ], result.assigned.map { |reg, bib| [ reg.racer.last_name, bib ] }
     assert_empty result.unfilled
   end
 
@@ -44,7 +44,7 @@ class BibAssignerTest < ActiveSupport::TestCase
     entry(@late, "Lo", "Late")
     result = BibAssigner.call(@event)
     assert_equal 3, result.assigned.size
-    assert_equal ["Early Men: 1 racer still needs a bib — range 100–102 is full", "Late Men: 1 racer still needs a bib — no bib range"],
+    assert_equal [ "Early Men: 1 racer still needs a bib — range 100–102 is full", "Late Men: 1 racer still needs a bib — no bib range" ],
                  result.unfilled
     assert_nil bibs["EarlyD"]
   end
@@ -61,8 +61,8 @@ class BibAssignerTest < ActiveSupport::TestCase
     @event.update!(bib_from: 1, bib_to: 50)
     entry(@early, "Amy", "Adams")
     entry(@late, "Bo", "Brown")
-    result = BibAssigner.call(@event, races: [@late])
+    result = BibAssigner.call(@event, races: [ @late ])
     assert_equal({ "Adams" => nil, "Brown" => "1" }, bibs)
-    assert_equal [%w[Brown 1]], result.assigned.map { |reg, bib| [reg.racer.last_name, bib] }
+    assert_equal [ %w[Brown 1] ], result.assigned.map { |reg, bib| [ reg.racer.last_name, bib ] }
   end
 end

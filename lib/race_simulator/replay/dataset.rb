@@ -15,7 +15,7 @@ module RaceSimulator
       # Races that finish together: the wave's, then each race finishing on its own.
       def cohorts
         together, alone = races.partition(&:finish_with_leader)
-        [together, *alone.map { [it] }].reject(&:empty?)
+        [ together, *alone.map { [ it ] } ].reject(&:empty?)
       end
 
       # The lap count is the wave leader's: the most laps anyone in it rode.

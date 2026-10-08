@@ -12,8 +12,8 @@ module Types
     field :start_at_ms, Millis
     field :pull_at_ms, Millis
     field :finish_ref, ID
-    field :lap_positions, [Integer], null: false
-    field :crossings, [RacerCrossingType], null: false
-    field :rulings, [RacerRulingType], null: false, description: "Fixes affecting this racer, newest first"
+    field :lap_positions, [ Integer ], null: false
+    field :crossings, [ RacerCrossingType ], null: false
+    field :rulings, [ RacerRulingType ], null: false, description: "Fixes affecting this racer, newest first"
   end
 end

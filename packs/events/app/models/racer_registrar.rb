@@ -58,7 +58,7 @@ class RacerRegistrar
 
     by_name = scope.where("LOWER(racers.first_name) = ? AND LOWER(racers.last_name) = ?",
                           attrs[:first_name].to_s.strip.downcase, attrs[:last_name].to_s.strip.downcase)
-    by_name = by_name.where(racers: { license_number: [nil, ""] }) if license
+    by_name = by_name.where(racers: { license_number: [ nil, "" ] }) if license
     by_name.first
   end
 

@@ -25,7 +25,7 @@ module RaceSimulator
                               finish_with_leader: start.finish_with_leader ? nil : false,
                               age_min: ages&.min, age_max: ages && ages.max < 99 ? ages.max : nil,
                               scheduled_at_ms: gun_ms, expected_duration_ms: wave.minutes * 60_000)
-          dataset.results_for([start.name]).each { register(event:, race:, result: it, ages:) }
+          dataset.results_for([ start.name ]).each { register(event:, race:, result: it, ages:) }
         end
       end
       event
@@ -47,7 +47,7 @@ module RaceSimulator
           sleeper.call(wait) if wait.positive?
         end
         case kind
-        when :start then writer.start_races([arg], at_ms:)
+        when :start then writer.start_races([ arg ], at_ms:)
         when :laps then writer.set_lap_count(*arg)
         when :flag then Ruling.create!(event:, kind: "flag_out", payload: { "race_id" => arg.id, "at_ms" => at_ms })
         when :capture then writer.capture(at_ms:, bib: arg)
@@ -62,21 +62,21 @@ module RaceSimulator
       steps = dataset.waves.flat_map do |wave|
         results = dataset.results_for(wave.races.map(&:name))
         gun_ms = races.fetch(wave.races.first.name).scheduled_at_ms
-        lap_counts = wave.cohorts.flat_map { |cohort| [wave.lap_count(dataset.results_for(cohort.map(&:name)))] * cohort.size }
+        lap_counts = wave.cohorts.flat_map { |cohort| [ wave.lap_count(dataset.results_for(cohort.map(&:name))) ] * cohort.size }
         starts = wave.cohorts.flatten.zip(lap_counts).flat_map do |start, lap_count|
           race = races.fetch(start.name)
           at = gun_ms + start.start_s * 1000
-          [[at, :start, race], [at, :laps, [race, lap_count]]]
+          [ [ at, :start, race ], [ at, :laps, [ race, lap_count ] ] ]
         end
         crossings = results.flat_map do |result|
           at = gun_ms + wave.arm_s * 1000
-          result.laps_ms.map { [at += it, :capture, result.bib] }
+          result.laps_ms.map { [ at += it, :capture, result.bib ] }
         end
-        flag = wave.flag_out_s && [[gun_ms + (wave.arm_s + wave.flag_out_s) * 1000, :flag, races.fetch(wave.cohorts.first.first.name)]]
+        flag = wave.flag_out_s && [ [ gun_ms + (wave.arm_s + wave.flag_out_s) * 1000, :flag, races.fetch(wave.cohorts.first.first.name) ] ]
         starts + crossings + Array(flag)
       end
       order = { start: 0, laps: 1, flag: 2, capture: 3 }
-      steps.sort_by { |at, kind, arg| [at, order[kind], kind == :capture ? arg : ""] }
+      steps.sort_by { |at, kind, arg| [ at, order[kind], kind == :capture ? arg : "" ] }
     end
 
     def unused_name(name)

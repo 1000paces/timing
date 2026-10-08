@@ -1,9 +1,9 @@
 module Mutations
   class StartRaces < BaseMutation
     description "Start the selected races together, at hub time"
-    argument :race_ids, [ID]
+    argument :race_ids, [ ID ]
 
-    field :rulings, [Types::RulingType], null: false
+    field :rulings, [ Types::RulingType ], null: false
 
     def resolve(race_ids:)
       official = require_official!("chief")

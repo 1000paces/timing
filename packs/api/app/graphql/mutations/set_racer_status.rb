@@ -10,10 +10,10 @@ module Mutations
     def resolve(event_id:, bib:, status:, reason: nil)
       official = require_official!("chief")
       event = Event.find(event_id)
-      return { errors: ["Bib #{bib} is not registered in this event"] } unless event.registrations.exists?(bib:)
+      return { errors: [ "Bib #{bib} is not registered in this event" ] } unless event.registrations.exists?(bib:)
 
       clearing = RacerStatuses.active_rulings(event).select { it.payload["bib"].to_s == bib }
-      writes = status ? [[status, { bib: }]] : clearing.map { ["revert", { ruling_id: it.id }] }
+      writes = status ? [ [ status, { bib: } ] ] : clearing.map { [ "revert", { ruling_id: it.id } ] }
       written = []
       Ruling.transaction do
         writes.each do |kind, payload|

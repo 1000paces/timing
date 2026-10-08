@@ -28,9 +28,9 @@ module Results
       starts = race_starts(races)
       race_ids = races.map(&:id)
       entrants = @input.entrants.select { race_ids.include?(it.race_id) }
-      crossings = entrants.to_h { |e| [e.bib, post_start(e, starts[e.race_id])] }
+      crossings = entrants.to_h { |e| [ e.bib, post_start(e, starts[e.race_id]) ] }
       lap_count = resolve_lap_count
-      finish_open_at = lap_count && crossings.values.filter_map { it[lap_count - 1] }.min_by { [it.at_ms, it.ref] }&.at_ms
+      finish_open_at = lap_count && crossings.values.filter_map { it[lap_count - 1] }.min_by { [ it.at_ms, it.ref ] }&.at_ms
       flag_out_at = resolve_flag_out
       # The wave's leader when the flag came out rides on to the lap count.
       leader = flag_out_at && lap_count && leader_at(crossings, flag_out_at)
@@ -40,9 +40,9 @@ module Results
 
       race_results = races.map do |race|
         state = if starts[race.id].nil? then :not_started
-                elsif finish_open_at || flag_out_at then :finish_open
-                else :in_progress
-                end
+        elsif finish_open_at || flag_out_at then :finish_open
+        else :in_progress
+        end
         rows = Standings.rows(racers.select { it.entrant.race_id == race.id })
         RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
                        start_at_ms: starts[race.id], flag_out_at_ms: flag_out_at)
@@ -54,7 +54,7 @@ module Results
 
     # Fingerprint of what the race's standings show; publication compares against it.
     def digest(lap_count, rows)
-      Digest::SHA256.hexdigest(JSON.generate([lap_count, rows.map { [it.place, it.bib, it.status.to_s, it.laps, it.elapsed_ms, it.lap_times_ms] }]))
+      Digest::SHA256.hexdigest(JSON.generate([ lap_count, rows.map { [ it.place, it.bib, it.status.to_s, it.laps, it.elapsed_ms, it.lap_times_ms ] } ]))
     end
 
     # The latest lap count set for any race in the cohort; else the races'
@@ -75,14 +75,14 @@ module Results
 
     # Bib with the most laps before the flag, the first to have crossed on that lap.
     def leader_at(crossings, at_ms)
-      crossings.filter_map { |bib, list| (before = list.select { it.at_ms < at_ms }).any? && [bib, before] }
-               .min_by { |_, before| [-before.size, before.last.at_ms, before.last.ref] }&.first
+      crossings.filter_map { |bib, list| (before = list.select { it.at_ms < at_ms }).any? && [ bib, before ] }
+               .min_by { |_, before| [ -before.size, before.last.at_ms, before.last.ref ] }&.first
     end
 
     # Each race starts at its own latest set_race_start (waves are started by hand).
     def race_starts(races)
       starts = @rulings.latest_by("set_race_start") { it.payload["race_id"] }
-      races.to_h { |r| [r.id, starts[r.id]&.payload&.fetch("at_ms")] }
+      races.to_h { |r| [ r.id, starts[r.id]&.payload&.fetch("at_ms") ] }
     end
 
     def post_start(entrant, start)
@@ -95,14 +95,14 @@ module Results
       pull_at = @pulls[entrant.bib]&.payload&.fetch("at_ms")
       pull_at = nil if pull_at && finish && finish.at_ms <= pull_at # a pull at/after the finish does not undo it
       status = if (s = @statuses[entrant.bib]) then s.kind.to_sym
-               elsif pull_at then :pulled
-               elsif finish then :finished
-               else :racing
-               end
+      elsif pull_at then :pulled
+      elsif finish then :finished
+      else :racing
+      end
       counted = if status == :pulled then crossings.select { it.at_ms <= pull_at }
-                elsif finish then crossings[0..crossings.index(finish)]
-                else crossings
-                end
+      elsif finish then crossings[0..crossings.index(finish)]
+      else crossings
+      end
       RacerState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:,
                      seen: @resolved.crossings_by_bib.fetch(entrant.bib, []), dropped: @resolved.dropped.fetch(entrant.bib, []))
     end
@@ -114,10 +114,10 @@ module Results
     def finish_crossing(bib, crossings, finish_open_at, flag_out_at)
       flag_ref = @flags[bib]&.payload&.fetch("capture_id")
       flag_ref = @resolved.aliases.fetch(flag_ref, flag_ref)
-      candidates = [crossings.find { it.ref == flag_ref }]
+      candidates = [ crossings.find { it.ref == flag_ref } ]
       candidates << crossings.find { it.at_ms >= finish_open_at } if finish_open_at
       candidates << crossings.find { it.at_ms >= flag_out_at } if flag_out_at
-      candidates.compact.min_by { [it.at_ms, it.ref] }
+      candidates.compact.min_by { [ it.at_ms, it.ref ] }
     end
   end
 end

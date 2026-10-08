@@ -5,11 +5,11 @@ module RacerStatuses
 
   # Active status rulings, oldest first.
   def self.active_rulings(event)
-    engine = Ruling.where(event:, kind: KINDS + ["revert"])
+    engine = Ruling.where(event:, kind: KINDS + [ "revert" ])
                    .map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
     Results::ActiveRulings.new(engine).all.select { KINDS.include?(it.kind) }
   end
 
   # bib => "DNF" | "DNS" | "DSQ"
-  def self.by_bib(event) = active_rulings(event).to_h { [it.payload["bib"].to_s, it.kind.upcase] }
+  def self.by_bib(event) = active_rulings(event).to_h { [ it.payload["bib"].to_s, it.kind.upcase ] }
 end

@@ -19,7 +19,7 @@ class RegistrationModelTest < ActiveSupport::TestCase
 
   test "source, age, external category and check-in" do
     reg = Registration.create!(race: @race, racer: create_racer, bib: "1", age: 41, source: "import", external_category: "Cat 3 Men")
-    assert_equal [41, "import", "Cat 3 Men"], [reg.age, reg.source, reg.external_category]
+    assert_equal [ 41, "import", "Cat 3 Men" ], [ reg.age, reg.source, reg.external_category ]
     refute reg.checked_in?
     reg.update!(checked_in_at_ms: 5)
     assert reg.checked_in?
@@ -29,7 +29,7 @@ class RegistrationModelTest < ActiveSupport::TestCase
 
   test "racers have city and state; ability level is gone" do
     racer = create_racer(city: "Boulder", state: "CO")
-    assert_equal %w[Boulder CO], [racer.city, racer.state]
+    assert_equal %w[Boulder CO], [ racer.city, racer.state ]
     refute Racer.column_names.include?("ability_level")
   end
 

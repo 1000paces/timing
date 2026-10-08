@@ -8,7 +8,7 @@ module Mutations
     argument :racer, Types::RacerInput, required: false
 
     field :registration, Types::RegistrationType
-    field :warnings, [String], null: false
+    field :warnings, [ String ], null: false
 
     def resolve(id:, **changes)
       require_official!("chief")

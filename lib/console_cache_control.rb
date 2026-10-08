@@ -10,6 +10,6 @@ class ConsoleCacheControl
   def call(env)
     status, headers, body = @app.call(env)
     headers["cache-control"] = "no-cache" if PAGES.include?(env["PATH_INFO"])
-    [status, headers, body]
+    [ status, headers, body ]
   end
 end

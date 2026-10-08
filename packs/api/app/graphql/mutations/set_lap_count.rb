@@ -4,7 +4,7 @@ module Mutations
     argument :race_id, ID
     argument :laps, Integer
 
-    field :rulings, [Types::RulingType], null: false
+    field :rulings, [ Types::RulingType ], null: false
 
     def resolve(race_id:, laps:)
       official = require_official!("chief")

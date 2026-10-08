@@ -63,6 +63,6 @@ Rails.application.configure do
   if ENV["TIMING_MODE"] == "hub"
     # Same list as LocalCa.default_hosts (not autoloadable yet while environments load).
     hostname = Socket.gethostname
-    config.hosts.concat([hostname, "#{hostname.split('.').first}.local", "localhost"].uniq)
+    config.hosts.concat([ hostname, "#{hostname.split('.').first}.local", "localhost" ].uniq)
   end
 end

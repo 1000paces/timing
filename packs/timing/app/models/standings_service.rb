@@ -7,7 +7,7 @@ class StandingsService
 
   def self.report(event, now_ms: Clock.now_ms, compute: ResultsSnapshot.method(:compute))
     output = compute.call(event, now_ms:)
-    LAST_GOOD[event.id] = [output, now_ms]
+    LAST_GOOD[event.id] = [ output, now_ms ]
     Report.new(event:, output:, computed_at_ms: now_ms, stale: false, error: nil)
   rescue StandardError => e
     Rails.logger.error("[standings] event #{event.id}: #{e.class}: #{e.message}\n#{Array(e.backtrace).first(10).join("\n")}")

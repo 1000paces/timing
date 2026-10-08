@@ -14,7 +14,7 @@ module Results
       voided = rulings.of("void_capture").map { it.payload["capture_id"] }.to_set
       overrides = rulings.latest_by("assign_bib") { it.payload["capture_id"] }
       device_bibs = @input.bib_assignments.uniq(&:id).group_by(&:capture_id)
-                          .transform_values { |list| list.max_by { [it.device_seq, it.id] }.bib }
+                          .transform_values { |list| list.max_by { [ it.device_seq, it.id ] }.bib }
 
       crossings = []
       unassigned = []
@@ -37,7 +37,7 @@ module Results
       end
 
       by_bib, aliases, dropped = debounce(crossings)
-      Resolved.new(crossings_by_bib: by_bib, unassigned: unassigned.sort_by { [it.at_ms, it.capture_id] },
+      Resolved.new(crossings_by_bib: by_bib, unassigned: unassigned.sort_by { [ it.at_ms, it.capture_id ] },
                    aliases:, dropped:, rulings:, unsynced_devices: unsynced.to_a.sort)
     end
 
@@ -50,7 +50,7 @@ module Results
       aliases = {}
       dropped = Hash.new { |h, k| h[k] = [] }
       by_bib = crossings.group_by(&:bib).transform_values do |list|
-        list.sort_by { [it.at_ms, it.ref] }.each_with_object([]) do |c, kept|
+        list.sort_by { [ it.at_ms, it.ref ] }.each_with_object([]) do |c, kept|
           if kept.any? && c.at_ms - kept.last.at_ms < @input.config.debounce_ms
             aliases[c.ref] = kept.last.ref
             dropped[c.bib] << c
@@ -59,7 +59,7 @@ module Results
           end
         end
       end
-      [by_bib, aliases, dropped.to_h]
+      [ by_bib, aliases, dropped.to_h ]
     end
   end
 end

@@ -21,8 +21,8 @@ class DeviceHashTest < ActiveSupport::TestCase
     fix = BibAssignment.record!(capture:, bib: "102")
     void = CaptureVoid.record!(capture:)
     assert_equal DeviceHash.genesis(device.id), capture.prev_hash
-    [capture, fix, void].each { assert_equal DeviceHash.digest(it.wire), it.entry_hash }
-    assert_equal [capture.entry_hash, fix.entry_hash], [fix.prev_hash, void.prev_hash]
+    [ capture, fix, void ].each { assert_equal DeviceHash.digest(it.wire), it.entry_hash }
+    assert_equal [ capture.entry_hash, fix.entry_hash ], [ fix.prev_hash, void.prev_hash ]
     assert_equal({ "id" => void.id, "kind" => "capture_void", "device_seq" => 3, "prev_hash" => fix.entry_hash, "capture_id" => capture.id },
                  void.wire)
   end
@@ -46,7 +46,7 @@ class DeviceHashTest < ActiveSupport::TestCase
     later = Capture.record!(device:, at_ms: 120_000, bib: "101")
     CaptureVoid.record!(capture: extra)
     assert_includes CaptureLaps.voided_ids(event), extra.id
-    assert_equal [1, 2], [first, later].map { CaptureLaps.new(event).lap(it) }
+    assert_equal [ 1, 2 ], [ first, later ].map { CaptureLaps.new(event).lap(it) }
     assert_equal 2, StandingsService.report(event).output.races.first.rows.first.laps
   end
 end

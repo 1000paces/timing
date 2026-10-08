@@ -63,9 +63,9 @@ class EventRaceSetupTest < ActiveSupport::TestCase
     b = create_race(event:, category: "B", scheduled_at_ms: SIX_PM)
     alone = create_race(event:, category: "C", scheduled_at_ms: SIX_PM, finish_with_leader: false)
     later = create_race(event:, category: "D", scheduled_at_ms: SIX_PM + 3_600_000)
-    assert_equal [a, b].sort_by(&:id), a.cohort.sort_by(&:id)
-    assert_equal [alone], alone.cohort
-    assert_equal [later], later.cohort
+    assert_equal [ a, b ].sort_by(&:id), a.cohort.sort_by(&:id)
+    assert_equal [ alone ], alone.cohort
+    assert_equal [ later ], later.cohort
   end
 
   test "eligibility checks gender and age only" do

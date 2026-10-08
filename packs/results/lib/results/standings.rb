@@ -7,8 +7,8 @@ module Results
 
     def rows(racers)
       running = racers.select { %i[finished racing].include?(it.status) }
-                      .sort_by { [-it.counted.size, it.counted.last&.at_ms || Float::INFINITY, it.counted.last&.ref || "", it.entrant.bib] }
-      pulled = racers.select { it.status == :pulled }.sort_by { [-it.counted.size, it.pull_at, it.entrant.bib] }
+                      .sort_by { [ -it.counted.size, it.counted.last&.at_ms || Float::INFINITY, it.counted.last&.ref || "", it.entrant.bib ] }
+      pulled = racers.select { it.status == :pulled }.sort_by { [ -it.counted.size, it.pull_at, it.entrant.bib ] }
       unplaced = UNPLACED.flat_map { |s| racers.select { it.status == s }.sort_by { it.entrant.bib } }
       placed = running + pulled
       leader = placed.first
@@ -31,7 +31,7 @@ module Results
       positions = Hash.new { |h, k| h[k] = [] }
       depth = racers.map { it.counted.size }.max || 0
       (0...depth).each do |n|
-        racers.select { it.counted.size > n }.sort_by { [it.counted[n].at_ms, it.counted[n].ref] }
+        racers.select { it.counted.size > n }.sort_by { [ it.counted[n].at_ms, it.counted[n].ref ] }
               .each_with_index { |r, i| positions[r.entrant.bib] << i + 1 }
       end
       positions
@@ -39,7 +39,7 @@ module Results
 
     # Every crossing the engine saw for this racer, in time order, with what it counted as.
     def crossing_views(racer)
-      counted = racer.counted.each_with_index.to_h { |c, i| [c.ref, i] }
+      counted = racer.counted.each_with_index.to_h { |c, i| [ c.ref, i ] }
       views = racer.seen.map do |c|
         if (i = counted[c.ref])
           previous = i.zero? ? racer.race_start : racer.counted[i - 1].at_ms
@@ -50,7 +50,7 @@ module Results
         end
       end
       views += racer.dropped.map { CrossingView.new(ref: it.ref, at_ms: it.at_ms, inserted: it.inserted, kind: :duplicate, lap: nil, lap_ms: nil) }
-      views.sort_by { [it.at_ms, it.ref] }
+      views.sort_by { [ it.at_ms, it.ref ] }
     end
 
     def ignored_kind(racer, crossing)
@@ -68,7 +68,7 @@ module Results
 
     def lap_times(racer)
       return [] unless racer.race_start
-      ([racer.race_start] + racer.counted.map(&:at_ms)).each_cons(2).map { |a, b| b - a }
+      ([ racer.race_start ] + racer.counted.map(&:at_ms)).each_cons(2).map { |a, b| b - a }
     end
   end
 end

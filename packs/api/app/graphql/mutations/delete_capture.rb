@@ -10,8 +10,8 @@ module Mutations
       official = require_official!("timer")
       capture = Capture.find(capture_id)
       mine = capture.device == ConsoleDevice.find(event: capture.event, official:)
-      return { errors: ["You can only delete your own captures"] } unless mine || official.at_least?("chief")
-      return { errors: ["That capture is already deleted"] } if CaptureLaps.voided_ids(capture.event).include?(capture.id)
+      return { errors: [ "You can only delete your own captures" ] } unless mine || official.at_least?("chief")
+      return { errors: [ "That capture is already deleted" ] } if CaptureLaps.voided_ids(capture.event).include?(capture.id)
 
       ruling = RulingWriter.write(event: capture.event, official:, kind: "void_capture", payload: { capture_id: capture.id })
       { errors: ruling.errors.full_messages }

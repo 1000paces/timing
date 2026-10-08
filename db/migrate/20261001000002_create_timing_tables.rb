@@ -24,7 +24,7 @@ class CreateTimingTables < ActiveRecord::Migration[8.1]
       t.string :entry_hash, null: false
       t.bigint :received_at_ms, null: false
     end
-    add_index :device_entries, [:device_id, :device_seq], unique: true
+    add_index :device_entries, [ :device_id, :device_seq ], unique: true
 
     create_table :rulings, id: :string do |t|
       t.references :event, type: :string, null: false, foreign_key: true
@@ -34,6 +34,6 @@ class CreateTimingTables < ActiveRecord::Migration[8.1]
       t.string :reason
       t.bigint :created_at_ms, null: false
     end
-    add_index :rulings, [:event_id, :created_at_ms]
+    add_index :rulings, [ :event_id, :created_at_ms ]
   end
 end

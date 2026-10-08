@@ -12,7 +12,7 @@ class LocalCa
 
   def self.default_hosts
     host = Socket.gethostname
-    [host, "#{host.split('.').first}.local", "localhost"].uniq
+    [ host, "#{host.split('.').first}.local", "localhost" ].uniq
   end
 
   def initialize(dir = Rails.root.join("storage/certs"))
@@ -27,7 +27,7 @@ class LocalCa
   def ensure!(hosts:, ips:)
     FileUtils.mkdir_p(@dir)
     File.chmod(0o700, @dir)
-    [root_key_path, server_key_path].each { File.chmod(0o600, it) if it.exist? }
+    [ root_key_path, server_key_path ].each { File.chmod(0o600, it) if it.exist? }
     ensure_root!
     ensure_server!(hosts.uniq, ips.uniq)
     self

@@ -21,25 +21,25 @@ class RegistrationImportTest < ActiveSupport::TestCase
     assert_equal({ "first_name" => "First Name", "last_name" => "Last Name", "gender" => "Gender", "team" => "Team",
                    "license_number" => "USAC License", "age" => "Age on Event Day", "city" => "City", "state" => "State",
                    "bib" => "Bib", "category" => "Category Entered / Merchandise Ordered" }, analysis.mapping)
-    rows = analysis.categories.to_h { [it.value, [it.count, it.race_id, it.skip]] }
-    assert_equal({ "Women Open" => [2, @women.id, false], "Cat 3 Men" => [2, @cat3.id, false],
-                   "Masters 50+ Men Cat 1/2/3" => [1, nil, false], "T-Shirt" => [1, nil, false] }, rows)
+    rows = analysis.categories.to_h { [ it.value, [ it.count, it.race_id, it.skip ] ] }
+    assert_equal({ "Women Open" => [ 2, @women.id, false ], "Cat 3 Men" => [ 2, @cat3.id, false ],
+                   "Masters 50+ Men Cat 1/2/3" => [ 1, nil, false ], "T-Shirt" => [ 1, nil, false ] }, rows)
   end
 
   test "saved category choices are suggested next time" do
     run_bikereg
-    rows = RegistrationImport.analyze(event: @event, csv: BIKEREG).categories.to_h { [it.value, [it.race_id, it.skip]] }
-    assert_equal [@masters.id, false], rows["Masters 50+ Men Cat 1/2/3"]
-    assert_equal [nil, true], rows["T-Shirt"]
+    rows = RegistrationImport.analyze(event: @event, csv: BIKEREG).categories.to_h { [ it.value, [ it.race_id, it.skip ] ] }
+    assert_equal [ @masters.id, false ], rows["Masters 50+ Men Cat 1/2/3"]
+    assert_equal [ nil, true ], rows["T-Shirt"]
   end
 
   test "imports race rows, skips merchandise, and stores no email or phone" do
     result = run_bikereg
-    assert_equal [5, 0, 1], [result.created, result.updated, result.skipped]
+    assert_equal [ 5, 0, 1 ], [ result.created, result.updated, result.skipped ]
     assert_empty result.errors
     ann = @event.registrations.joins(:racer).find_by(racers: { first_name: "Ann" })
-    assert_equal [@women, nil, 41, "import", "Women Open"], [ann.race, ann.bib, ann.age, ann.source, ann.external_category]
-    assert_equal %w[Boulder CO Velo 100001], [ann.racer.city, ann.racer.state, ann.racer.team, ann.racer.license_number]
+    assert_equal [ @women, nil, 41, "import", "Women Open" ], [ ann.race, ann.bib, ann.age, ann.source, ann.external_category ]
+    assert_equal %w[Boulder CO Velo 100001], [ ann.racer.city, ann.racer.state, ann.racer.team, ann.racer.license_number ]
     assert_equal "12", @event.registrations.joins(:racer).find_by(racers: { first_name: "Bob" }).bib
     assert_equal %w[F M M M F], @event.registrations.joins(:racer).order("racers.first_name").pluck("racers.gender")
     refute Racer.column_names.any? { it.include?("email") || it.include?("phone") }
@@ -47,16 +47,16 @@ class RegistrationImportTest < ActiveSupport::TestCase
 
   test "an unmapped category is a row error; other rows still import" do
     result = RegistrationImport.call(event: @event, csv: BIKEREG, categories: { "T-Shirt" => { "skip" => true } })
-    assert_equal [[4, "category Masters 50+ Men Cat 1/2/3 is not mapped to a race"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 4, "category Masters 50+ Men Cat 1/2/3 is not mapped to a race" ] ], result.errors.map { [ it.row, it.message ] }
     assert_equal 4, result.created
   end
 
   test "eligibility warnings use the imported age" do
-    warnings = run_bikereg.warnings.map { [it.row, it.message] }
+    warnings = run_bikereg.warnings.map { [ it.row, it.message ] }
     assert_empty warnings # Cy is 52 in Masters 50+
     csv = BIKEREG.sub('"Denver","Cy","Active","Dee","CO","Spoke","","52"', '"Denver","Cy","Active","Dee","CO","Spoke","","45"')
     @event.registrations.destroy_all
-    assert_equal [[4, "age 45 is below minimum 50"]], run_bikereg(csv).warnings.map { [it.row, it.message] }
+    assert_equal [ [ 4, "age 45 is below minimum 50" ] ], run_bikereg(csv).warnings.map { [ it.row, it.message ] }
   end
 
   # Review Focus 1
@@ -70,10 +70,10 @@ class RegistrationImportTest < ActiveSupport::TestCase
     csv = BIKEREG.sub('"Velo","100001","41"', '"New Team","","42"') # Ann: new team, license blank this time
                  .sub(/\r\n"","Lyons","Di".*?\r\n/, "\r\n")         # Di dropped out
     result = run_bikereg(csv)
-    assert_equal [0, 4], [result.created, result.updated]
+    assert_equal [ 0, 4 ], [ result.created, result.updated ]
     ann.reload
-    assert_equal ["301", 42, "New Team", "100001"], [ann.bib, ann.age, ann.racer.team, ann.racer.license_number]
-    assert_equal ["Di Eve (Cat 3 Men)"], result.not_in_file
+    assert_equal [ "301", 42, "New Team", "100001" ], [ ann.bib, ann.age, ann.racer.team, ann.racer.license_number ]
+    assert_equal [ "Di Eve (Cat 3 Men)" ], result.not_in_file
   end
 
   test "a re-import can move a racer to another race" do
@@ -87,7 +87,7 @@ class RegistrationImportTest < ActiveSupport::TestCase
   test "the same racer twice in one file for races is an error on the second row" do
     csv = BIKEREG.sub('"T-Shirt","Male"', '"Cat 3 Men","Male"')
     result = run_bikereg(csv)
-    assert_equal [[5, "Cy Dee appears more than once in this file (row 4)"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 5, "Cy Dee appears more than once in this file (row 4)" ] ], result.errors.map { [ it.row, it.message ] }
     assert_equal @masters, @event.registrations.joins(:racer).find_by(racers: { first_name: "Cy" }).race
   end
 
@@ -95,21 +95,21 @@ class RegistrationImportTest < ActiveSupport::TestCase
     preview = nil
     assert_no_difference(-> { Registration.count + Racer.count + CategoryMapping.count }) { preview = run_bikereg(dry_run: true) }
     real = run_bikereg
-    assert_equal [preview.created, preview.updated, preview.skipped, preview.errors], [real.created, real.updated, real.skipped, real.errors]
+    assert_equal [ preview.created, preview.updated, preview.skipped, preview.errors ], [ real.created, real.updated, real.skipped, real.errors ]
   end
 
   test "unknown gender, bad dates and taken bibs are row errors" do
     csv = "first_name,last_name,gender,birth_date,bib,race\n" \
           "Ann,Lee,Q,,1,Women Open\nBob,Ray,M,not-a-date,2,Cat 3 Men\nCy,Dee,M,,3,Cat 3 Men\nDi,Eve,M,,3,Cat 3 Men\n"
     result = RegistrationImport.call(event: @event, csv:)
-    assert_equal [[2, "gender Q must be M, F or X"], [3, "birth_date must be YYYY-MM-DD"], [5, "Bib has already been taken"]],
-                 result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 2, "gender Q must be M, F or X" ], [ 3, "birth_date must be YYYY-MM-DD" ], [ 5, "Bib has already been taken" ] ],
+                 result.errors.map { [ it.row, it.message ] }
     assert_equal 1, result.created
   end
 
   test "a missing required column stops the import" do
     result = RegistrationImport.call(event: @event, csv: "first_name,last_name,race\nAnn,Lee,Women Open\n")
-    assert_equal [[1, "missing column gender"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 1, "missing column gender" ] ], result.errors.map { [ it.row, it.message ] }
   end
 
   test "column mapping lets headers differ" do
@@ -122,7 +122,7 @@ class RegistrationImportTest < ActiveSupport::TestCase
     csv = "first_name,last_name,gender,bib,race\nAnn,Lee,F,301,Women Open\n\n,,,,\nBob,Ray,M,101,Cat 3 Men\nCy,Dee,M,101,Cat 3 Men\n"
     result = RegistrationImport.call(event: @event, csv:)
     assert_equal 2, result.created
-    assert_equal [[6, "Bib has already been taken"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 6, "Bib has already been taken" ] ], result.errors.map { [ it.row, it.message ] }
   end
 
   test "deleting a race drops its saved category mapping" do
@@ -135,7 +135,7 @@ class RegistrationImportTest < ActiveSupport::TestCase
     stranger = create_race(event: create_event(name: "Other"))
     result = RegistrationImport.call(event: @event, csv: BIKEREG,
                                      categories: { "Masters 50+ Men Cat 1/2/3" => { "race_id" => stranger.id }, "T-Shirt" => { "skip" => true } })
-    assert_equal [[4, "category Masters 50+ Men Cat 1/2/3 is not mapped to a race"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 4, "category Masters 50+ Men Cat 1/2/3 is not mapped to a race" ] ], result.errors.map { [ it.row, it.message ] }
     refute CategoryMapping.exists?(race_id: stranger.id)
   end
 
@@ -143,14 +143,14 @@ class RegistrationImportTest < ActiveSupport::TestCase
   test "the same name twice in one file is a row error even when only one row has a license" do
     csv = "first_name,last_name,gender,license_number,race\nCy,Dee,M,,Cat 3 Men\nCy,Dee,M,555,Masters 50+ Men\n"
     result = RegistrationImport.call(event: @event, csv:)
-    assert_equal [[3, "Cy Dee appears more than once in this file (row 2)"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 3, "Cy Dee appears more than once in this file (row 2)" ] ], result.errors.map { [ it.row, it.message ] }
     assert_equal @cat3, @event.registrations.sole.race
   end
 
   test "two different licensed racers with the same name are both registered" do
     csv = "first_name,last_name,gender,license_number,race\nJo,Smith,M,111,Cat 3 Men\nJo,Smith,M,222,Masters 50+ Men\n"
     result = RegistrationImport.call(event: @event, csv:)
-    assert_equal [2, 0, []], [result.created, result.updated, result.errors]
+    assert_equal [ 2, 0, [] ], [ result.created, result.updated, result.errors ]
     assert_equal({ "111" => @cat3.id, "222" => @masters.id }, @event.registrations.joins(:racer).pluck("racers.license_number", :race_id).to_h)
   end
 
@@ -158,7 +158,7 @@ class RegistrationImportTest < ActiveSupport::TestCase
   test "a column or category explicitly left blank is not used" do
     csv = "first_name,last_name,gender,bib,race\nAnn,Lee,F,7,Women Open\nBob,Ray,M,8,Cat 3 Men\n"
     result = RegistrationImport.call(event: @event, csv:, mapping: { "bib" => "" }, categories: { "Cat 3 Men" => { "race_id" => nil } })
-    assert_equal [[3, "category Cat 3 Men is not mapped to a race"]], result.errors.map { [it.row, it.message] }
+    assert_equal [ [ 3, "category Cat 3 Men is not mapped to a race" ] ], result.errors.map { [ it.row, it.message ] }
     assert_nil @event.registrations.sole.bib
   end
 end

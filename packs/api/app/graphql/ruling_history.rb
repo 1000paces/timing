@@ -8,7 +8,7 @@ class RulingHistory
     @cancelled = Results::ActiveRulings.new(engine).cancelled_ids
     @names = Official.where(id: @rulings.map(&:official_id).compact.uniq).pluck(:id, :name).to_h
     # target id => the active revert that undid it
-    @undone_by = @rulings.select { it.kind == "revert" && !@cancelled.include?(it.id) }.to_h { [it.payload["ruling_id"], it] }
+    @undone_by = @rulings.select { it.kind == "revert" && !@cancelled.include?(it.id) }.to_h { [ it.payload["ruling_id"], it ] }
   end
 
   attr_reader :rulings

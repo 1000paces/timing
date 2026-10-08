@@ -1,8 +1,8 @@
 require "test_helper"
 
 class RaceSimulator::GeneratorTest < ActiveSupport::TestCase
-  RACES = [RaceSimulator::RaceSpec.new(race_id: "a", offset_ms: 0, bibs: (101..110).to_a),
-           RaceSimulator::RaceSpec.new(race_id: "b", offset_ms: 30_000, bibs: (201..210).to_a)].freeze
+  RACES = [ RaceSimulator::RaceSpec.new(race_id: "a", offset_ms: 0, bibs: (101..110).to_a),
+           RaceSimulator::RaceSpec.new(race_id: "b", offset_ms: 30_000, bibs: (201..210).to_a) ].freeze
 
   def generate(**opts) = RaceSimulator::Generator.new(races: RACES, laps: 5, seed: 7, **opts).call
 
@@ -24,7 +24,7 @@ class RaceSimulator::GeneratorTest < ActiveSupport::TestCase
 
   test "untagged taps are never a racer's first or last crossing and are spread out" do
     truths = generate(untagged_rate: 1.0)
-    picked = truths.flat_map { |t| t.untagged.map { [t, it] } }
+    picked = truths.flat_map { |t| t.untagged.map { [ t, it ] } }
     assert_operator picked.size, :>=, 3
     picked.each { |t, i| assert i.between?(1, t.crossings_ms.size - 2) }
     times = picked.map { |t, i| t.crossings_ms[i] }.sort

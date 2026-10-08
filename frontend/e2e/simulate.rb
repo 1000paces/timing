@@ -3,7 +3,7 @@
 # so the review queue has work to do.
 event = Event.find_by!(name: "E2E CX")
 races = event.races
-starts = StandingsService.report(event).output.races.to_h { [it.race_id, it.start_at_ms] }
+starts = StandingsService.report(event).output.races.to_h { [ it.race_id, it.start_at_ms ] }
 abort "not every race has started" if starts.values_at(*races.map(&:id)).any?(&:nil?)
 gun = starts.values.compact.min
 specs = RaceSimulator.specs_for(races).map { it.with(offset_ms: starts.fetch(it.race_id) - gun) }

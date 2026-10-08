@@ -2,7 +2,7 @@ require "test_helper"
 
 class TimingModeTest < ActiveSupport::TestCase
   def with_env(vars)
-    old = vars.keys.to_h { [it, ENV[it]] }
+    old = vars.keys.to_h { [ it, ENV[it] ] }
     vars.each { |k, v| ENV[k] = v }
     yield
   ensure

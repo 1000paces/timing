@@ -9,7 +9,7 @@ class Device < ApplicationRecord
   # Returns [device, credential]; only the digest is stored.
   def self.pair!(event:, name:)
     credential = SecureRandom.urlsafe_base64(32)
-    [create!(event:, name:, paired_at_ms: Clock.now_ms, credential_digest: digest(credential)), credential]
+    [ create!(event:, name:, paired_at_ms: Clock.now_ms, credential_digest: digest(credential)), credential ]
   end
 
   def self.authenticate(id, credential)

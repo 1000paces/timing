@@ -38,7 +38,7 @@ text.each_line do |line|
     lap_times = times.first(laps)
     tolerance = total.count(":") == 2 ? 1.01 : 0.05 # h:mm:ss rows are rounded to the second
     abort "#{line}: laps don't add up" if (lap_times.sum { seconds(it) } - seconds(total)).abs > tolerance
-    csv << [category, place.to_i, bib, laps, total, *lap_times]
+    csv << [ category, place.to_i, bib, laps, total, *lap_times ]
   else
     category = line
   end

@@ -4,7 +4,7 @@ class OnboardingTest < ActionDispatch::IntegrationTest
   setup do
     @dir = Dir.mktmpdir
     @ca = LocalCa.new(@dir)
-    @ca.ensure!(hosts: ["localhost"], ips: ["127.0.0.1"])
+    @ca.ensure!(hosts: [ "localhost" ], ips: [ "127.0.0.1" ])
     OnboardingController.local_ca = @ca
   end
 

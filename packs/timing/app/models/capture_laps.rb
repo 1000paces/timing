@@ -33,7 +33,7 @@ class CaptureLaps
 
   def initialize(event)
     @voided = self.class.voided_ids(event)
-    starts = StandingsService.report(event).output.races.to_h { [it.race_id, it.start_at_ms] }
+    starts = StandingsService.report(event).output.races.to_h { [ it.race_id, it.start_at_ms ] }
     race_by_bib = event.registrations.pluck(:bib, :race_id).to_h
     @start_by_bib = race_by_bib.transform_values { starts[it] }.compact
     device_bibs = BibAssignment.where(event:).order(:device_seq).pluck(:capture_id, :bib).to_h
@@ -41,18 +41,18 @@ class CaptureLaps
     @sources = {}
     @bibs = Capture.where(event:).pluck(:id, :bib).to_h do |id, bib|
       @sources[id] = assigned[id] ? :ruling : device_bibs[id] ? :device : :entered
-      [id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence]
+      [ id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence ]
     end
     captures = Capture.where(event:).where.not(id: @voided.to_a).order(:captured_at_ms, :id).pluck(:id, :captured_at_ms)
-                      .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [bib, at, id] }
+                      .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [ bib, at, id ] }
     @info = {}
     laps_by_race = Hash.new { |h, k| h[k] = [] }
     captures.group_by(&:first).each do |bib, rows|
       start = @start_by_bib[bib]
       previous = start
       rows.select { |_, at, _| at >= start }.each.with_index(1) do |(_, at, id), lap|
-        @info[id] = [race_by_bib[bib], lap, at - previous]
-        laps_by_race[race_by_bib[bib]] << [id, at - previous] if lap > 1
+        @info[id] = [ race_by_bib[bib], lap, at - previous ]
+        laps_by_race[race_by_bib[bib]] << [ id, at - previous ] if lap > 1
         previous = at
       end
     end

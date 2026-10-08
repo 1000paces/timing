@@ -28,7 +28,7 @@ class DevicePairingTest < ActionDispatch::IntegrationTest
 
     sign_in(Official.find_by!(role: "admin"), "1111")
     devices = gql("query($id: ID!) { devices(eventId: $id) { id name revokedAtMs entryCount } }", id: @event.id).dig("data", "devices")
-    assert_equal [{ "id" => paired["device_id"], "name" => "Finish tablet", "revokedAtMs" => nil, "entryCount" => 0 }], devices
+    assert_equal [ { "id" => paired["device_id"], "name" => "Finish tablet", "revokedAtMs" => nil, "entryCount" => 0 } ], devices
     gql("mutation($id: ID!) { revokeDevice(deviceId: $id) { errors } }", id: paired["device_id"])
     assert_nil Device.authenticate(paired["device_id"], paired["credential"])
   end

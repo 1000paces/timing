@@ -10,6 +10,6 @@ module Mutations
       ruling.persisted? ? { ruling:, errors: [] } : { ruling: nil, errors: ruling.errors.full_messages }
     end
 
-    def refuse(message) = { ruling: nil, errors: [message] }
+    def refuse(message) = { ruling: nil, errors: [ message ] }
   end
 end

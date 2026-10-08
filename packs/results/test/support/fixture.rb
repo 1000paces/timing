@@ -47,9 +47,9 @@ module Results
       (data["rulings"] || []).each_with_index do |r, i|
         payload = r.except("id", "kind", "created").to_h do |k, v|
           case k
-          when "at" then ["at_ms", ms.(v)]
-          when "bib" then ["bib", v&.to_s]
-          else [k, v]
+          when "at" then [ "at_ms", ms.(v) ]
+          when "bib" then [ "bib", v&.to_s ]
+          else [ k, v ]
           end
         end
         rulings << Ruling.new(id: r.fetch("id", "r-#{i + 1}"), kind: r.fetch("kind"), payload:, created_at_ms: ms.(r.fetch("created", i + 1)))
@@ -63,7 +63,7 @@ module Results
         entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Racer #{it['bib']}")) },
         captures:, bib_assignments: assignments, rulings:, now_ms: ms.(data.fetch("now", 0))
       )
-      [input, data["expect"] || {}]
+      [ input, data["expect"] || {} ]
     end
   end
 end
