@@ -100,6 +100,38 @@ Items deliberately deferred. Each has enough context to pick up cold.
 
 ## Carry into upcoming plans
 
+### Concerns from the flag-out / replay review (2026-10-07)
+Doing now:
+1. **Flag-out leader exemption is fragile.** The exempt rider can be a DNF/DSQ rider, a
+   phantom lap from a stray tap, or the wrong one of two riders tapped in swapped order;
+   nothing shows who was exempt. Skip DNF/DSQ/DNS riders; show the exempt rider on the wave.
+2. **Riders who quit stay "Racing" with no prompt.** Add an "overdue — mark DNF?" problem
+   once the flag is out (about-to-be-lapped switches off then).
+3. **Capture flag time is late by the confirm dialog.** Stamp it at the first tap.
+
+Later:
+- "Current wave" can pick wrong: overlapping waves (newer wins), races that finish on their
+  own count as waves of one, and it groups by scheduled time while the engine also splits
+  off races that started after the finish opened.
+- A timer can flag out a whole wave; only a chief can undo it.
+- No sanity checks on flag times (in the future, before the wave started, typos in "Flag out at…").
+- Waves are still "same scheduled time": a mistyped time silently moves a race out of its
+  wave (lap count, flag). The user asked for a foreign key; deferred.
+- Flag out on a race header flags the whole wave; the History line names one race.
+- Wave view groups races that finish on their own (Running Race) into the scheduled wave.
+- Timers can flag out on Capture but don't see the button on Results.
+- Replay checks are partly circular: flag times, start offsets and arming delays are fitted
+  from the results they're checked against.
+- Replays are too clean: one device, perfect hundredths, in order, historic timestamps (live
+  "now" behaviour never runs). Nothing tests whether a person can tap a bunch sprint.
+- The replay check ignores lap positions, gaps, other statuses; one rider's error (386)
+  shows as 10 lines.
+- Fitter edge cases (one-rider waves, ties like 330/402, crash laps); no test for
+  script/results-pdf-to-csv (sample PDFs aren't committed).
+- Cascade Locks 1's date (2026-09-27) is a guess; replays pile up events in dev with no cleanup.
+- Flag out lacks tests with a finish flag or a pull on the same rider.
+- Split big branches into reviewable PRs; get an independent review of the Flag out engine change.
+
 ### Real-race replay (after the clean replay, 2026-10-07)
 - A messy replay for officiating rehearsal: missed taps, wrong bibs, no-bib taps, a phone
   offline for 10 minutes, on top of the real anomalies (46, 422, 386, 70).
