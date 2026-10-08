@@ -50,6 +50,21 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
 
   await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
 
+  // Race, Scheduled and Status sort (a second click reverses); the sort survives a reload.
+  const firstRace = page.getByRole("row").nth(1);
+  await expect(firstRace).toContainText("Masters 35+ Men");
+  await page.getByRole("button", { name: "Status", exact: true }).click();
+  await expect(firstRace).toContainText("Women Open"); // not started first
+  const byRace = page.getByRole("button", { name: "Race", exact: true });
+  await byRace.click();
+  await expect(firstRace).toContainText("Masters 35+ Men");
+  await byRace.click();
+  await expect(firstRace).toContainText("Women Open");
+  await page.reload();
+  await expect(firstRace).toContainText("Women Open");
+  await page.getByRole("button", { name: "Scheduled", exact: true }).click();
+  await expect(firstRace).toContainText("Masters 35+ Men");
+
   // Wave 2, started by mistake, then unstarted and started again.
   await page.getByRole("checkbox", { name: "Select Women Open" }).check();
   await start.click();

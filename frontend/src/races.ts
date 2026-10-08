@@ -2,12 +2,39 @@ import { formatClock, formatElapsed } from "./format";
 
 export type StartRow = { id: string; name: string; scheduledAtMs: number | null; startAtMs: number | null };
 
-// Races in order of their start group's scheduled time, then name. Waves are
-// formed by hand on the Start screen: select races, press Start, repeat.
-export function sortRaces<T extends StartRow>(rows: T[]): T[] {
-  return [...rows].sort(
-    (a, b) => (a.scheduledAtMs ?? Infinity) - (b.scheduledAtMs ?? Infinity) || a.name.localeCompare(b.name),
-  );
+export type StartSort = { key: "race" | "scheduled" | "status"; dir: "asc" | "desc" };
+export const DEFAULT_START_SORT: StartSort = { key: "scheduled", dir: "asc" };
+const START_SORT_KEYS: StartSort["key"][] = ["race", "scheduled", "status"];
+
+const byName = (a: StartRow, b: StartRow) => a.name.localeCompare(b.name, undefined, { numeric: true });
+// Unscheduled races go last whichever way the column is sorted.
+const bySchedule = (a: StartRow, b: StartRow, sign = 1) =>
+  a.scheduledAtMs == null || b.scheduledAtMs == null
+    ? Number(a.scheduledAtMs == null) - Number(b.scheduledAtMs == null)
+    : (a.scheduledAtMs - b.scheduledAtMs) * sign;
+// Not started before started; started races by when they went off.
+const byStatus = (a: StartRow, b: StartRow) => (a.startAtMs ?? -Infinity) - (b.startAtMs ?? -Infinity) || 0;
+
+// The Start screen's order: by the chosen column, then by scheduled time and
+// name (the default, which keeps each start group together).
+export function sortRaces<T extends StartRow>(rows: T[], sort: StartSort = DEFAULT_START_SORT): T[] {
+  const sign = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const primary =
+      sort.key === "race" ? byName(a, b) * sign : sort.key === "scheduled" ? bySchedule(a, b, sign) : byStatus(a, b) * sign;
+    return primary || bySchedule(a, b) || byName(a, b);
+  });
+}
+
+// The sort lives in the page address (?sort=status&dir=desc); the default leaves it out.
+export function startSortFromSearch(search: string): StartSort {
+  const params = new URLSearchParams(search);
+  const key = params.get("sort") as StartSort["key"];
+  return START_SORT_KEYS.includes(key) ? { key, dir: params.get("dir") === "desc" ? "desc" : "asc" } : DEFAULT_START_SORT;
+}
+
+export function startSortToSearch(sort: StartSort): string {
+  return sort.key === DEFAULT_START_SORT.key && sort.dir === DEFAULT_START_SORT.dir ? "" : `?sort=${sort.key}&dir=${sort.dir}`;
 }
 
 const GENDER_LABEL: Record<string, string> = { men: "Men", women: "Women", open: "Open" };
