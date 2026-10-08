@@ -23,19 +23,19 @@ class HistoryTest < ActionDispatch::IntegrationTest
 
   test "every ruling, newest first, readable, with who undid what" do
     rows = history
-    assert_equal ["Undo: DNF bib 101", "Pull bib 205 at 00:00:00", "DNF bib 101"], rows.map { it["description"] }
+    assert_equal [ "Undo: DNF bib 101", "Pull bib 205 at 00:00:00", "DNF bib 101" ], rows.map { it["description"] }
     dnf = rows.last
     assert_equal({ "kind" => "dnf", "bib" => "101", "officialName" => "Pat", "undone" => true, "undoneBy" => "Pat" }, dnf.except("description", "undoneAtMs"))
     assert dnf["undoneAtMs"].is_a?(Integer)
   end
 
   test "search by bib or racer name, and page through" do
-    assert_equal ["Pull bib 205 at 00:00:00"], history(search: "205").map { it["description"] }
-    assert_equal ["Undo: DNF bib 101", "DNF bib 101"], history(search: "ann lee").map { it["description"] }
-    assert_equal ["Pull bib 205 at 00:00:00"], history(limit: 1, offset: 1).map { it["description"] }
+    assert_equal [ "Pull bib 205 at 00:00:00" ], history(search: "205").map { it["description"] }
+    assert_equal [ "Undo: DNF bib 101", "DNF bib 101" ], history(search: "ann lee").map { it["description"] }
+    assert_equal [ "Pull bib 205 at 00:00:00" ], history(limit: 1, offset: 1).map { it["description"] }
   end
 
-  RACER_FIXES = 'query($id: ID!, $bib: String!) { racer(eventId: $id, bib: $bib) { rulings { description undone } } }'
+  RACER_FIXES = "query($id: ID!, $bib: String!) { racer(eventId: $id, bib: $bib) { rulings { description undone } } }"
 
   test "a crossing's bib is the one a phone or a move gave it, for the description, search and the racer's fixes" do
     tablet = create_device(event: @event)
@@ -55,7 +55,7 @@ class HistoryTest < ActionDispatch::IntegrationTest
 
   test "history and the racer panel cost the same number of queries however many fixes there are" do
     tablet = create_device(event: @event)
-    counts = [3, 12].map do |n|
+    counts = [ 3, 12 ].map do |n|
       n.times do |i|
         c = record_capture(device: tablet, seq: 100 + Ruling.count + i, at_ms: i * 1000, bib: "101")
         RulingWriter.write(event: @event, official: @pat, kind: "void_capture", payload: { capture_id: c.id })

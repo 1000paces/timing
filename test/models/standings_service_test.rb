@@ -15,7 +15,7 @@ class StandingsServiceTest < ActiveSupport::TestCase
     refute report.stale
     assert_nil report.error
     assert_equal 500_000, report.computed_at_ms
-    assert_equal ["1"], report.output.races.first.rows.map(&:bib)
+    assert_equal [ "1" ], report.output.races.first.rows.map(&:bib)
   end
 
   # Review Focus 3
@@ -26,7 +26,7 @@ class StandingsServiceTest < ActiveSupport::TestCase
     assert report.stale
     assert_equal "ArgumentError: comparison of Integer with nil failed", report.error
     assert_equal 500_000, report.computed_at_ms
-    assert_equal ["1"], report.output.races.first.rows.map(&:bib)
+    assert_equal [ "1" ], report.output.races.first.rows.map(&:bib)
   end
 
   test "with no previous result the fallback is empty" do

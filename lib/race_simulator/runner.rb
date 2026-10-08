@@ -7,7 +7,7 @@ module RaceSimulator
     def self.taps(truths)
       truths.flat_map do |truth|
         truth.crossings_ms.each_with_index.map { |ms, i| Tap.new(at_ms: ms, bib: truth.untagged.include?(i) ? nil : truth.bib) }
-      end.sort_by { [it.at_ms, it.bib.to_s] }
+      end.sort_by { [ it.at_ms, it.bib.to_s ] }
     end
 
     def initialize(writer:, gun_at_ms:, truths:, speed: 0, sleeper: ->(seconds) { sleep(seconds) })

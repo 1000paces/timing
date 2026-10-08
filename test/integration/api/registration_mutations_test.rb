@@ -23,7 +23,7 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
   test "a chief adds a walk-up: manual, checked in, bib optional" do
     as("chief")
     reg = data(walk_up, "registerRacer")["registration"]
-    assert_equal [nil, "manual", "Lyons", "CO"], [reg["bib"], reg["source"], reg.dig("racer", "city"), reg.dig("racer", "state")]
+    assert_equal [ nil, "manual", "Lyons", "CO" ], [ reg["bib"], reg["source"], reg.dig("racer", "city"), reg.dig("racer", "state") ]
     assert reg["checkedInAtMs"].is_a?(Integer)
   end
 
@@ -40,16 +40,16 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
       mutation($id: ID!, $raceId: ID, $bib: String) { updateRegistration(id: $id, raceId: $raceId, bib: $bib) { registration { #{REG} } warnings errors } }
     GQL
     moved = data(gql(update, id: reg["id"], raceId: @masters.id), "updateRegistration")
-    assert_equal ["150", @masters.id], [moved.dig("registration", "bib"), moved.dig("registration", "race", "id")]
-    assert_equal ["age 40 is below minimum 50"], moved["warnings"]
+    assert_equal [ "150", @masters.id ], [ moved.dig("registration", "bib"), moved.dig("registration", "race", "id") ]
+    assert_equal [ "age 40 is below minimum 50" ], moved["warnings"]
 
     data(walk_up(bib: "151", first: "Other"), "registerRacer")
     locked = data(gql(update, id: reg["id"], bib: "152"), "updateRegistration")
-    assert_equal ["Bib can't change once the racer is checked in (undo check-in first)"], locked["errors"]
+    assert_equal [ "Bib can't change once the racer is checked in (undo check-in first)" ], locked["errors"]
 
     gql("mutation($id: ID!) { setCheckedIn(registrationId: $id, checkedIn: false) { errors } }", id: reg["id"])
     taken = data(gql(update, id: reg["id"], bib: "151"), "updateRegistration")
-    assert_equal ["Bib has already been taken"], taken["errors"]
+    assert_equal [ "Bib has already been taken" ], taken["errors"]
     cleared = data(gql(update, id: reg["id"], bib: nil), "updateRegistration")
     assert_nil cleared.dig("registration", "bib")
   end
@@ -79,7 +79,7 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     Capture.record!(device: create_device(event: @event), at_ms: 1, bib: "101")
     spare = register(race: @cat3, bib: "102")
     remove = "mutation($id: ID!) { removeRegistration(id: $id) { errors } }"
-    assert_equal ["Bib 101 has captures and can't be removed"], data(gql(remove, id: captured.id), "removeRegistration")["errors"]
+    assert_equal [ "Bib 101 has captures and can't be removed" ], data(gql(remove, id: captured.id), "removeRegistration")["errors"]
     assert_equal [], data(gql(remove, id: spare.id), "removeRegistration")["errors"]
     refute Registration.exists?(spare.id)
   end
@@ -89,8 +89,8 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     register(race: @cat3, bib: nil, racer: create_racer(first_name: "Amy", last_name: "Adams"))
     register(race: @masters, bib: nil)
     body = gql("mutation($id: ID!) { assignBibs(eventId: $id) { assigned { bib name raceName } unfilled errors } }", id: @event.id)
-    assert_equal({ "assigned" => [{ "bib" => "100", "name" => "Amy Adams", "raceName" => "Cat 3 Men" }],
-                   "unfilled" => ["Masters Men: 1 racer still needs a bib — no bib range"], "errors" => [] }, data(body, "assignBibs"))
+    assert_equal({ "assigned" => [ { "bib" => "100", "name" => "Amy Adams", "raceName" => "Cat 3 Men" } ],
+                   "unfilled" => [ "Masters Men: 1 racer still needs a bib — no bib range" ], "errors" => [] }, data(body, "assignBibs"))
   end
 
   test "assignBibs with a race fills only that race" do
@@ -100,7 +100,7 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     @event.update!(bib_from: 1, bib_to: 9)
     body = gql("mutation($id: ID!, $raceId: ID) { assignBibs(eventId: $id, raceId: $raceId) { assigned { bib raceName } unfilled } }",
                id: @event.id, raceId: @masters.id)
-    assert_equal({ "assigned" => [{ "bib" => "1", "raceName" => "Masters Men" }], "unfilled" => [] }, data(body, "assignBibs"))
+    assert_equal({ "assigned" => [ { "bib" => "1", "raceName" => "Masters Men" } ], "unfilled" => [] }, data(body, "assignBibs"))
     assert_nil @cat3.registrations.sole.bib
   end
 
@@ -108,9 +108,9 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     as("admin")
     register(race: @cat3, bib: "1", racer: create_racer(birth_date: Date.new(1985, 6, 1)))
     body = gql("query($id: ID!) { event(id: $id) { ageNextYear registrations { age racingAge } } }", id: @event.id)
-    assert_equal({ "ageNextYear" => true, "registrations" => [{ "age" => nil, "racingAge" => 42 }] }, body.dig("data", "event"))
+    assert_equal({ "ageNextYear" => true, "registrations" => [ { "age" => nil, "racingAge" => 42 } ] }, body.dig("data", "event"))
     off = gql("mutation($id: ID!) { updateEvent(id: $id, ageNextYear: false) { event { ageNextYear registrations { racingAge } } errors } }", id: @event.id)
-    assert_equal({ "ageNextYear" => false, "registrations" => [{ "racingAge" => 41 }] }, data(off, "updateEvent")["event"])
+    assert_equal({ "ageNextYear" => false, "registrations" => [ { "racingAge" => 41 } ] }, data(off, "updateEvent")["event"])
     assert_equal true, gql("{ disciplines { id ageNextYear } }").dig("data", "disciplines").find { it["id"] == "cyclocross" }["ageNextYear"]
   end
 
@@ -119,6 +119,6 @@ class RegistrationMutationsTest < ActionDispatch::IntegrationTest
     body = gql("mutation($id: ID!) { updateEvent(id: $id, bibFrom: 500, bibTo: 599) { event { bibFrom bibTo } errors } }", id: @event.id)
     assert_equal({ "bibFrom" => 500, "bibTo" => 599 }, data(body, "updateEvent")["event"])
     body = gql("mutation($id: ID!) { updateRace(id: $id, bibFrom: 150, bibTo: 250) { race { bibFrom } errors } }", id: @masters.id)
-    assert_equal ["Bib range 150–250 overlaps Cat 3 Men (100–199)"], data(body, "updateRace")["errors"]
+    assert_equal [ "Bib range 150–250 overlaps Cat 3 Men (100–199)" ], data(body, "updateRace")["errors"]
   end
 end

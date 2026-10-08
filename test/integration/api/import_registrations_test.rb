@@ -29,7 +29,7 @@ class ImportRegistrationsTest < ActionDispatch::IntegrationTest
     admin!
     data = gql(ANALYZE, eventId: @event.id, csv: BIKEREG).dig("data", "analyzeImport")
     assert_equal "Category Entered / Merchandise Ordered", data.dig("mapping", "category")
-    assert_equal ["Women Open", "Cat 3 Men", "Masters 50+ Men Cat 1/2/3", "T-Shirt"], data["categories"].map { it["value"] }
+    assert_equal [ "Women Open", "Cat 3 Men", "Masters 50+ Men Cat 1/2/3", "T-Shirt" ], data["categories"].map { it["value"] }
   end
 
   test "a dry run previews the same counts as the real import and writes nothing" do
@@ -39,7 +39,7 @@ class ImportRegistrationsTest < ActionDispatch::IntegrationTest
       preview = gql(IMPORT, eventId: @event.id, csv: BIKEREG, categories: @categories, dryRun: true).dig("data", "importRegistrations")
     end
     real = gql(IMPORT, eventId: @event.id, csv: BIKEREG, categories: @categories).dig("data", "importRegistrations")
-    assert_equal [5, 0, 1, []], real.values_at("created", "updated", "skipped", "rowErrors")
+    assert_equal [ 5, 0, 1, [] ], real.values_at("created", "updated", "skipped", "rowErrors")
     assert_equal preview.except("notInFile"), real.except("notInFile")
   end
 

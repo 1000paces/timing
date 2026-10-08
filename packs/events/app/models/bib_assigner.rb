@@ -17,7 +17,7 @@ class BibAssigner
     unfilled = []
     Registration.transaction do
       used = @event.registrations.where.not(bib: nil).pluck(:bib).to_set { it.to_i }
-      @races.sort_by { [it.scheduled_at_ms, it.name] }.each do |race|
+      @races.sort_by { [ it.scheduled_at_ms, it.name ] }.each do |race|
         waiting = race.registrations.where(bib: nil).joins(:racer).order("racers.last_name", "racers.first_name", :id).to_a
         next if waiting.empty?
 
@@ -28,7 +28,7 @@ class BibAssigner
           break unless number
           registration.update!(bib: number.to_s)
           used << number
-          assigned << [registration, number.to_s]
+          assigned << [ registration, number.to_s ]
         end
         left = waiting.count { it.bib.nil? }
         unfilled << unfilled_message(race, left, range) if left.positive?

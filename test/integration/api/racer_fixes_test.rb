@@ -35,10 +35,10 @@ class RacerFixesTest < ActionDispatch::IntegrationTest
   test "the racer query shows each crossing, its source, lap times and positions — for timers too" do
     sign_in(create_official(role: "timer", pin: "2222"), "2222")
     r = racer
-    assert_equal ["Ann Lee", "Cat 3 Men", "RACING", 1, 2, T0], r.values_at("name").push(r.dig("race", "name"), r["status"], r["place"], r["laps"], r["startAtMs"])
-    assert_equal [["lap1", "LAP", 1, 365_000, "Finish phone"], ["dup", "DUPLICATE", nil, nil, "Finish phone"], ["lap2", "LAP", 2, 365_000, "Finish phone"]],
+    assert_equal [ "Ann Lee", "Cat 3 Men", "RACING", 1, 2, T0 ], r.values_at("name").push(r.dig("race", "name"), r["status"], r["place"], r["laps"], r["startAtMs"])
+    assert_equal [ [ "lap1", "LAP", 1, 365_000, "Finish phone" ], [ "dup", "DUPLICATE", nil, nil, "Finish phone" ], [ "lap2", "LAP", 2, 365_000, "Finish phone" ] ],
                  r["crossings"].map { it.values_at("ref", "kind", "lap", "lapMs", "source") }
-    assert_equal [1, 1], r["lapPositions"]
+    assert_equal [ 1, 1 ], r["lapPositions"]
   end
 
   # Review Focus 5
@@ -76,12 +76,12 @@ class RacerFixesTest < ActionDispatch::IntegrationTest
     other_event = create_event(name: "Other")
     stranger = record_capture(device: create_device(event: other_event), seq: 1, at_ms: 1, bib: "1", id: "stranger")
     errors = ->(data) { data["errors"] }
-    assert_equal ["That crossing isn't part of this event"], errors.(mutate("voidCrossing", "$e: ID!", 'eventId: $e, ref: "stranger"', e: @event.id))
-    assert_equal ["Bib 999 is not registered in this event"],
+    assert_equal [ "That crossing isn't part of this event" ], errors.(mutate("voidCrossing", "$e: ID!", 'eventId: $e, ref: "stranger"', e: @event.id))
+    assert_equal [ "Bib 999 is not registered in this event" ],
                  errors.(mutate("moveCrossing", "$e: ID!", 'eventId: $e, captureId: "lap1", bib: "999"', e: @event.id))
-    assert_equal ["A crossing can't be inserted before the race started"],
+    assert_equal [ "A crossing can't be inserted before the race started" ],
                  errors.(mutate("insertCrossing", "$e: ID!, $at: Millis!", 'eventId: $e, bib: "101", atMs: $at', e: @event.id, at: T0 - 1000))
-    assert_equal ["That crossing isn't one of bib 101's"],
+    assert_equal [ "That crossing isn't one of bib 101's" ],
                  errors.(mutate("flagFinish", "$e: ID!", 'eventId: $e, bib: "101", ref: "other"', e: @event.id))
     assert stranger
   end
@@ -93,11 +93,11 @@ class RacerFixesTest < ActionDispatch::IntegrationTest
     revert = "mutation($id: ID!) { revertRuling(rulingId: $id) { ruling { id } errors } }"
     undo = gql(revert, id: void).dig("data", "revertRuling")
     assert_equal [], undo["errors"]
-    assert_equal ["That fix is already undone"], gql(revert, id: void).dig("data", "revertRuling", "errors")
-    assert_equal ["An undo can't be undone"], gql(revert, id: undo.dig("ruling", "id")).dig("data", "revertRuling", "errors")
+    assert_equal [ "That fix is already undone" ], gql(revert, id: void).dig("data", "revertRuling", "errors")
+    assert_equal [ "An undo can't be undone" ], gql(revert, id: undo.dig("ruling", "id")).dig("data", "revertRuling", "errors")
 
     fixes = racer["rulings"]
-    assert_equal [["void_capture", "Void crossing 10:06:08 (bib 101)", "Pat", true, "Pat"]],
+    assert_equal [ [ "void_capture", "Void crossing 10:06:08 (bib 101)", "Pat", true, "Pat" ] ],
                  fixes.map { it.values_at("kind", "description", "officialName", "undone", "undoneBy") }
   end
 end

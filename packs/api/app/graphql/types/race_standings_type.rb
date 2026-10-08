@@ -6,7 +6,7 @@ module Types
     field :lap_count, Integer
     field :publication, PublicationEnum, null: false
     field :digest, String, null: false
-    field :rows, [StandingRowType], null: false
+    field :rows, [ StandingRowType ], null: false
     field :start_at_ms, Millis, description: "When the race actually started, or null"
     field :flag_out_at_ms, Millis, description: "When the finish flag came out for its wave, or null"
 

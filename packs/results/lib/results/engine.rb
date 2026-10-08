@@ -19,11 +19,11 @@ module Results
     def score(cohort, resolved)
       scored = CohortScorer.new(@input, cohort, resolved).call
       open_at = scored.finish_open_at
-      return [scored] unless open_at
-      starts = scored.race_results.to_h { [it.race_id, it.start_at_ms] }
+      return [ scored ] unless open_at
+      starts = scored.race_results.to_h { [ it.race_id, it.start_at_ms ] }
       late = cohort.select { (start = starts[it.id]) && start > open_at }
-      return [scored] if late.empty?
-      score(cohort - late, resolved) + late.flat_map { score([it], resolved) }
+      return [ scored ] if late.empty?
+      score(cohort - late, resolved) + late.flat_map { score([ it ], resolved) }
     end
 
     # Finish-with-leader races sharing a scheduled start finish together; every
@@ -31,7 +31,7 @@ module Results
     def cohorts
       races = @input.races.uniq(&:id).sort_by(&:id)
       together, alone = races.partition { it.finish_with_leader && it.scheduled_at_ms }
-      (together.group_by(&:scheduled_at_ms).values + alone.map { [it] }).sort_by { |c| [c.first.scheduled_at_ms || Float::INFINITY, c.first.id] }
+      (together.group_by(&:scheduled_at_ms).values + alone.map { [ it ] }).sort_by { |c| [ c.first.scheduled_at_ms || Float::INFINITY, c.first.id ] }
     end
   end
 end

@@ -8,17 +8,17 @@ require "csv"
 class RegistrationImport
   # field => header names recognised automatically (case-insensitive)
   HEADERS = {
-    "first_name" => ["First Name", "first_name"],
-    "last_name" => ["Last Name", "last_name"],
+    "first_name" => [ "First Name", "first_name" ],
+    "last_name" => [ "Last Name", "last_name" ],
     "gender" => %w[Gender gender],
     "team" => %w[Team team],
-    "license_number" => ["USAC License", "License", "license_number"],
-    "age" => ["Age on Event Day", "Age", "age"],
-    "birth_date" => ["Birth Date", "birth_date"],
+    "license_number" => [ "USAC License", "License", "license_number" ],
+    "age" => [ "Age on Event Day", "Age", "age" ],
+    "birth_date" => [ "Birth Date", "birth_date" ],
     "city" => %w[City city],
     "state" => %w[State state],
     "bib" => %w[Bib bib],
-    "category" => ["Category Entered / Merchandise Ordered", "Category Entered", "Race Category", "Category", "race"]
+    "category" => [ "Category Entered / Merchandise Ordered", "Category Entered", "Race Category", "Category", "race" ]
   }.freeze
   FIELDS = HEADERS.keys.freeze
   REQUIRED = %w[first_name last_name gender category].freeze
@@ -78,13 +78,13 @@ class RegistrationImport
 
   def auto_mapping
     lookup = @table.headers.compact.index_by(&:downcase)
-    HEADERS.filter_map { |field, names| (header = names.lazy.filter_map { lookup[it.downcase] }.first) && [field, header] }.to_h
+    HEADERS.filter_map { |field, names| (header = names.lazy.filter_map { lookup[it.downcase] }.first) && [ field, header ] }.to_h
   end
 
   def suggestion(category)
     saved = @event.category_mappings.find_by(external_category: category)
-    return [saved.race_id, saved.skip] if saved
-    [races_by_name[category.downcase]&.id, false]
+    return [ saved.race_id, saved.skip ] if saved
+    [ races_by_name[category.downcase]&.id, false ]
   end
 
   def races_by_name = @races_by_name ||= @event.races.to_a.index_by { it.name.downcase }
@@ -135,21 +135,21 @@ class RegistrationImport
 
   # Returns [attrs, nil] or [nil, problem].
   def row_attrs(row)
-    attrs = RACER_FIELDS.to_h { [it, value(row, it)] }
+    attrs = RACER_FIELDS.to_h { [ it, value(row, it) ] }
     raw_gender = value(row, "gender")
     attrs["gender"] = GENDERS[raw_gender.to_s.downcase]
-    return [nil, "gender #{raw_gender} must be M, F or X"] unless attrs["gender"]
+    return [ nil, "gender #{raw_gender} must be M, F or X" ] unless attrs["gender"]
 
     attrs["bib"] = value(row, "bib")
     if (raw_age = value(row, "age"))
       attrs["age"] = Integer(raw_age, 10, exception: false)
-      return [nil, "age #{raw_age} must be a whole number"] unless attrs["age"]&.positive?
+      return [ nil, "age #{raw_age} must be a whole number" ] unless attrs["age"]&.positive?
     end
     if (raw_date = value(row, "birth_date"))
       attrs["birth_date"] = parse_date(raw_date)
-      return [nil, "birth_date must be YYYY-MM-DD"] unless attrs["birth_date"]
+      return [ nil, "birth_date must be YYYY-MM-DD" ] unless attrs["birth_date"]
     end
-    [attrs, nil]
+    [ attrs, nil ]
   end
 
   def save_mappings(choices)
@@ -163,7 +163,7 @@ class RegistrationImport
 
   def not_in_file(touched)
     @event.registrations.where(source: "import").where.not(id: touched).includes(:racer, :race).map do |reg|
-      "#{reg.racer.full_name} (#{[reg.bib && "bib #{reg.bib}", reg.race.name].compact.join(', ')})"
+      "#{reg.racer.full_name} (#{[ reg.bib && "bib #{reg.bib}", reg.race.name ].compact.join(', ')})"
     end
   end
 

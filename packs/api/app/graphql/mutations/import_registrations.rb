@@ -11,9 +11,9 @@ module Mutations
     field :created, Integer, null: false
     field :updated, Integer, null: false
     field :skipped, Integer, null: false, description: "Rows whose category is skipped (merchandise)"
-    field :row_errors, [Types::RowMessageType], null: false
-    field :warnings, [Types::RowMessageType], null: false
-    field :not_in_file, [String], null: false, description: "Imported earlier but missing from this file; never removed"
+    field :row_errors, [ Types::RowMessageType ], null: false
+    field :warnings, [ Types::RowMessageType ], null: false
+    field :not_in_file, [ String ], null: false, description: "Imported earlier but missing from this file; never removed"
 
     def resolve(event_id:, csv:, mapping: {}, categories: {}, dry_run: false)
       require_official!("admin")
@@ -22,7 +22,7 @@ module Mutations
       { created: result.created, updated: result.updated, skipped: result.skipped, row_errors: result.errors,
         warnings: result.warnings, not_in_file: result.not_in_file, errors: [] }
     rescue CSV::MalformedCSVError => e
-      { created: 0, updated: 0, skipped: 0, row_errors: [], warnings: [], not_in_file: [], errors: ["CSV could not be read: #{e.message}"] }
+      { created: 0, updated: 0, skipped: 0, row_errors: [], warnings: [], not_in_file: [], errors: [ "CSV could not be read: #{e.message}" ] }
     end
   end
 end

@@ -2,7 +2,7 @@ module Mutations
   class BaseMutation < GraphQL::Schema::Mutation
     include Authorization
 
-    field :errors, [String], null: false
+    field :errors, [ String ], null: false
 
     private
 

@@ -1,7 +1,7 @@
 require "test_helper"
 
 class ConsoleCacheControlTest < ActiveSupport::TestCase
-  APP = ->(_env) { [200, { "cache-control" => "public, max-age=31536000" }, ["ok"]] }
+  APP = ->(_env) { [ 200, { "cache-control" => "public, max-age=31536000" }, [ "ok" ] ] }
 
   def cache_control(path)
     _status, headers, _body = ConsoleCacheControl.new(APP).call(Rack::MockRequest.env_for("http://hub.local#{path}"))

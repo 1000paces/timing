@@ -32,7 +32,7 @@ class Event < ApplicationRecord
 
   private
 
-  def other_bib_ranges = races.filter_map { |race| [race.name, race.own_bib_range] if race.own_bib_range }
+  def other_bib_ranges = races.filter_map { |race| [ race.name, race.own_bib_range ] if race.own_bib_range }
 
   def discipline_known
     errors.add(:sub_discipline, "#{sub_discipline} is not part of #{discipline}") unless Disciplines.valid?(discipline, sub_discipline)

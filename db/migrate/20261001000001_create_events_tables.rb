@@ -52,6 +52,6 @@ class CreateEventsTables < ActiveRecord::Migration[8.1]
       t.string :bib, null: false
       t.timestamps
     end
-    add_index :registrations, [:event_id, :bib], unique: true
+    add_index :registrations, [ :event_id, :bib ], unique: true
   end
 end

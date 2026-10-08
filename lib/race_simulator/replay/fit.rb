@@ -11,21 +11,21 @@ module RaceSimulator
 
       def waves
         @dataset.waves.map do |wave|
-          shortfalls = wave.races.to_h { [it.name, shortfall(@dataset.results_for([it.name]))] }
+          shortfalls = wave.races.to_h { [ it.name, shortfall(@dataset.results_for([ it.name ])) ] }
           top = shortfalls.values.compact.max || 0
           arm_s = (top / 15.0).round * 15
           races = wave.races.map do |race|
             short = shortfalls[race.name]
-            race.with(start_s: short ? [arm_s, ((top - short) / 30.0).round * 30].min : 0)
+            race.with(start_s: short ? [ arm_s, ((top - short) / 30.0).round * 30 ].min : 0)
           end
-          wave.with(arm_s:, races: races.sort_by { [it.start_s, -(shortfalls[it.name] || 0)] }, flag_out_s: flag_out_s(wave))
+          wave.with(arm_s:, races: races.sort_by { [ it.start_s, -(shortfalls[it.name] || 0) ] }, flag_out_s: flag_out_s(wave))
         end
       end
 
       def to_yaml
-        lines = ["waves:"]
+        lines = [ "waves:" ]
         waves.each do |w|
-          lines += [%(  - gun: "#{w.gun}"), "    minutes: #{w.minutes}", "    arm_s: #{w.arm_s}"]
+          lines += [ %(  - gun: "#{w.gun}"), "    minutes: #{w.minutes}", "    arm_s: #{w.arm_s}" ]
           lines << "    flag_out_s: #{w.flag_out_s}" if w.flag_out_s
           lines << "    races:"
           w.races.each do |r|
@@ -49,15 +49,15 @@ module RaceSimulator
       # Seconds after arming, or nil when the wave's lap count explains everyone.
       def flag_out_s(wave)
         results = @dataset.results_for(wave.cohorts.first.map(&:name))
-        crossings = results.to_h { |r| [r, r.laps_ms.each_with_object([]) { |ms, at| at << (at.last || 0) + ms }] }
+        crossings = results.to_h { |r| [ r, r.laps_ms.each_with_object([]) { |ms, at| at << (at.last || 0) + ms } ] }
         laps = wave.lap_count(results)
-        leader = crossings.min_by { |_, at| [-at.size, at[laps - 1] || Float::INFINITY] }.first
+        leader = crossings.min_by { |_, at| [ -at.size, at[laps - 1] || Float::INFINITY ] }.first
         misfits = lambda do |flag|
           # A rider who never crosses after the flag stays racing: a misfit too.
           crossings.count { |r, at| r != leader && ((i = at.index { it >= flag }).nil? || i + 1 != r.laps) }
         end
         times = crossings.values.flatten.uniq.sort
-        best = times.min_by { |t| [misfits.(t), t] }
+        best = times.min_by { |t| [ misfits.(t), t ] }
         before = times.select { it < best }.max || 0
         return nil if best >= crossings[leader].fetch(laps - 1) # the leader's finish opens it anyway
         ((before + best) / 2000.0).round

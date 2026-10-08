@@ -26,7 +26,7 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
   # Review Focus 3
   test "a sub-discipline the discipline doesn't have is refused" do
     body = gql('mutation { createEvent(name: "x", date: "2026-10-18", discipline: "road", subDiscipline: "xcc") { event { id } errors } }')
-    assert_equal ["Sub discipline xcc is not part of road"], body.dig("data", "createEvent", "errors")
+    assert_equal [ "Sub discipline xcc is not part of road" ], body.dig("data", "createEvent", "errors")
   end
 
   test "updateEvent edits details" do
@@ -40,7 +40,7 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     body = gql('mutation($id: ID!) { updateEvent(id: $id, timezone: "America/Denver") { event { timezone } errors } }', id: event.id)
     assert_equal "America/Denver", body.dig("data", "updateEvent", "event", "timezone")
     body = gql('mutation($id: ID!) { updateEvent(id: $id, timezone: "Mars/Olympus") { event { timezone } errors } }', id: event.id)
-    assert_equal ["Timezone Mars/Olympus is not a time zone"], body.dig("data", "updateEvent", "errors")
+    assert_equal [ "Timezone Mars/Olympus is not a time zone" ], body.dig("data", "updateEvent", "errors")
   end
 
   test "races get default names from category, age group and gender; an override wins" do
@@ -51,14 +51,14 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     assert race["finishWithLeader"]
     assert_nil race["finishWithLeaderOverride"]
     elite = create_race_via_api(event.id, category: "Pro", gender: "women", nameOverride: "Elite Women", finishWithLeader: false)["race"]
-    assert_equal ["Elite Women", "Pro Women", false, false], elite.values_at("name", "defaultName", "finishWithLeader", "finishWithLeaderOverride")
+    assert_equal [ "Elite Women", "Pro Women", false, false ], elite.values_at("name", "defaultName", "finishWithLeader", "finishWithLeaderOverride")
   end
 
   # Review Focus 2
   test "a duplicate race name is refused" do
     event = create_event
     create_race_via_api(event.id, category: "Cat 3")
-    assert_equal ["Name cat 3 Men is already used in this event"], create_race_via_api(event.id, category: "cat 3")["errors"]
+    assert_equal [ "Name cat 3 Men is already used in this event" ], create_race_via_api(event.id, category: "cat 3")["errors"]
   end
 
   test "updateRace changes fields and an explicit null clears them" do
@@ -67,7 +67,7 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
       mutation($id: ID!) { updateRace(id: $id, ageGroup: "U23", expectedLaps: null, nameOverride: null, finishWithLeader: false) { race { #{RACE_FIELDS} } errors } }
     GQL
     updated = body.dig("data", "updateRace", "race")
-    assert_equal ["Cat 3 U23 Men", nil, nil, false], updated.values_at("name", "expectedLaps", "nameOverride", "finishWithLeaderOverride")
+    assert_equal [ "Cat 3 U23 Men", nil, nil, false ], updated.values_at("name", "expectedLaps", "nameOverride", "finishWithLeaderOverride")
   end
 
   test "a null Millis variable clears the expected duration" do
@@ -88,8 +88,8 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     started = create_race(event:, category: "C")
     rule(event:, kind: "set_race_start", race_id: started.id, at_ms: 1)
     delete_race = ->(race) { gql("mutation($id: ID!) { deleteRace(id: $id) { errors } }", id: race.id).dig("data", "deleteRace", "errors") }
-    assert_equal ["B Men has registrations and can't be deleted"], delete_race.(registered)
-    assert_equal ["C Men has started and can't be deleted"], delete_race.(started)
+    assert_equal [ "B Men has registrations and can't be deleted" ], delete_race.(registered)
+    assert_equal [ "C Men has started and can't be deleted" ], delete_race.(started)
     assert_empty delete_race.(empty)
     refute Race.exists?(empty.id)
   end

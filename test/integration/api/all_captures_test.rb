@@ -20,7 +20,7 @@ class AllCapturesTest < ActionDispatch::IntegrationTest
     sign_in_as("timer")
     mine = gql("mutation($e: ID!) { recordCapture(eventId: $e, bib: \"102\") { capture { id } } }", e: @event.id).dig("data", "recordCapture", "capture", "id")
     rows = gql(CAPTURES, id: @event.id).dig("data", "event", "captures")
-    assert_equal [mine, "phone-1"], rows.map { it["id"] }
+    assert_equal [ mine, "phone-1" ], rows.map { it["id"] }
     phone_row = rows.last
     assert_equal({ "bib" => "101", "atMs" => 10_250, "deviceName" => "Finish phone", "mine" => false, "bibSource" => "ENTERED" },
                  phone_row.except("id"))
@@ -29,15 +29,15 @@ class AllCapturesTest < ActionDispatch::IntegrationTest
 
   test "a timer can't change another device's crossing" do
     sign_in_as("timer")
-    assert_equal ["You can only change your own captures"], gql(CORRECT, id: @tap.id, bib: "102").dig("data", "correctCaptureBib", "errors")
-    assert_equal ["You can only delete your own captures"], gql(DELETE, id: @tap.id).dig("data", "deleteCapture", "errors")
+    assert_equal [ "You can only change your own captures" ], gql(CORRECT, id: @tap.id, bib: "102").dig("data", "correctCaptureBib", "errors")
+    assert_equal [ "You can only delete your own captures" ], gql(DELETE, id: @tap.id).dig("data", "deleteCapture", "errors")
   end
 
   test "a chief corrects and deletes a phone's crossing as official rulings" do
     chief = sign_in_as("chief")
     assert_equal [], gql(CORRECT, id: @tap.id, bib: "102").dig("data", "correctCaptureBib", "errors")
     ruling = Ruling.find_by!(kind: "assign_bib")
-    assert_equal [{ "capture_id" => @tap.id, "bib" => "102" }, chief.id], [ruling.payload, ruling.official_id]
+    assert_equal [ { "capture_id" => @tap.id, "bib" => "102" }, chief.id ], [ ruling.payload, ruling.official_id ]
     assert_equal "RULING", gql(CAPTURES, id: @event.id).dig("data", "event", "captures").first["bibSource"]
 
     assert_equal [], gql(DELETE, id: @tap.id).dig("data", "deleteCapture", "errors")

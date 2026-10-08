@@ -20,7 +20,7 @@ class PairingToken < ApplicationRecord
     end
     record = create!(event:, token_digest: Device.digest(code), expires_at_ms: Clock.now_ms + TTL_MS,
                      created_by_official_id: official.id)
-    [record, "#{code[0, 3]}-#{code[3, 3]}"]
+    [ record, "#{code[0, 3]}-#{code[3, 3]}" ]
   end
 
   def self.redeem!(raw, device_name:)

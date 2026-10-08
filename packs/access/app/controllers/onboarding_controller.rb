@@ -17,7 +17,7 @@ class OnboardingController < ApplicationController
 
   def page
     port = ENV.fetch("HUB_TLS_PORT", "3443")
-    urls = (LocalCa.lan_ips.presence || ["127.0.0.1"]).map { "https://#{it}:#{port}" }
+    urls = (LocalCa.lan_ips.presence || [ "127.0.0.1" ]).map { "https://#{it}:#{port}" }
     fingerprint = ca_store.root_cert_path.exist? ? ca_store.root_fingerprint : "unavailable"
     <<~HTML
       <!doctype html>

@@ -42,8 +42,8 @@ class RacerRegistrarTest < ActiveSupport::TestCase
     assert_no_difference("Registration.count") do
       reg = RacerRegistrar.register(race: other, bib: "5", racer_attrs: attrs(last_name: "Smith"))
       refute reg.persisted?
-      assert_equal ["License L1 belongs to Ann Lee; check the license number"], reg.errors.full_messages
-      assert_equal ["License L1 belongs to Ann Lee; check the license number"], reg.errors[:base]
+      assert_equal [ "License L1 belongs to Ann Lee; check the license number" ], reg.errors.full_messages
+      assert_equal [ "License L1 belongs to Ann Lee; check the license number" ], reg.errors[:base]
     end
   end
 
@@ -64,7 +64,7 @@ class RacerRegistrarTest < ActiveSupport::TestCase
   test "walk-ups are manual and may have no bib" do
     reg = RacerRegistrar.register(race: @race, bib: nil, racer_attrs: attrs)
     assert reg.persisted?
-    assert_equal ["manual", nil], [reg.source, reg.bib]
+    assert_equal [ "manual", nil ], [ reg.source, reg.bib ]
   end
 
   test "upsert matches by license, else by name within the event, and never clears a bib" do
@@ -72,7 +72,7 @@ class RacerRegistrarTest < ActiveSupport::TestCase
     assert first.previously_new_record?
     by_license = RacerRegistrar.upsert(event: @event, race: @race, attrs: attrs(bib: nil, team: "B"), source: "import")
     assert_equal first.id, by_license.id
-    assert_equal ["7", "B"], [by_license.bib, by_license.racer.team]
+    assert_equal [ "7", "B" ], [ by_license.bib, by_license.racer.team ]
     by_name = RacerRegistrar.upsert(event: @event, race: @race, attrs: attrs(license_number: nil, first_name: "ANN", team: "C"), source: "import")
     assert_equal first.id, by_name.id
     assert_equal "C", by_name.racer.team

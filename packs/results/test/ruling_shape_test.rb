@@ -35,7 +35,7 @@ class RulingShapeTest < Minitest::Test
   end
 
   def test_malformed_insert_capture_is_ignored
-    out = compute(<<~YAML, bibs: [1])
+    out = compute(<<~YAML, bibs: [ 1 ])
       crossings:
         1: [100, 200, 300]
       rulings:
@@ -44,6 +44,6 @@ class RulingShapeTest < Minitest::Test
         - {id: bad2, kind: void_capture, capture_id: 7}
     YAML
     race = out.races.find { it.race_id == "r1" }
-    assert_equal [[1, "1", "racing", 2, 200]], compact_rows(race.rows)
+    assert_equal [ [ 1, "1", "racing", 2, 200 ] ], compact_rows(race.rows)
   end
 end

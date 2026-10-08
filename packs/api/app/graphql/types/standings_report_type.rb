@@ -1,8 +1,8 @@
 module Types
   class StandingsReportType < BaseObject
-    field :races, [RaceStandingsType], null: false
-    field :suggestions, [SuggestionType], null: false
-    field :unassigned, [UnassignedCaptureType], null: false
+    field :races, [ RaceStandingsType ], null: false
+    field :suggestions, [ SuggestionType ], null: false
+    field :unassigned, [ UnassignedCaptureType ], null: false
     field :computed_at_ms, Millis
     field :stale, Boolean, null: false
     field :error, String

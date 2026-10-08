@@ -11,7 +11,7 @@ module Types
     field :checked_in_at_ms, Millis
     field :official_status, String, description: "DNF, DNS or DSQ when an official has marked the racer; else null"
     field :racer, RacerType, null: false
-    field :eligibility_warnings, [String], null: false
+    field :eligibility_warnings, [ String ], null: false
 
     # One lookup per event per request, shared by every registration in the list.
     def official_status = ((context[:racer_statuses] ||= {})[object.event_id] ||= RacerStatuses.by_bib(object.event))[object.bib]

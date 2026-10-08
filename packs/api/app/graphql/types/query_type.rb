@@ -1,17 +1,17 @@
 module Types
   class QueryType < BaseObject
     field :me, OfficialType, description: "The signed-in official, or null"
-    field :events, [EventType], null: false
+    field :events, [ EventType ], null: false
     field :event, EventType, null: false do
       argument :id, ID
     end
-    field :disciplines, [DisciplineType], null: false, description: "Disciplines, sub-disciplines and finish-with-leader defaults"
-    field :officials, [OfficialType], null: false
+    field :disciplines, [ DisciplineType ], null: false, description: "Disciplines, sub-disciplines and finish-with-leader defaults"
+    field :officials, [ OfficialType ], null: false
     field :standings, StandingsReportType, null: false do
       argument :event_id, ID
     end
 
-    field :rulings, [RulingType], null: false, description: "History: newest first; search by bib or racer name" do
+    field :rulings, [ RulingType ], null: false, description: "History: newest first; search by bib or racer name" do
       argument :event_id, ID
       argument :search, String, required: false
       argument :limit, Integer, required: false, default_value: 50
@@ -25,7 +25,7 @@ module Types
       argument :event_id, ID
       argument :bib, String
     end
-    field :devices, [DeviceType], null: false do
+    field :devices, [ DeviceType ], null: false do
       argument :event_id, ID
     end
 
@@ -57,7 +57,7 @@ module Types
       history = context[:ruling_history] = RulingHistory.new(event)
       rulings = history.rulings
       if (needle = search.to_s.strip.downcase).present?
-        names = event.registrations.includes(:racer).to_h { [it.bib, it.racer.full_name.downcase] }
+        names = event.registrations.includes(:racer).to_h { [ it.bib, it.racer.full_name.downcase ] }
         rulings = rulings.select do |r|
           history.describer.bibs_for(r).any? { it.downcase == needle || names[it]&.include?(needle) }
         end

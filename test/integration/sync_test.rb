@@ -42,7 +42,7 @@ class SyncTest < ActionDispatch::IntegrationTest
   end
 
   test "push stores a chain, is idempotent, and resumes after a lost ack" do
-    batch = chain([{ captured_at_ms: 60_000, clock_offset_ms: 0, bib: "101" }, { captured_at_ms: 70_000, clock_offset_ms: 0 }])
+    batch = chain([ { captured_at_ms: 60_000, clock_offset_ms: 0, bib: "101" }, { captured_at_ms: 70_000, clock_offset_ms: 0 } ])
     push(batch)
     assert_equal({ "ack_seq" => 2 }, response.parsed_body)
     push(batch)
@@ -50,7 +50,7 @@ class SyncTest < ActionDispatch::IntegrationTest
     assert_equal 2, Capture.where(device: @device).count
 
     # Review Focus 1: an overlap plus new entries
-    more = chain([{ captured_at_ms: 120_000, clock_offset_ms: 0, bib: "101" }], from: 3, prev: batch.last["hash"])
+    more = chain([ { captured_at_ms: 120_000, clock_offset_ms: 0, bib: "101" } ], from: 3, prev: batch.last["hash"])
     push(batch.drop(1) + more)
     assert_equal({ "ack_seq" => 3 }, response.parsed_body)
     assert_equal 3, Capture.where(device: @device).count
@@ -59,8 +59,8 @@ class SyncTest < ActionDispatch::IntegrationTest
   end
 
   test "a gap or a bad hash is a chain mismatch: nothing applied, the device is flagged" do
-    batch = chain([{ captured_at_ms: 1_000, clock_offset_ms: 0, bib: "101" }, { captured_at_ms: 2_000, clock_offset_ms: 0 }])
-    push([batch.last])
+    batch = chain([ { captured_at_ms: 1_000, clock_offset_ms: 0, bib: "101" }, { captured_at_ms: 2_000, clock_offset_ms: 0 } ])
+    push([ batch.last ])
     assert_response :conflict
     assert_equal({ "error" => "chain_mismatch", "ack_seq" => 0 }, response.parsed_body)
     assert @device.reload.sync_stopped_at_ms.present?
@@ -76,7 +76,7 @@ class SyncTest < ActionDispatch::IntegrationTest
   # Review Focus 5
   test "a void or bib fix for another device's capture is a chain mismatch" do
     other = Capture.record!(device: create_device(event: @event, name: "Other"), at_ms: 1, bib: "101")
-    push(chain([{ kind: "capture_void", capture_id: other.id }]))
+    push(chain([ { kind: "capture_void", capture_id: other.id } ]))
     assert_response :conflict
     assert_equal 0, CaptureVoid.count
   end
@@ -87,9 +87,9 @@ class SyncTest < ActionDispatch::IntegrationTest
   end
 
   test "pushed captures, fixes and voids reach results; status reports them back" do
-    batch = chain([{ captured_at_ms: 60_000, clock_offset_ms: 0, bib: "999" }, { captured_at_ms: 90_000, clock_offset_ms: 0, bib: "101" },
-                   { captured_at_ms: 120_000, clock_offset_ms: 0, bib: "101" }])
-    fix = chain([{ kind: "bib_assignment", capture_id: batch[0]["id"], bib: "101" }, { kind: "capture_void", capture_id: batch[1]["id"] }],
+    batch = chain([ { captured_at_ms: 60_000, clock_offset_ms: 0, bib: "999" }, { captured_at_ms: 90_000, clock_offset_ms: 0, bib: "101" },
+                   { captured_at_ms: 120_000, clock_offset_ms: 0, bib: "101" } ])
+    fix = chain([ { kind: "bib_assignment", capture_id: batch[0]["id"], bib: "101" }, { kind: "capture_void", capture_id: batch[1]["id"] } ],
                 from: 4, prev: batch.last["hash"])
     push(batch + fix)
     assert_equal({ "ack_seq" => 5 }, response.parsed_body)
@@ -106,8 +106,8 @@ class SyncTest < ActionDispatch::IntegrationTest
   test "the roster has bib, name and race only, with a version for If-None-Match" do
     get "/sync/v1/roster", headers: auth
     body = response.parsed_body
-    assert_equal({ "name" => @event.name, "races" => [{ "id" => @race.id, "name" => @race.name }] }, body["event"])
-    assert_equal [{ "bib" => "101", "name" => "Ann Lee", "race_id" => @race.id }], body["racers"]
+    assert_equal({ "name" => @event.name, "races" => [ { "id" => @race.id, "name" => @race.name } ] }, body["event"])
+    assert_equal [ { "bib" => "101", "name" => "Ann Lee", "race_id" => @race.id } ], body["racers"]
     refute_match(/1980|L1/, response.body)
     get "/sync/v1/roster", headers: auth.merge("If-None-Match" => body["version"])
     assert_response :not_modified

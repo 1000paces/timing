@@ -7,7 +7,7 @@ class RulingDescriber
     @event = event
     @zone = ActiveSupport::TimeZone[event.timezone] || Time.zone
     @rulings = rulings.index_by(&:id)
-    @captures = Capture.where(event:).pluck(:id, :bib, :captured_at_ms, :clock_offset_ms).to_h { |id, *rest| [id, rest] }
+    @captures = Capture.where(event:).pluck(:id, :bib, :captured_at_ms, :clock_offset_ms).to_h { |id, *rest| [ id, rest ] }
     @device_bibs = BibAssignment.where(event:).order(:device_seq).pluck(:capture_id, :bib).to_h
     @moved_bibs = CaptureLaps.assigned_bibs(event)
   end
@@ -44,7 +44,7 @@ class RulingDescriber
     p = ruling.payload
     return (target = find_ruling(p["ruling_id"])) ? bibs_for(target) : [] if ruling.kind == "revert"
     ref = p["capture_id"]
-    [p["bib"].presence&.to_s, ref && entered_bib(ref), ref && current_bib(ref)].compact.uniq - ["no bib"]
+    [ p["bib"].presence&.to_s, ref && entered_bib(ref), ref && current_bib(ref) ].compact.uniq - [ "no bib" ]
   end
 
   private

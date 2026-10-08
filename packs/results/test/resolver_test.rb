@@ -9,7 +9,7 @@ class ResolverTest < Minitest::Test
 
   def test_capture_bib_maps_to_crossings_sorted_by_time
     r = resolve("crossings:\n  1: [600, 300]\n")
-    assert_equal [300, 600], times(r, 1)
+    assert_equal [ 300, 600 ], times(r, 1)
   end
 
   def test_clock_offset_is_applied_and_missing_offset_flags_device
@@ -18,14 +18,14 @@ class ResolverTest < Minitest::Test
         - {id: a, bib: 1, at: 300, device: d1, offset_ms: 2000}
         - {id: b, bib: 2, at: 300, device: d2, offset_ms: ~}
     YAML
-    assert_equal [302], times(r, 1)
-    assert_equal [300], times(r, 2)
-    assert_equal ["d2"], r.unsynced_devices
+    assert_equal [ 302 ], times(r, 1)
+    assert_equal [ 300 ], times(r, 2)
+    assert_equal [ "d2" ], r.unsynced_devices
   end
 
   def test_device_bib_assignment_names_a_bibless_tap
     r = resolve("unassigned: [300]\nbib_assignments:\n  - {id: b-1, capture: u-1, bib: 2}\n")
-    assert_equal [300], times(r, 2)
+    assert_equal [ 300 ], times(r, 2)
     assert_empty r.unassigned
   end
 
@@ -38,7 +38,7 @@ class ResolverTest < Minitest::Test
         - {kind: assign_bib, capture_id: u-1, bib: 3}
     YAML
     assert_equal [], times(r, 2)
-    assert_equal [300], times(r, 3)
+    assert_equal [ 300 ], times(r, 3)
   end
 
   def test_void_removes_and_insert_adds
@@ -49,7 +49,7 @@ class ResolverTest < Minitest::Test
         - {kind: void_capture, capture_id: c-1-2}
         - {id: ins, kind: insert_capture, bib: 1, at: 900}
     YAML
-    assert_equal [300, 900], times(r, 1)
+    assert_equal [ 300, 900 ], times(r, 1)
     assert r.crossings_by_bib["1"].last.inserted
   end
 
@@ -57,7 +57,7 @@ class ResolverTest < Minitest::Test
   def test_assign_bib_to_unregistered_bib_goes_to_unassigned_with_that_bib
     r = resolve("crossings:\n  1: [300]\nrulings:\n  - {kind: assign_bib, capture_id: c-1-1, bib: 999}\n")
     assert_equal [], times(r, 1)
-    assert_equal [Results::UnassignedCrossing.new(capture_id: "c-1-1", at_ms: 300_000, bib: "999")], r.unassigned
+    assert_equal [ Results::UnassignedCrossing.new(capture_id: "c-1-1", at_ms: 300_000, bib: "999") ], r.unassigned
   end
 
   # Review Focus 4: reverting a revert restores the original ruling.
@@ -70,7 +70,7 @@ class ResolverTest < Minitest::Test
         - {id: rv, kind: revert, ruling_id: v, created: 800}
         - {id: rrv, kind: revert, ruling_id: rv, created: 900}
     YAML
-    assert_equal [300], times(r, 1)
+    assert_equal [ 300 ], times(r, 1)
   end
 
   def test_single_revert_cancels_ruling
@@ -81,7 +81,7 @@ class ResolverTest < Minitest::Test
         - {id: v, kind: void_capture, capture_id: c-1-2, created: 700}
         - {id: rv, kind: revert, ruling_id: v, created: 800}
     YAML
-    assert_equal [300, 600], times(r, 1)
+    assert_equal [ 300, 600 ], times(r, 1)
   end
 
   def test_taps_within_debounce_window_collapse_to_earliest
@@ -91,7 +91,7 @@ class ResolverTest < Minitest::Test
         - {id: b, bib: 1, at: 306, device: d2}
         - {id: c, bib: 1, at: 600, device: d1}
     YAML
-    assert_equal [300, 600], times(r, 1)
+    assert_equal [ 300, 600 ], times(r, 1)
     assert_equal({ "b" => "a" }, r.aliases)
   end
 

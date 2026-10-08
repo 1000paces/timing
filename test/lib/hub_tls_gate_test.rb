@@ -1,7 +1,7 @@
 require "test_helper"
 
 class HubTlsGateTest < ActiveSupport::TestCase
-  APP = ->(_env) { [200, {}, ["ok"]] }
+  APP = ->(_env) { [ 200, {}, [ "ok" ] ] }
 
   def call(path, https: false, enabled: true, headers: {})
     env = Rack::MockRequest.env_for("#{https ? 'https' : 'http'}://hub.local:3000#{path}", headers)

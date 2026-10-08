@@ -44,17 +44,17 @@ class TimingTest < ActiveSupport::TestCase
   test "rulings reject wrongly typed payload values" do
     invalid = ->(kind, **payload) { Ruling.new(event: @event, kind:, payload: payload.transform_keys(&:to_s)).tap(&:valid?) }
     [
-      ["set_lap_count", { race_id: "r1", laps: "3" }],
-      ["set_lap_count", { race_id: "r1", laps: 0 }],
-      ["set_lap_count", { race_id: "r1", laps: -2 }],
-      ["set_race_start", { race_id: "r1", at_ms: "5" }],
-      ["set_race_start", { race_id: "r1", at_ms: nil }],
-      ["set_race_start", { race_id: "", at_ms: 5 }],
-      ["assign_bib", { capture_id: "c1", bib: "" }],
-      ["assign_bib", { capture_id: "c1", bib: 5 }],
-      ["void_capture", { capture_id: 7 }],
-      ["revert", { ruling_id: " " }],
-      ["dismiss_suggestion", { suggestion_key: nil }]
+      [ "set_lap_count", { race_id: "r1", laps: "3" } ],
+      [ "set_lap_count", { race_id: "r1", laps: 0 } ],
+      [ "set_lap_count", { race_id: "r1", laps: -2 } ],
+      [ "set_race_start", { race_id: "r1", at_ms: "5" } ],
+      [ "set_race_start", { race_id: "r1", at_ms: nil } ],
+      [ "set_race_start", { race_id: "", at_ms: 5 } ],
+      [ "assign_bib", { capture_id: "c1", bib: "" } ],
+      [ "assign_bib", { capture_id: "c1", bib: 5 } ],
+      [ "void_capture", { capture_id: 7 } ],
+      [ "revert", { ruling_id: " " } ],
+      [ "dismiss_suggestion", { suggestion_key: nil } ]
     ].each do |kind, payload|
       assert invalid.(kind, **payload).errors[:payload].any?, "#{kind} #{payload} should be invalid"
     end

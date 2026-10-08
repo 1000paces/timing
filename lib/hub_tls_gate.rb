@@ -11,8 +11,8 @@ class HubTlsGate
   def call(env)
     request = Rack::Request.new(env)
     return @app.call(env) if !@enabled || secure?(env) || open_path?(request.path)
-    [403, { "content-type" => "text/plain" },
-     ["This hub only answers over HTTPS. Set up this device first: http://#{request.host_with_port}/onboarding\n"]]
+    [ 403, { "content-type" => "text/plain" },
+     [ "This hub only answers over HTTPS. Set up this device first: http://#{request.host_with_port}/onboarding\n" ] ]
   end
 
   private

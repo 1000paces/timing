@@ -11,9 +11,9 @@ module RacerDetail
     row = result&.rows&.find { it.bib == bib }
     views = row&.crossings || []
     refs = views.map(&:ref)
-    devices = Capture.where(id: refs).includes(:device).to_h { [it.id, it.device.name] }
+    devices = Capture.where(id: refs).includes(:device).to_h { [ it.id, it.device.name ] }
     history = RulingHistory.new(event)
-    inserts = history.rulings.select { refs.include?(it.id) }.to_h { [it.id, it.official_id] }
+    inserts = history.rulings.select { refs.include?(it.id) }.to_h { [ it.id, it.official_id ] }
     concerns = refs.to_set
     fixes = history.rulings.reject { it.kind == "revert" }
                    .select { history.describer.bibs_for(it).include?(bib) || concerns.include?(it.payload["capture_id"]) }

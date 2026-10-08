@@ -8,8 +8,8 @@ class SuggestionFixTest < ActiveSupport::TestCase
   test "missing" do
     assert_equal [], SuggestionFix.missing(nil)
     assert_equal [], SuggestionFix.missing({ "kind" => "void_capture", "capture_id" => "c" })
-    assert_equal ["bib"], SuggestionFix.missing(UNASSIGNED)
-    assert_equal ["capture_id"], SuggestionFix.missing(FLAG)
+    assert_equal [ "bib" ], SuggestionFix.missing(UNASSIGNED)
+    assert_equal [ "capture_id" ], SuggestionFix.missing(FLAG)
   end
 
   test "complete fills the bib on an unassigned fix" do

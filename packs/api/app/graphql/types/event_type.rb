@@ -10,19 +10,19 @@ module Types
     field :timezone, String, null: false
     field :age_rule, String, null: false
     field :age_next_year, Boolean, null: false, description: "Racing age as of the end of the following year (season crosses the year boundary, e.g. CX)"
-    field :races, [RaceType], null: false, description: "In scheduled order, then name"
-    field :registrations, [RegistrationType], null: false, description: "By bib, then racers without one by name"
+    field :races, [ RaceType ], null: false, description: "In scheduled order, then name"
+    field :registrations, [ RegistrationType ], null: false, description: "By bib, then racers without one by name"
     field :registration_counts, RegistrationCountsType, null: false
     field :bib_from, Integer, description: "Event-wide bib range, for races without their own"
     field :bib_to, Integer
-    field :captures, [CaptureType], null: false, description: "Every device's crossings, newest first by hub time (deleted ones left out)" do
+    field :captures, [ CaptureType ], null: false, description: "Every device's crossings, newest first by hub time (deleted ones left out)" do
       argument :limit, Integer, required: false, default_value: 100
     end
-    field :my_captures, [CaptureType], null: false, description: "The signed-in official's console captures, newest first" do
+    field :my_captures, [ CaptureType ], null: false, description: "The signed-in official's console captures, newest first" do
       argument :limit, Integer, required: false, default_value: 20
     end
 
-    def races = object.races.to_a.sort_by { [it.scheduled_at_ms, it.name] }
+    def races = object.races.to_a.sort_by { [ it.scheduled_at_ms, it.name ] }
     def captures(limit:)
       voided = CaptureLaps.voided_ids(object).to_a
       Capture.where(event: object).where.not(id: voided).includes(:device)
@@ -36,7 +36,7 @@ module Types
     end
 
     def registrations
-      object.registrations.includes(:event, :racer, :race).sort_by { [it.bib ? 0 : 1, it.bib.to_i, it.bib.to_s, it.racer.last_name, it.racer.first_name] }
+      object.registrations.includes(:event, :racer, :race).sort_by { [ it.bib ? 0 : 1, it.bib.to_i, it.bib.to_s, it.racer.last_name, it.racer.first_name ] }
     end
 
     def registration_counts

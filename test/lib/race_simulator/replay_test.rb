@@ -8,9 +8,9 @@ class RaceSimulator::ReplayTest < ActiveSupport::TestCase
     assert_equal 34, DATASET.races.size
     assert_equal DATASET.results.map(&:category).uniq.sort, DATASET.races.map(&:name).sort
     cat4 = DATASET.results.find { it.bib == "381" }
-    assert_equal ["Category 4 Open", 1, 6], [cat4.category, cat4.place, cat4.laps]
-    assert_equal [428_960, 445_980], cat4.laps_ms.first(2)
-    assert_equal [561_000, 577_000], DATASET.results.find { it.bib == "243" }.laps_ms # the running race is in h:mm:ss
+    assert_equal [ "Category 4 Open", 1, 6 ], [ cat4.category, cat4.place, cat4.laps ]
+    assert_equal [ 428_960, 445_980 ], cat4.laps_ms.first(2)
+    assert_equal [ 561_000, 577_000 ], DATASET.results.find { it.bib == "243" }.laps_ms # the running race is in h:mm:ss
   end
 
   test "each wave's lap count is its leader's, and its flag time comes from the data" do
@@ -22,7 +22,7 @@ class RaceSimulator::ReplayTest < ActiveSupport::TestCase
 
   test "setup builds the real event: races in waves, real bibs, made-up names, Pacific time" do
     event = RaceSimulator::Replay.setup!(DATASET)
-    assert_equal ["Cross Crusade Cascade Locks 1", Date.new(2026, 9, 27), "America/Los_Angeles", "cyclocross"], [event.name, event.date, event.timezone, event.discipline]
+    assert_equal [ "Cross Crusade Cascade Locks 1", Date.new(2026, 9, 27), "America/Los_Angeles", "cyclocross" ], [ event.name, event.date, event.timezone, event.discipline ]
     assert_equal 34, event.races.count
     assert_equal DATASET.results.map(&:bib).sort, event.registrations.pluck(:bib).sort
     masters = event.races.find_by(name_override: "Masters 50+")

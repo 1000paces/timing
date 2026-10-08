@@ -5,7 +5,7 @@ module Results
     attr_reader :all, :cancelled_ids
 
     def initialize(rulings)
-      sorted = rulings.select { RulingShape.valid?(it) }.uniq(&:id).sort_by { [it.created_at_ms, it.id] }
+      sorted = rulings.select { RulingShape.valid?(it) }.uniq(&:id).sort_by { [ it.created_at_ms, it.id ] }
       @cancelled_ids = Set.new
       sorted.reverse_each do |r|
         next if @cancelled_ids.include?(r.id)

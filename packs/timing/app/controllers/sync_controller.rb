@@ -24,7 +24,7 @@ class SyncController < ApplicationController
   # Bib, name and race only — nothing else about racers leaves the hub.
   def roster
     event = @device.event
-    races = event.races.to_a.sort_by { [it.scheduled_at_ms, it.name] }
+    races = event.races.to_a.sort_by { [ it.scheduled_at_ms, it.name ] }
     racers = event.registrations.where.not(bib: nil).includes(:racer).order(:bib)
                   .map { { bib: it.bib, name: it.racer.full_name, race_id: it.race_id } }
     body = { event: { name: event.name, races: races.map { { id: it.id, name: it.name } } }, racers: }

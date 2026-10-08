@@ -12,7 +12,7 @@ module Mutations
     def racer_row(event, bib)
       registration = event.registrations.find_by(bib:)
       result = StandingsService.report(event).output.races.find { it.race_id == registration&.race_id }
-      [result, result&.rows&.find { it.bib == bib }]
+      [ result, result&.rows&.find { it.bib == bib } ]
     end
   end
 end
