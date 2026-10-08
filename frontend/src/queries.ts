@@ -123,6 +123,9 @@ export const UPDATE_RACE = gql`
 export const DELETE_RACE = gql`
   mutation DeleteRace($id: ID!) { deleteRace(id: $id) { errors } }
 `;
+export const FLAG_OUT = gql`
+  mutation FlagOut($raceId: ID!, $atMs: Millis) { flagOut(raceId: $raceId, atMs: $atMs) { errors } }
+`;
 export const SET_RACE_START = gql`
   mutation SetRaceStart($raceId: ID!, $atMs: Millis) { setRaceStart(raceId: $raceId, atMs: $atMs) { errors } }
 `;
@@ -142,6 +145,7 @@ export type RaceStandings = {
   state: string;
   lapCount: number | null;
   startAtMs: number | null;
+  flagOutAtMs: number | null;
   rows: Row[];
 };
 export type Suggestion = { key: string; kind: string; bib: string | null; raceId: string | null; message: string; needs: string[] };
@@ -160,6 +164,7 @@ export const STANDINGS = gql`
         state
         lapCount
         startAtMs
+        flagOutAtMs
         rows { place bib name status laps elapsedMs gapLapsDown gapMs }
       }
       suggestions { key kind bib raceId message needs }

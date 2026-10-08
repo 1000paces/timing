@@ -8,17 +8,19 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { formatElapsed, formatScheduled } from "../format";
 import { STATUS_COLOR, statusLabel } from "../races";
+import type { ReactNode } from "react";
 import type { Wave, WaveRow } from "../waves";
 
 const num = { textAlign: "right", fontVariantNumeric: "tabular-nums" } as const;
 
 // One wave's racers in order on the road, with their category and place in it.
-export function WaveStandings({ wave, onRowClick }: { wave: Wave; onRowClick?: (row: WaveRow) => void }) {
+export function WaveStandings({ wave, controls, onRowClick }: { wave: Wave; controls?: ReactNode; onRowClick?: (row: WaveRow) => void }) {
   const title = wave.scheduledAtMs != null ? `Wave ${formatScheduled(wave.scheduledAtMs)}` : "Not scheduled";
   return (
     <Paper component="section" aria-label={title} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3">{title}</Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>{wave.raceNames.join(" · ")}</Typography>
+      {controls}
       <Table size="small">
         <TableHead>
           <TableRow>

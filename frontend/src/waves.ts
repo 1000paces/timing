@@ -1,7 +1,8 @@
 import type { RaceStandings, Row } from "./queries";
 
 export type WaveRow = Row & { raceId: string; raceName: string; position: number | null };
-export type Wave = { scheduledAtMs: number | null; raceNames: string[]; rows: WaveRow[] };
+// startedRaceId: any started race in the wave (a wave-wide action like Flag out names one).
+export type Wave = { scheduledAtMs: number | null; raceNames: string[]; startedRaceId: string | null; flagOutAtMs: number | null; rows: WaveRow[] };
 
 const OUT = new Set(["DNF", "DNS", "DSQ"]);
 
@@ -29,6 +30,8 @@ export function groupWaves(races: (RaceStandings & { scheduledAtMs: number | nul
       return {
         scheduledAtMs,
         raceNames: group.map((race) => race.race.name),
+        startedRaceId: group.find((race) => race.startAtMs != null)?.race.id ?? null,
+        flagOutAtMs: group.find((race) => race.flagOutAtMs != null)?.flagOutAtMs ?? null,
         rows: rows.map(({ crossedAt: _crossedAt, placed, ...row }) => ({ ...row, position: placed ? ++position : null })),
       };
     });

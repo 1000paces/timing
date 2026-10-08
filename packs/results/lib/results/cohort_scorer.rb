@@ -10,7 +10,7 @@ module Results
     # crossings: post-start crossings; seen: every kept crossing for the bib (pre-start too);
     # dropped: crossings the debounce dropped.
     RacerState = Data.define(:entrant, :race_start, :crossings, :counted, :status, :finish, :pull_at, :seen, :dropped)
-    Scored = Data.define(:races, :lap_count, :finish_open_at, :racers, :race_results)
+    Scored = Data.define(:races, :lap_count, :finish_open_at, :flag_out_at, :racers, :race_results)
 
     def initialize(input, races, resolved)
       @input = input
@@ -31,18 +31,23 @@ module Results
       crossings = entrants.to_h { |e| [e.bib, post_start(e, starts[e.race_id])] }
       lap_count = resolve_lap_count
       finish_open_at = lap_count && crossings.values.filter_map { it[lap_count - 1] }.min_by { [it.at_ms, it.ref] }&.at_ms
-      racers = entrants.map { |e| racer_state(e, starts[e.race_id], crossings[e.bib], finish_open_at) }
+      flag_out_at = resolve_flag_out
+      # The wave's leader when the flag came out rides on to the lap count.
+      leader = flag_out_at && lap_count && leader_at(crossings, flag_out_at)
+      racers = entrants.map do |e|
+        racer_state(e, starts[e.race_id], crossings[e.bib], finish_open_at, e.bib == leader ? nil : flag_out_at)
+      end
 
       race_results = races.map do |race|
         state = if starts[race.id].nil? then :not_started
-                elsif finish_open_at then :finish_open
+                elsif finish_open_at || flag_out_at then :finish_open
                 else :in_progress
                 end
         rows = Standings.rows(racers.select { it.entrant.race_id == race.id })
         RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
-                       start_at_ms: starts[race.id])
+                       start_at_ms: starts[race.id], flag_out_at_ms: flag_out_at)
       end
-      Scored.new(races:, lap_count:, finish_open_at:, racers:, race_results:)
+      Scored.new(races:, lap_count:, finish_open_at:, flag_out_at:, racers:, race_results:)
     end
 
     private
@@ -62,6 +67,18 @@ module Results
       expected.first if expected.size == 1
     end
 
+    # When the finish flag came out for the cohort (a flag_out on any of its races), if it has.
+    def resolve_flag_out
+      ids = @races.map(&:id)
+      @rulings.of("flag_out").select { ids.include?(it.payload["race_id"]) }.last&.payload&.fetch("at_ms")
+    end
+
+    # Bib with the most laps before the flag, the first to have crossed on that lap.
+    def leader_at(crossings, at_ms)
+      crossings.filter_map { |bib, list| (before = list.select { it.at_ms < at_ms }).any? && [bib, before] }
+               .min_by { |_, before| [-before.size, before.last.at_ms, before.last.ref] }&.first
+    end
+
     # Each race starts at its own latest set_race_start (waves are started by hand).
     def race_starts(races)
       starts = @rulings.latest_by("set_race_start") { it.payload["race_id"] }
@@ -73,8 +90,8 @@ module Results
       @resolved.crossings_by_bib.fetch(entrant.bib, []).select { it.at_ms >= start }
     end
 
-    def racer_state(entrant, start, crossings, finish_open_at)
-      finish = finish_crossing(entrant.bib, crossings, finish_open_at)
+    def racer_state(entrant, start, crossings, finish_open_at, flag_out_at)
+      finish = finish_crossing(entrant.bib, crossings, finish_open_at, flag_out_at)
       pull_at = @pulls[entrant.bib]&.payload&.fetch("at_ms")
       pull_at = nil if pull_at && finish && finish.at_ms <= pull_at # a pull at/after the finish does not undo it
       status = if (s = @statuses[entrant.bib]) then s.kind.to_sym
@@ -90,14 +107,16 @@ module Results
                      seen: @resolved.crossings_by_bib.fetch(entrant.bib, []), dropped: @resolved.dropped.fetch(entrant.bib, []))
     end
 
-    # Earliest of: the flagged crossing (early checkered flag) and the first
-    # crossing once the finish is open. A flag on a crossing this racer no longer
-    # has (voided or reassigned) is ignored.
-    def finish_crossing(bib, crossings, finish_open_at)
+    # Earliest of: the flagged crossing (early checkered flag), the first
+    # crossing once the finish is open, and the first once the wave's flag is
+    # out (not for its leader). A flag on a crossing this racer no longer has
+    # (voided or reassigned) is ignored.
+    def finish_crossing(bib, crossings, finish_open_at, flag_out_at)
       flag_ref = @flags[bib]&.payload&.fetch("capture_id")
       flag_ref = @resolved.aliases.fetch(flag_ref, flag_ref)
       candidates = [crossings.find { it.ref == flag_ref }]
       candidates << crossings.find { it.at_ms >= finish_open_at } if finish_open_at
+      candidates << crossings.find { it.at_ms >= flag_out_at } if flag_out_at
       candidates.compact.min_by { [it.at_ms, it.ref] }
     end
   end

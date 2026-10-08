@@ -13,12 +13,11 @@ class RaceSimulator::ReplayTest < ActiveSupport::TestCase
     assert_equal [561_000, 577_000], DATASET.results.find { it.bib == "243" }.laps_ms # the running race is in h:mm:ss
   end
 
-  test "a wave's lap count is the one that best explains who stopped when" do
-    # Three racers finish on lap 3 after the leader's 3rd crossing opens the finish; the leader rode on
-    # to lap 4. A lap count of 4 would instead have all three stopping early.
-    wave = RaceSimulator::Replay::Wave.new(gun: "10:00", minutes: 45, arm_s: 0, races: [])
-    racers = [[100, 200, 300, 400], [110, 210, 310], [120, 220, 320], [130, 230, 330]].map { RaceSimulator::Replay::Result.new(category: "x", place: 1, bib: "1", laps: it.size, laps_ms: it.each_cons(2).map { |a, b| b - a }.unshift(it.first)) }
-    assert_equal 3, wave.lap_count(racers)
+  test "each wave's lap count is its leader's, and its flag time comes from the data" do
+    wave = DATASET.waves.find { it.gun == "11:00" }
+    assert_equal 7, wave.lap_count(DATASET.results_for(wave.races.map(&:name))) # #43
+    assert_equal 2330, wave.flag_out_s
+    assert_nil DATASET.waves.first.flag_out_s
   end
 
   test "setup builds the real event: races in waves, real bibs, made-up names, Pacific time" do
@@ -38,16 +37,21 @@ class RaceSimulator::ReplayTest < ActiveSupport::TestCase
     RaceSimulator::Replay.run(event:, dataset: DATASET, speed: 0, out: StringIO.new)
     check = RaceSimulator::Replay::Check.new(event:, dataset: DATASET)
     assert_equal 34, check.races_checked
-    assert_equal KNOWN_MISMATCHES, check.mismatches.map(&:to_s).sort
-    assert_equal 57, check.stopped_early.size
+    assert_equal KNOWN_MISMATCHES.sort, check.mismatches.map(&:to_s).sort
+    assert_equal %w[143 292 379 421 422 423 46], check.stopped_early.map(&:bib).sort # quit early: the chief marks DNF
     assert_equal check.stopped_early.size, check.stopped_early.map(&:bib).uniq.size
   end
 
-  # What the real event did that a finish-with-leader rule doesn't: everything
-  # else (places, laps, every lap time) matches the published results.
+  # What the real event did that the hub's rules don't: everything else
+  # (places, laps, every lap time) matches the published results.
   KNOWN_MISMATCHES = [
-    "Category 3 Masters Open 35+ #43: laps ours 6, theirs 7", # rode a lap past the finish; the timing system counted it
-    "Junior Open 13-14 #70: laps ours 3, theirs 4",           # a 6:49 last lap after a 10:46: rode past the wave's finish
-    "Junior Open 15-16 #449: laps ours 4, theirs 5"           # rode a 5th lap after the juniors' finish opened
+    "Category 3 Masters Open 35+ #386: laps ours 5, theirs 6", # rode on after the flag, with a 4:28 last lap (normal: 8:00)
+    "Category 3 Masters Open 35+ #386: place ours 16, theirs 8", # ...so we place him on 5 laps,
+    *%w[21:8:9 390:9:10 257:10:11 435:11:12 55:12:13 304:13:14 416:14:15 326:15:16].map do |entry| # and those between move up one
+      bib, ours, theirs = entry.split(":")
+      "Category 3 Masters Open 35+ ##{bib}: place ours #{ours}, theirs #{theirs}"
+    end,
+    "Junior Open 13-14 #70: laps ours 3, theirs 4",           # rode on after the juniors' flag; a 6:49 last lap after a 10:46
+    "Junior Women 11-12 #324: laps ours 3, theirs 4"          # rode on after the juniors' flag (or our junior start offsets are off)
   ].freeze
 end

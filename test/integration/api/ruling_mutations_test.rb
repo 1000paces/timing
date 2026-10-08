@@ -26,6 +26,25 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
     assert_equal @chief.id, ruling.official_id
   end
 
+  test "flagOut marks the wave's finish flag (hub time by default), shows on standings and in History" do
+    partner = create_race(event: @event, category: "Cat 4")
+    result = mutate("flagOut", "$id: ID!", "raceId: $id, atMs: 7000", id: @race.id)
+    assert_empty result["errors"]
+    assert_equal({ "race_id" => @race.id, "at_ms" => 7_000 }, result.dig("ruling", "payload"))
+    mutate("setRaceStart", "$id: ID!", "raceId: $id, atMs: 1000", id: partner.id)
+    races = gql("query($id: ID!) { standings(eventId: $id) { races { race { id } flagOutAtMs } } }", id: @event.id).dig("data", "standings", "races")
+    assert_equal [7_000], races.select { it.dig("race", "id") == partner.id }.map { it["flagOutAtMs"] }, "the whole wave"
+    history = gql("query($id: ID!) { rulings(eventId: $id) { description } }", id: @event.id).dig("data", "rulings")
+    assert_includes history.map { it["description"] }, "Flag out for #{@race.name}'s wave at 00:00:07"
+    assert_operator mutate("flagOut", "$id: ID!", "raceId: $id", id: @race.id).dig("ruling", "payload", "at_ms"), :>=, 7_000
+  end
+
+  test "a timer can't put the flag out" do
+    sign_in(create_official(role: "timer", pin: "1357"), "1357")
+    body = gql("mutation($id: ID!) { flagOut(raceId: $id) { errors } }", id: @race.id)
+    assert_equal "Requires the chief role", body["errors"].first["message"]
+  end
+
   # Review Focus 5
   test "setLapCount applies to the race's whole cohort; setRaceStart takes a time" do
     partner = create_race(event: @event, category: "Cat 4")

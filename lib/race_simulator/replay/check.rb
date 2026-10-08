@@ -4,8 +4,8 @@ module RaceSimulator
     # The real lap 1 runs from when the wave was armed; ours from the race's
     # start, so our lap 1 is longer by (arm_s - start_s). Everything else —
     # finished, place, laps, laps 2 on — should match exactly — except riders
-    # who stopped before the finish opened (lapped or pulled): the hub keeps
-    # them "racing" until an official pulls them, so those are listed apart.
+    # who quit before the flag came out: the hub keeps them "racing" until an
+    # official marks them DNF, so those are listed apart.
     class Check
       Difference = Data.define(:race, :bib, :what, :ours, :theirs) do
         def to_s = "#{race} ##{bib}: #{what} ours #{ours}, theirs #{theirs}"
@@ -36,11 +36,11 @@ module RaceSimulator
           found = mismatches.select { it.race == name }
           early = stopped_early.select { it.race == name }.map(&:bib)
           [found.empty? ? "✓ #{name}" : "✗ #{name}", *found.map { "    #{it}" },
-           *("    stopped before the finish (an official pulls them): #{early.join(', ')}" if early.any?)]
+           *("    quit before the flag (an official marks them DNF): #{early.join(', ')}" if early.any?)]
         end
         [*lines.flatten, "",
          "#{races_checked} races: #{mismatches.size} mismatch#{'es' unless mismatches.size == 1}, " \
-         "#{stopped_early.size} riders stopped before the finish"].join("\n")
+         "#{stopped_early.size} riders quit before the flag"].join("\n")
       end
 
       private

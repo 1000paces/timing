@@ -24,6 +24,7 @@ import { ReviewQueue } from "./ReviewQueue";
 import { RacerPanel } from "./RacerPanel";
 import { Standings } from "./Standings";
 import { WaveStandings } from "./WaveStandings";
+import { FlagOut } from "./FlagOut";
 import { groupWaves } from "../waves";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
@@ -98,13 +99,14 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
           </ToggleButtonGroup>
         </Stack>
         {view === "wave" && groupWaves(shown.map((r) => ({ ...r, scheduledAtMs: scheduledById.get(r.race.id) ?? null }))).map((wave) => (
-          <WaveStandings key={wave.scheduledAtMs ?? "none"} wave={wave} onRowClick={(row) => setRacer(row.bib)} />
+          <WaveStandings key={wave.scheduledAtMs ?? "none"} wave={wave} onRowClick={(row) => setRacer(row.bib)}
+            controls={wave.startedRaceId && <FlagOut raceId={wave.startedRaceId} flagOutAtMs={wave.flagOutAtMs} canAct={canAct} onChanged={refresh} />} />
         ))}
         {view === "category" && shown.map((race) => (
           <Standings
             key={race.race.id}
             race={race}
-            controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} canAct={canAct} onChanged={refresh} />}
+            controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} flagOutAtMs={race.flagOutAtMs} canAct={canAct} onChanged={refresh} />}
             onRowClick={(row) => setRacer(row.bib)}
           />
         ))}

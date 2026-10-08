@@ -5,6 +5,9 @@
 #   arm_s:    seconds from the gun to arming (estimated from the first lap shortfall).
 #   start_s:  each race's start after the gun. Races that went off later in the wave have a
 #             smaller first-lap shortfall; estimated from that and rounded to 30 s. Correct freely.
+#   flag_out_s: when the finish flag came out, in seconds after arming: everyone but the wave's
+#             leader finished on their next crossing. Fitted to the results (e.g. 11:00: riders crossing
+#             up to 38:38 rode on, from 39:07 they stopped).
 #   finish_with_leader: false for a race that finishes on its own lap count, not the wave's.
 event:
   name: "Cross Crusade Cascade Locks 1"
@@ -20,6 +23,7 @@ waves:
       - { name: "Unicycles", start_s: 0 }
       - { name: "Running Race", start_s: 0, finish_with_leader: false }
   - gun: "10:00"
+    flag_out_s: 2330
     minutes: 45
     arm_s: 150
     races:
@@ -30,6 +34,7 @@ waves:
       - { name: "Vintage", start_s: 90 }
       - { name: "Masters 70+", start_s: 120 }
   - gun: "11:00"
+    flag_out_s: 2330
     minutes: 45
     arm_s: 120
     races:
@@ -38,6 +43,7 @@ waves:
       - { name: "Category 4 Open", start_s: 90 }
       - { name: "Beginner Open", start_s: 120 }
   - gun: "11:50"
+    flag_out_s: 1860
     minutes: 45
     arm_s: 150
     races:
@@ -49,6 +55,7 @@ waves:
       - { name: "Category 4 Women", start_s: 120 }
       - { name: "Beginner Women", start_s: 120 }
   - gun: "13:05"
+    flag_out_s: 2370
     minutes: 45
     arm_s: 90
     races:
@@ -56,6 +63,7 @@ waves:
       - { name: "Singlespeed Women", start_s: 30 }
       - { name: "Tracklocross", start_s: 60 }
   - gun: "13:55"
+    flag_out_s: 1740
     minutes: 35
     arm_s: 180
     races:
@@ -67,6 +75,7 @@ waves:
       - { name: "Junior Open 9-10", start_s: 120 }
       - { name: "Junior Open 11-12", start_s: 150 }
   - gun: "14:45"
+    flag_out_s: 2805
     minutes: 50
     arm_s: 120
     races:

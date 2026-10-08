@@ -6,6 +6,7 @@ class Ruling < ApplicationRecord
   KINDS = {
     "set_race_start" => %w[race_id at_ms],
     "set_lap_count" => %w[race_id laps],
+    "flag_out" => %w[race_id at_ms],
     "assign_bib" => %w[capture_id bib],
     "void_capture" => %w[capture_id],
     "insert_capture" => %w[bib at_ms],

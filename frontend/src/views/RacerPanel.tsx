@@ -25,7 +25,7 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useState } from "react";
-import { formatClock, formatElapsed, formatGap, fromLocalInput, toLocalInput } from "../format";
+import { formatClock, formatElapsed, formatGap } from "../format";
 import {
   FLAG_FINISH,
   INSERT_CROSSING,
@@ -42,6 +42,7 @@ import {
 import { kindLabel, midpoint, positionLabel } from "../racerPanel";
 import { STATUS_COLOR, statusLabel } from "../races";
 import { useEventChanges } from "../useEventChanges";
+import { TimeDialog } from "./TimeDialog";
 import { RacerStatusMenu } from "./RacerStatusMenu";
 
 type Props = {
@@ -255,24 +256,6 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
         </DialogActions>
       </Dialog>
     </Drawer>
-  );
-}
-
-function TimeDialog({ title, action, atMs, onCancel, onSave }: { title: string; action: string; atMs: number; onCancel: () => void; onSave: (atMs: number) => void }) {
-  const [value, setValue] = useState(toLocalInput(atMs, { seconds: true }));
-  const parsed = fromLocalInput(value);
-  return (
-    <Dialog open onClose={onCancel}>
-      <DialogTitle>{title}</DialogTitle>
-      <DialogContent>
-        <TextField label="Time" type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} sx={{ mt: 1 }}
-          slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }} />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="contained" disabled={parsed == null} onClick={() => parsed != null && onSave(parsed)}>{action}</Button>
-      </DialogActions>
-    </Dialog>
   );
 }
 

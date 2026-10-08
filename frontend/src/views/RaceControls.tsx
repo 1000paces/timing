@@ -7,12 +7,13 @@ import Typography from "@mui/material/Typography";
 import { useState, type FormEvent } from "react";
 import { formatClock } from "../format";
 import { SET_LAP_COUNT, type MutationResult } from "../queries";
+import { FlagOut } from "./FlagOut";
 
-type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; canAct: boolean; onChanged: () => void };
+type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; flagOutAtMs: number | null; canAct: boolean; onChanged: () => void };
 
 // A race's start status and lap count. Setting laps applies to every race that
 // finishes with this one.
-export function RaceControls({ raceId, startAtMs, lapCount, canAct, onChanged }: Props) {
+export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, canAct, onChanged }: Props) {
   const [setLapCount] = useMutation<{ setLapCount: MutationResult }>(SET_LAP_COUNT);
   const [laps, setLaps] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,7 @@ export function RaceControls({ raceId, startAtMs, lapCount, canAct, onChanged }:
           </Button>
         </Stack>
       )}
+      {startAtMs && <FlagOut raceId={raceId} flagOutAtMs={flagOutAtMs} canAct={canAct} onChanged={onChanged} />}
       {error && <Alert severity="error">{error}</Alert>}
     </Stack>
   );

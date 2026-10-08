@@ -58,9 +58,11 @@ bin/replay-race --check <event id>        # compare the hub's results with the p
 
 The data is in `lib/race_simulator/data/cascade_locks_1/`: `results.csv` (from the
 published results PDF) and `waves.yml` (the schedule's waves, each race's start offset
-and the delay before the timing system was armed — estimates, edit freely). The check
-should report 3 mismatches (riders who rode past the finish) and 57 riders who stopped
-before the finish: lapped or pulled riders that a chief pulls in the racer panel.
+the delay before the timing system was armed — estimates, edit freely — and when each
+wave's finish flag came out, fitted to the results). Each wave's lap count is its
+leader's. The check should report 3 riders who rode on after the flag (#386, and juniors
+#70 and #324; #386's lost lap moves eight riders up a place) and 7 riders who quit early,
+whom a chief marks DNF.
 
 ## API
 

@@ -169,6 +169,14 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await expect(wave).toContainText("Masters 50+ Men");
   await page.reload();
   await expect(wave.getByTestId("racer-status")).toHaveCount(12);
+
+  // Flag out for the wave: shown on the wave and on each of its races, and in History.
+  await wave.getByRole("button", { name: "Flag out", exact: true }).click();
+  await expect(wave.getByTestId("flag-out")).toContainText("Flag out at");
   await page.getByRole("button", { name: "Category", exact: true }).click();
   await expect(page.getByRole("region", { name: "Masters 35+ Men" })).toBeVisible();
+  await expect(page.getByTestId("flag-out")).toHaveCount(3);
+  await page.getByRole("tab", { name: /Problems/ }).click();
+  await page.getByRole("button", { name: "History" }).click();
+  await expect(page.getByTestId("history-entry").filter({ hasText: /^.*Flag out for .*'s wave at/ })).toHaveCount(1);
 });

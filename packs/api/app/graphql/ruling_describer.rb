@@ -22,6 +22,7 @@ class RulingDescriber
     when "flag_finish" then "Finish bib #{p['bib']} at #{crossing_time(p['capture_id'])}"
     when "dnf", "dns", "dsq" then "#{ruling.kind.upcase} bib #{p['bib']}"
     when "set_lap_count" then "Lap count #{p['laps']} for #{race_name(p['race_id'])}"
+    when "flag_out" then "Flag out for #{race_name(p['race_id'])}'s wave at #{clock(p['at_ms'])}"
     when "set_race_start" then "Start #{race_name(p['race_id'])} at #{clock(p['at_ms'])}"
     when "dismiss_suggestion" then "Dismiss a suggestion"
     when "publish_results" then "Publish #{race_name(p['race_id'])}"

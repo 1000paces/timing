@@ -31,8 +31,9 @@ module RaceSimulator
       event
     end
 
-    # Starts each race at its gun plus offset, sets the wave's lap count, and
-    # records every crossing at gun + arming delay + the racer's lap times.
+    # Starts each race at its gun plus offset, sets the wave's lap count, puts
+    # the flag out when the data says it came out, and records every crossing
+    # at gun + arming delay + the racer's lap times.
     def run(event:, dataset:, speed: 0, out: $stdout, sleeper: ->(seconds) { sleep(seconds) })
       writer = Writer.new(event:, device_name: "Finish phone")
       steps = timeline(event, dataset)
@@ -48,6 +49,7 @@ module RaceSimulator
         case kind
         when :start then writer.start_races([arg], at_ms:)
         when :laps then writer.set_lap_count(*arg)
+        when :flag then Ruling.create!(event:, kind: "flag_out", payload: { "race_id" => arg.id, "at_ms" => at_ms })
         when :capture then writer.capture(at_ms:, bib: arg)
         end
       end
@@ -70,9 +72,10 @@ module RaceSimulator
           at = gun_ms + wave.arm_s * 1000
           result.laps_ms.map { [at += it, :capture, result.bib] }
         end
-        starts + crossings
+        flag = wave.flag_out_s && [[gun_ms + (wave.arm_s + wave.flag_out_s) * 1000, :flag, races.fetch(wave.cohorts.first.first.name)]]
+        starts + crossings + Array(flag)
       end
-      order = { start: 0, laps: 1, capture: 2 }
+      order = { start: 0, laps: 1, flag: 2, capture: 3 }
       steps.sort_by { |at, kind, arg| [at, order[kind], kind == :capture ? arg : ""] }
     end
 

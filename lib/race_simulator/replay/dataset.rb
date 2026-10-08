@@ -11,26 +11,15 @@ module RaceSimulator
 
     # A start wave from the race-day schedule. Its races go off start_s apart
     # and (unless a race says otherwise) finish together on one lap count.
-    Wave = Data.define(:gun, :minutes, :arm_s, :races) do
+    Wave = Data.define(:gun, :minutes, :arm_s, :flag_out_s, :races) do
       # Races that finish together: the wave's, then each race finishing on its own.
       def cohorts
         together, alone = races.partition(&:finish_with_leader)
         [together, *alone.map { [it] }].reject(&:empty?)
       end
 
-      # The lap count that best explains the results. The finish opens on the
-      # first crossing of that lap, so everyone should stop on their next
-      # crossing. Riding on past the finish counts double; stopping before it
-      # is common (lapped and pulled riders).
-      def lap_count(results)
-        crossings = results.map { |r| r.laps_ms.each_with_object([]) { |ms, at| at << (at.last || 0) + ms } }
-        results.map(&:laps).uniq.min_by do |laps|
-          open_at = crossings.filter_map { it[laps - 1] }.min
-          rode_past = crossings.count { |at| (i = at.index { it >= open_at }) && i < at.size - 1 }
-          stopped_before = crossings.count { it.last < open_at }
-          [2 * rode_past + stopped_before, -laps]
-        end
-      end
+      # The lap count is the wave leader's: the most laps anyone in it rode.
+      def lap_count(results) = results.map(&:laps).max
     end
 
     # The committed results and wave layout for one real event, from
@@ -40,7 +29,7 @@ module RaceSimulator
         dir = Pathname(__dir__).join("../data", name)
         yaml = YAML.safe_load_file(dir.join("waves.yml"))
         waves = yaml.fetch("waves").map do |w|
-          Wave.new(gun: w.fetch("gun"), minutes: w.fetch("minutes"), arm_s: w.fetch("arm_s"),
+          Wave.new(gun: w.fetch("gun"), minutes: w.fetch("minutes"), arm_s: w.fetch("arm_s"), flag_out_s: w["flag_out_s"],
                    races: w.fetch("races").map { RaceStart.new(name: it.fetch("name"), start_s: it.fetch("start_s"), finish_with_leader: it.fetch("finish_with_leader", true)) })
         end
         results = CSV.read(dir.join("results.csv"), headers: true).map do |row|
