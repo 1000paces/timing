@@ -100,6 +100,16 @@ Items deliberately deferred. Each has enough context to pick up cold.
 
 ## Carry into upcoming plans
 
+### Real-race replay (after the clean replay, 2026-10-07)
+- A messy replay for officiating rehearsal: missed taps, wrong bibs, no-bib taps, a phone
+  offline for 10 minutes, on top of the real anomalies (46, 422, 386, 70).
+- Several phones and bursty sync, to load-test the console, Results and Problems.
+- An "officiate" option that pulls the riders who stopped before the finish, so the
+  check compares statuses too.
+- **Chip timing:** start-line reads as a wave rolls off (gun to arming, 1–2 min), and a
+  per-race "ignore reads for N seconds after the start" rule. Without it, moving a start
+  back to the gun turns every start-line read into a ~20 s lap 1.
+
 ### Officiating follow-ups (after part 1, 2026-10-07)
 - Open the racer panel from Problems and Capture rows (today: Results and History only).
 - Redo (undoing an undo). Today an undo can't be undone; re-apply the fix instead.

@@ -48,6 +48,20 @@ bin/simulate-race --demo                  # 20× real time; --speed 0 writes it 
 bin/rails hub:standings EVENT=<id> WATCH=1
 ```
 
+## Replay a real race
+
+```bash
+bin/replay-race                           # Cross Crusade Cascade Locks 1: 34 races, 219 racers, real bibs
+bin/replay-race --speed 60                # the whole day in about 6 minutes, to watch it live
+bin/replay-race --check <event id>        # compare the hub's results with the published ones
+```
+
+The data is in `lib/race_simulator/data/cascade_locks_1/`: `results.csv` (from the
+published results PDF) and `waves.yml` (the schedule's waves, each race's start offset
+and the delay before the timing system was armed — estimates, edit freely). The check
+should report 3 mismatches (riders who rode past the finish) and 57 riders who stopped
+before the finish: lapped or pulled riders that a chief pulls in the racer panel.
+
 ## API
 
 - `POST /session` with `{"name": "...", "pin": "..."}` signs in (session cookie).
