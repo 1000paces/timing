@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
@@ -20,8 +21,10 @@ export function WaveStandings({ wave, controls, onRowClick }: { wave: Wave; cont
     <Paper component="section" aria-label={title} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3">{title}</Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>{wave.raceNames.join(" · ")}</Typography>
-      {controls}
-      <Table size="small">
+      {controls && <Box sx={{ my: 1 }}>{controls}</Box>}
+      {/* One line per racer; scroll sideways rather than wrap when the window is narrow. */}
+      <Box sx={{ overflowX: "auto" }}>
+      <Table size="small" sx={{ "& th, & td": { whiteSpace: "nowrap" } }}>
         <TableHead>
           <TableRow>
             <TableCell sx={num}>Pos</TableCell>
@@ -51,6 +54,7 @@ export function WaveStandings({ wave, controls, onRowClick }: { wave: Wave; cont
           ))}
         </TableBody>
       </Table>
+      </Box>
     </Paper>
   );
 }

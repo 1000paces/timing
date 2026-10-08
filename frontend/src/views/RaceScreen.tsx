@@ -72,7 +72,7 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   const scheduledById = new Map(event.data.event.races.map((r) => [r.id, r.scheduledAtMs]));
 
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 2, p: 2, alignItems: "start" }}>
+    <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 380px", gap: 2, p: 2, alignItems: "start" }}>
       <Box component="main">
         <EventNav eventId={eventId} eventName={event.data.event.name} current="race" admin={official.role === "admin"} />
         {standings.error && <Alert severity="error" sx={{ mb: 2 }}>{standings.error.message}</Alert>}

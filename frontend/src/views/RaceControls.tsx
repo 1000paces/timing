@@ -33,7 +33,7 @@ export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, canAct,
   }
 
   return (
-    <Stack direction="row" spacing={3} sx={{ alignItems: "center", flexWrap: "wrap", mb: 1 }}>
+    <Stack direction="row" spacing={3} useFlexGap sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1, mb: 1 }}>
       <Typography color={startAtMs ? "text.primary" : "text.secondary"}>
         {startAtMs ? `Started at ${formatClock(startAtMs)}` : "Not started — start it on the Start tab"}
       </Typography>

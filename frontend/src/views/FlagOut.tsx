@@ -2,7 +2,7 @@ import { useMutation } from "@apollo/client/react";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
 import { useState } from "react";
 import { formatClock } from "../format";
@@ -31,12 +31,14 @@ export function FlagOut({ raceId, flagOutAtMs, canAct, onChanged }: Props) {
     onChanged();
   }
 
-  if (flagOutAtMs != null) return <Typography data-testid="flag-out">Flag out at {formatClock(flagOutAtMs)}</Typography>;
+  if (flagOutAtMs != null) {
+    return <Chip data-testid="flag-out" icon={<SportsScoreIcon />} color="warning" size="small" label={`Flag out at ${formatClock(flagOutAtMs)}`} />;
+  }
   if (!canAct) return null;
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-      <Button size="small" variant="outlined" startIcon={<SportsScoreIcon />} onClick={() => void save()}>Flag out</Button>
-      <Button size="small" onClick={() => setAsking(true)}>Flag out at…</Button>
+      <Button size="small" variant="contained" startIcon={<SportsScoreIcon />} onClick={() => void save()} sx={{ whiteSpace: "nowrap" }}>Flag out</Button>
+      <Button size="small" onClick={() => setAsking(true)} sx={{ whiteSpace: "nowrap" }}>Flag out at…</Button>
       {asking && <TimeDialog title="Flag out" action="Flag out" atMs={Date.now()} onCancel={() => setAsking(false)} onSave={(atMs) => void save(atMs)} />}
       {error && <Alert severity="error">{error}</Alert>}
     </Stack>
