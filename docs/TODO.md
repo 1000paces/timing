@@ -2,6 +2,20 @@
 
 Items deliberately deferred. Each has enough context to pick up cold.
 
+## Priorities for a real (manual, no-chip) race — 2026-10-07
+
+1. **Race-day officiating** (in progress on `officiating`): rider detail with
+   crossings (void / move / insert), pull and flag finish, ruling history with
+   Undo, Publish, results CSV export and printable results.
+2. **Hardening:** run the hub in production mode, back up `storage/` during the
+   event, session expiry (see below).
+3. **Engine:** "no finish crossing" suggestion; fewer early-lap false alarms
+   (field comparison / pace-scaled fallback — see Results engine).
+4. **Registration on Starts:** "N of M checked in" per race; DNS suggestions.
+5. Operational: dedicated router (fixed hub IP), power, phones paired and
+   certificates installed the day before, console built before leaving, a paper
+   backup at the line, a dry run.
+
 ## Results engine
 
 ### Compare early laps against the field, not just the rider's own laps
@@ -55,6 +69,13 @@ Items deliberately deferred. Each has enough context to pick up cold.
   official has to untick the setting for those. Could default it from the event
   date (Sep–Dec → next year; Jan–Aug → this year).
 
+### Intermediate timing (split points on course)
+- Capture at points other than the finish line (e.g. a mid-course split), so
+  officials see positions and gaps between laps. Not in the first race-day slices.
+- Would need a capture "point" per device (finish / split N), splits per lap in
+  the engine and on the racer panel, and missed-split handling.
+- **Raised:** 2026-10-07.
+
 ## Hub operations & hardening
 
 ### Run the venue hub in production mode (not development)
@@ -79,21 +100,66 @@ Items deliberately deferred. Each has enough context to pick up cold.
 
 ## Carry into upcoming plans
 
+### Concerns from the flag-out / replay review (2026-10-07)
+Doing now:
+1. **Flag-out leader exemption is fragile.** The exempt rider can be a DNF/DSQ rider, a
+   phantom lap from a stray tap, or the wrong one of two riders tapped in swapped order;
+   nothing shows who was exempt. Skip DNF/DSQ/DNS riders; show the exempt rider on the wave.
+2. **Riders who quit stay "Racing" with no prompt.** Add an "overdue — mark DNF?" problem
+   once the flag is out (about-to-be-lapped switches off then).
+3. **Capture flag time is late by the confirm dialog.** Stamp it at the first tap.
+
+Later:
+- "Current wave" can pick wrong: overlapping waves (newer wins), races that finish on their
+  own count as waves of one, and it groups by scheduled time while the engine also splits
+  off races that started after the finish opened.
+- A timer can flag out a whole wave; only a chief can undo it.
+- No sanity checks on flag times (in the future, before the wave started, typos in "Flag out at…").
+- Waves are still "same scheduled time": a mistyped time silently moves a race out of its
+  wave (lap count, flag). The user asked for a foreign key; deferred.
+- Flag out on a race header flags the whole wave; the History line names one race.
+- Wave view groups races that finish on their own (Running Race) into the scheduled wave.
+- Timers can flag out on Capture but don't see the button on Results.
+- Replay checks are partly circular: flag times, start offsets and arming delays are fitted
+  from the results they're checked against.
+- Replays are too clean: one device, perfect hundredths, in order, historic timestamps (live
+  "now" behaviour never runs). Nothing tests whether a person can tap a bunch sprint.
+- The replay check ignores lap positions, gaps, other statuses; one rider's error (386)
+  shows as 10 lines.
+- Fitter edge cases (one-rider waves, ties like 330/402, crash laps); no test for
+  script/results-pdf-to-csv (sample PDFs aren't committed).
+- Cascade Locks 1's date (2026-09-27) is a guess; replays pile up events in dev with no cleanup.
+- Flag out lacks tests with a finish flag or a pull on the same rider.
+- Split big branches into reviewable PRs; get an independent review of the Flag out engine change.
+
+### Real-race replay (after the clean replay, 2026-10-07)
+- A messy replay for officiating rehearsal: missed taps, wrong bibs, no-bib taps, a phone
+  offline for 10 minutes, on top of the real anomalies (46, 422, 386, 70).
+- Several phones and bursty sync, to load-test the console, Results and Problems.
+- An "officiate" option that pulls the riders who stopped before the finish, so the
+  check compares statuses too.
+- **Chip timing:** start-line reads as a wave rolls off (gun to arming, 1–2 min), and a
+  per-race "ignore reads for N seconds after the start" rule. Without it, moving a start
+  back to the gun turns every start-line read into a ~20 s lap 1.
+
+### Officiating follow-ups (after part 1, 2026-10-07)
+- Open the racer panel from Problems and Capture rows (today: Results and History only).
+- Redo (undoing an undo). Today an undo can't be undone; re-apply the fix instead.
+- Voiding an inserted crossing should use the already-undone guard (two chiefs → two "Undo: Insert…" lines).
+- Hide "Finish here" / "Pull here" on ignored crossings (before start, after pull/finish), or refuse them on the hub; today they record a fix that does nothing.
+- Racer panel fix list: show when an undo happened ("undone by X at T").
+- History: "Show more" appears at exactly 50 entries; debounce the search box.
+- Keyboard access to Results rows (open the racer panel with Enter), since DNF/DNS/DSQ now live in the panel.
+- "Pull now" uses the console's clock, not hub time; "Insert missed crossing before" a pre-start crossing pre-fills a time the hub refuses.
+
 ### Ops console / API plan
-- **Expose crossing ids per rider** (`crossings { ref atMs inserted counted }` on
-  standings rows, or a crossings query). Without them the console can't void a
-  bad tap, reassign a counted crossing, or flag-finish a specific crossing — and
-  "about to be lapped" fixes can't be completed. First API task of the plan.
-- **Guard against a second GO:** `fireStart` on an already-started group should
-  refuse unless `restart: true` (console confirm dialog). Today a second GO
-  silently moves the gun and shifts every elapsed time.
 - **Sessions:** expire after 12–24 h; `updateOfficial(id, active, role, pin)`
   (admin); invalidate existing sessions on deactivation or PIN change (check in
   `CurrentOfficial` and the cable connection). Today a copied cookie keeps
   working after sign-out and there's no way to deactivate an official via the API.
-- **Pairing QR URL** must use the hub's LAN address (`LocalCa.lan_ips` +
-  `HUB_TLS_PORT`) or a configured hub URL — not the admin's request host
-  (`localhost` QR codes are unreachable from tablets).
+- **Pairing QR URL** (partly done): it uses the address the console is open on;
+  the dialog and runbook say to open the console on the hub's LAN address. Could
+  instead build it from `LocalCa.lan_ips` + `HUB_TLS_PORT` so it can't be wrong.
 - **Coalesce broadcasts** during CSV import (one "changed" at the end, not one
   per row); broadcast device pair/revoke so the device list is live.
 - **Simulator virtual clock:** taps are stamped ahead of the wall clock
@@ -106,25 +172,15 @@ Items deliberately deferred. Each has enough context to pick up cold.
   names per event; `revokeDevice` shouldn't overwrite the first revocation time;
   CSV import row cap and per-row error resilience; runbook notes (restart
   `bin/hub` after a network change; delete `storage/certs/server.*` if corrupt).
-- Clients must never set `Ruling#created_at_ms` ("latest wins" ordering depends
-  on hub time) — the API sets it.
 - Suggestion `fix` hashes are *templates*: `flag_finish` lacks `capture_id`,
   unassigned-capture fixes have `bib: nil`. The console must complete them before
   creating a ruling.
-- Lap-count changes: the console must let officials set the lap count on ANY start
-  group (fixed or timed) — decided 2026-10-01: a `set_lap_count` ruling overrides
-  the finish rule.
-- Show last good standings with an error banner if computing results fails (spec §9).
 
 ### Sync + capture plan
 - **Before any tablet/venue test:** run the hub in production mode (see "Run the
   venue hub in production mode") and constrain the root CA (nameConstraints).
-- Strip the pairing token from the capture app URL after reading it
-  (`history.replaceState`); bound device name length.
-- Device entries must take their `event_id` from the authenticated device, never
-  from the payload (and add a model check that it matches `device.event_id`).
+- Bound device name length (pairing).
 - Consider storing each raw device entry so hash chains can be re-verified later.
-- Normalize empty-string bibs to nil on captures.
 
 ### Event & race setup (review minors, 2026-10-02)
 - Warn in Setup when moving a race into a cohort (new scheduled start or finish

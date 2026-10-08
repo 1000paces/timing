@@ -7,6 +7,8 @@ import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
@@ -31,6 +33,7 @@ import { useEventChanges } from "../useEventChanges";
 import { EventNav } from "./EventNav";
 import { FilterWithChips } from "./FilterWithChips";
 import { ProblemMeta } from "./ProblemMeta";
+import { HistoryList } from "./HistoryList";
 import { IssueCount, SuggestionItem } from "./ReviewQueue";
 
 type Props = { eventId: string; official: Official; onSignedOut: () => void };
@@ -43,8 +46,12 @@ export function ProblemsScreen({ eventId, official, onSignedOut }: Props) {
   const filterKey = `problems:${eventId}`;
   const [filter, setFilter] = useState<ProblemFilter>(() => problemFilterFromSearch(initialSearch(filterKey, window.location.search)));
   const [typing, setTyping] = useState("");
+  const [view, setView] = useState<"open" | "history">(() => (new URLSearchParams(window.location.search).get("view") === "history" ? "history" : "open"));
   const setPart = (part: Partial<ProblemFilter>) => setFilter((current) => ({ ...current, ...part }));
-  useEffect(() => showSearch(filterKey, problemFilterToSearch(filter)), [filterKey, filter]);
+  useEffect(() => {
+    if (view === "history") window.history.replaceState(window.history.state, "", `${window.location.pathname}?view=history`);
+    else showSearch(filterKey, problemFilterToSearch(filter));
+  }, [filterKey, filter, view]);
 
   const { refetch } = standings;
   const refresh = useCallback(() => {
@@ -82,7 +89,13 @@ export function ProblemsScreen({ eventId, official, onSignedOut }: Props) {
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
         <Typography variant="h5" component="h2">Problems</Typography>
         {report && <IssueCount shown={shown.length} total={problems.length} />}
+        <Box sx={{ flex: 1 }} />
+        <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v) => v && setView(v)}>
+          <ToggleButton value="open">Open problems</ToggleButton>
+          <ToggleButton value="history">History</ToggleButton>
+        </ToggleButtonGroup>
       </Stack>
+      {view === "history" ? <HistoryList eventId={eventId} canAct={canAct} /> : <>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", flexWrap: "wrap", rowGap: 1, mb: 2 }}>
         <FilterWithChips chips={filter.types.map((t) => ({ key: t, label: PROBLEM_TYPE[t as keyof typeof PROBLEM_TYPE]?.label ?? t }))}
           onDelete={(t) => setPart({ types: filter.types.filter((x) => x !== t) })}>
@@ -127,6 +140,7 @@ export function ProblemsScreen({ eventId, official, onSignedOut }: Props) {
           })}
         </List>
       </Paper>
+      </>}
     </Box>
   );
 }

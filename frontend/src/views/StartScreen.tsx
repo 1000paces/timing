@@ -16,6 +16,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatClock, formatScheduled } from "../format";
@@ -29,7 +30,8 @@ import {
   type StartRacesResult,
   type UnstartRaceResult,
 } from "../queries";
-import { sortRaces, type StartRow } from "../races";
+import { sortRaces, startSortFromSearch, startSortToSearch, type StartRow, type StartSort } from "../races";
+import { initialSearch, showSearch } from "../rememberedSearch";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { useEventChanges } from "../useEventChanges";
@@ -49,6 +51,9 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
   const startingRef = useRef(false); // a double-click's second event must see it at once
   const [confirm, setConfirm] = useState<Row | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const sortKey = `starts:${eventId}`;
+  const [sort, setSort] = useState<StartSort>(() => startSortFromSearch(initialSearch(sortKey, window.location.search)));
+  useEffect(() => showSearch(sortKey, startSortToSearch(sort)), [sortKey, sort]);
 
   const refresh = useCallback(() => {
     standings.refetch().catch(() => {});
@@ -68,6 +73,16 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
   const loaded = Boolean(standings.data);
   const rows = sortRaces(
     event.data.event.races.map((r) => ({ id: r.id, name: r.name, scheduledAtMs: r.scheduledAtMs, startAtMs: startsById.get(r.id) ?? null })),
+    sort,
+  );
+  // A header click sorts by that column; clicking the sorted column reverses it.
+  const sortable = (key: StartSort["key"], label: string) => (
+    <TableCell sortDirection={sort.key === key ? sort.dir : false}>
+      <TableSortLabel active={sort.key === key} direction={sort.key === key ? sort.dir : "asc"}
+        onClick={() => setSort(sort.key === key ? { key, dir: sort.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" })}>
+        {label}
+      </TableSortLabel>
+    </TableCell>
   );
   const canAct = roleCanAct(official.role);
 
@@ -134,9 +149,9 @@ export function StartScreen({ eventId, official, onSignedOut }: Props) {
           <TableHead>
             <TableRow>
               {canAct && <TableCell padding="checkbox" />}
-              <TableCell>Race</TableCell>
-              <TableCell>Scheduled</TableCell>
-              <TableCell>Status</TableCell>
+              {sortable("race", "Race")}
+              {sortable("scheduled", "Scheduled")}
+              {sortable("status", "Status")}
               {canAct && <TableCell align="right">Actions</TableCell>}
             </TableRow>
           </TableHead>

@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+require "optparse"
+
+options = { dataset: "cascade_locks_1", speed: 0.0 }
+OptionParser.new do |o|
+  o.banner = "Usage: bin/replay-race [options]   (replays a real event's results through the hub)"
+  o.on("--dataset NAME", "Folder under lib/race_simulator/data (default cascade_locks_1)") { options[:dataset] = it }
+  o.on("--speed N", Float, "Times faster than real time; 0 writes everything at once (default 0)") { options[:speed] = it }
+  o.on("--check EVENT_ID", "Only compare an already-replayed event with the real results") { options[:check] = it }
+  o.on("--fit", "Print waves.yml with start offsets, arming delays and flag times estimated from the results") { options[:fit] = true }
+end.parse!
+
+require_relative "../config/environment"
+dataset = RaceSimulator::Replay::Dataset.load(options[:dataset])
+if options[:fit]
+  print RaceSimulator::Replay::Fit.new(dataset).to_yaml
+  exit
+end
+event = if options[:check] then Event.find(options[:check])
+        else
+          RaceSimulator::Replay.setup!(dataset).tap { RaceSimulator::Replay.run(event: it, dataset:, speed: options[:speed]) }
+        end
+puts
+puts RaceSimulator::Replay::Check.new(event:, dataset:).report

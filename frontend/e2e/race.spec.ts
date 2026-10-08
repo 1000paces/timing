@@ -50,6 +50,21 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
 
   await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
 
+  // Race, Scheduled and Status sort (a second click reverses); the sort survives a reload.
+  const firstRace = page.getByRole("row").nth(1);
+  await expect(firstRace).toContainText("Masters 35+ Men");
+  await page.getByRole("button", { name: "Status", exact: true }).click();
+  await expect(firstRace).toContainText("Women Open"); // not started first
+  const byRace = page.getByRole("button", { name: "Race", exact: true });
+  await byRace.click();
+  await expect(firstRace).toContainText("Masters 35+ Men");
+  await byRace.click();
+  await expect(firstRace).toContainText("Women Open");
+  await page.reload();
+  await expect(firstRace).toContainText("Women Open");
+  await page.getByRole("button", { name: "Scheduled", exact: true }).click();
+  await expect(firstRace).toContainText("Masters 35+ Men");
+
   // Wave 2, started by mistake, then unstarted and started again.
   await page.getByRole("checkbox", { name: "Select Women Open" }).check();
   await start.click();
@@ -124,22 +139,44 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await expect(statuses).toHaveCount(12);
   await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
 
-  // A chief marks a racer DNF from the Results row menu, then clears it.
-  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  // A chief marks a racer DNF from the racer panel's menu, then clears it; then DSQ.
+  await page.getByRole("region", { name: "Masters 35+ Men" }).getByRole("row").nth(1).click();
+  const panel = page.getByTestId("racer-panel");
+  const racerActions = panel.getByRole("button", { name: "Racer actions" });
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Mark DNF" }).click();
-  const dnfRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DNF" }) });
-  await expect(dnfRow).toHaveCount(1);
-  await dnfRow.getByRole("button", { name: /^Status actions for / }).click();
+  await expect(panel.getByTestId("panel-status")).toHaveText("DNF");
+  await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(1);
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Clear DNF" }).click();
   await expect(statuses.filter({ hasText: "DNF" })).toHaveCount(0);
 
-  // DSQ the same way.
-  await page.getByRole("button", { name: /^Status actions for / }).first().click();
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Mark DSQ" }).click();
-  const dsqRow = page.getByRole("row").filter({ has: page.getByTestId("racer-status").filter({ hasText: "DSQ" }) });
-  await expect(dsqRow).toHaveCount(1);
-  await dsqRow.getByRole("button", { name: /^Status actions for / }).click();
+  await expect(panel.getByTestId("panel-status")).toHaveText("DSQ");
+  await racerActions.click();
   await page.getByRole("menuitem", { name: "Clear DSQ" }).click();
   await expect(statuses.filter({ hasText: "DSQ" })).toHaveCount(0);
   await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
+
+  // Wave view: the three races share a scheduled start, so one table, everyone in order on the road.
+  await panel.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Wave", exact: true }).click();
+  const wave = page.getByRole("region", { name: /^Wave / });
+  await expect(wave).toHaveCount(1);
+  await expect(wave.getByTestId("racer-status")).toHaveCount(12);
+  await expect(wave.getByRole("row").nth(1).getByRole("cell").first()).toHaveText("1");
+  await expect(wave).toContainText("Masters 50+ Men");
+  await page.reload();
+  await expect(wave.getByTestId("racer-status")).toHaveCount(12);
+
+  // Flag out for the wave: shown on the wave and on each of its races, and in History.
+  await wave.getByRole("button", { name: "Flag out", exact: true }).click();
+  await expect(wave.getByTestId("flag-out")).toContainText("Flag out at");
+  await page.getByRole("button", { name: "Category", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Masters 35+ Men" })).toBeVisible();
+  await expect(page.getByTestId("flag-out")).toHaveCount(3);
+  await page.getByRole("tab", { name: /Problems/ }).click();
+  await page.getByRole("button", { name: "History" }).click();
+  await expect(page.getByTestId("history-entry").filter({ hasText: /^.*Flag out for .*'s wave at/ })).toHaveCount(1);
 });

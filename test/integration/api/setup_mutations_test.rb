@@ -35,6 +35,14 @@ class SetupMutationsTest < ActionDispatch::IntegrationTest
     assert_equal({ "name" => "Renamed", "location" => "Hill", "finishWithLeader" => false }, body.dig("data", "updateEvent", "event"))
   end
 
+  test "an event's time zone can be changed, and must be a real one" do
+    event = create_event
+    body = gql('mutation($id: ID!) { updateEvent(id: $id, timezone: "America/Denver") { event { timezone } errors } }', id: event.id)
+    assert_equal "America/Denver", body.dig("data", "updateEvent", "event", "timezone")
+    body = gql('mutation($id: ID!) { updateEvent(id: $id, timezone: "Mars/Olympus") { event { timezone } errors } }', id: event.id)
+    assert_equal ["Timezone Mars/Olympus is not a time zone"], body.dig("data", "updateEvent", "errors")
+  end
+
   test "races get default names from category, age group and gender; an override wins" do
     event = create_event
     race = create_race_via_api(event.id, category: "Cat 3", ageGroup: "Masters 35+")["race"]

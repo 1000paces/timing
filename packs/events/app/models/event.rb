@@ -19,6 +19,7 @@ class Event < ApplicationRecord
   validates :name, :date, presence: true
   validates :age_rule, inclusion: { in: AGE_RULES }
   validate :discipline_known
+  validate { errors.add(:timezone, "#{timezone} is not a time zone") unless ActiveSupport::TimeZone[timezone.to_s] }
 
   # Racing age: as of December 31 of the event's year, or of the following year
   # for a season that crosses the year boundary (age_next_year, e.g. CX).

@@ -20,3 +20,14 @@ six_pm = Time.zone.local(2026, 10, 18, 18).to_i * 1000
 Race.create!(event: registration, name_override: "Women Open", gender: "women", scheduled_at_ms: six_pm)
 Race.create!(event: registration, category: "Cat 3", gender: "men", scheduled_at_ms: six_pm, bib_from: 100, bib_to: 199)
 puts "Seeded #{registration.name} (#{registration.id})"
+
+# Officiating: Masters 35+ Men started 10 minutes ago; 101 has a duplicate tap.
+officiating = RaceSimulator::Demo.create!(racers_per_race: 3, name: "E2E Officiating")
+m35 = officiating.races.find { it.name == "Masters 35+ Men" }
+tablet = RaceSimulator::Writer.new(event: officiating, device_name: "Finish phone")
+go = Clock.now_ms - 600_000
+tablet.start_races([m35], at_ms: go)
+{ "101" => [60, 120, 123, 180], "102" => [65, 130], "103" => [70] }.each do |bib, secs|
+  secs.each { tablet.capture(at_ms: go + it * 1000, bib:) }
+end
+puts "Seeded #{officiating.name} (#{officiating.id})"

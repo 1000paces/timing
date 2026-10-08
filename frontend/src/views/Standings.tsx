@@ -14,8 +14,8 @@ import { STATUS_COLOR, statusLabel } from "../races";
 const STATE_LABEL: Record<string, string> = { NOT_STARTED: "not started", IN_PROGRESS: "in progress", FINISH_OPEN: "finish open" };
 const num = { textAlign: "right", fontVariantNumeric: "tabular-nums" } as const;
 
-// rowActions: per-racer actions (chief and above), shown in an Actions column.
-export function Standings({ race, controls, rowActions }: { race: RaceStandings; controls?: ReactNode; rowActions?: (row: Row) => ReactNode }) {
+// onRowClick: open the racer panel for that row.
+export function Standings({ race, controls, onRowClick }: { race: RaceStandings; controls?: ReactNode; onRowClick?: (row: Row) => void }) {
   return (
     <Paper component="section" aria-label={race.race.name} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3" gutterBottom>
@@ -32,12 +32,11 @@ export function Standings({ race, controls, rowActions }: { race: RaceStandings;
             <TableCell sx={num}>Laps</TableCell>
             <TableCell sx={num}>Time</TableCell>
             <TableCell sx={num}>Gap</TableCell>
-            {rowActions && <TableCell align="right">Actions</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
           {race.rows.map((row) => (
-            <TableRow key={row.bib} hover>
+            <TableRow key={row.bib} hover onClick={onRowClick ? () => onRowClick(row) : undefined} sx={onRowClick ? { cursor: "pointer" } : undefined}>
               <TableCell sx={num}>{row.place ?? "–"}</TableCell>
               <TableCell align="center">{row.bib}</TableCell>
               <TableCell>{row.name}</TableCell>
@@ -47,7 +46,6 @@ export function Standings({ race, controls, rowActions }: { race: RaceStandings;
               <TableCell sx={num}>{row.laps}</TableCell>
               <TableCell sx={num}>{formatElapsed(row.elapsedMs)}</TableCell>
               <TableCell sx={num}>{formatGap(row.gapLapsDown, row.gapMs)}</TableCell>
-              {rowActions && <TableCell align="right">{rowActions(row)}</TableCell>}
             </TableRow>
           ))}
         </TableBody>

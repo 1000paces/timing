@@ -6,7 +6,12 @@ module Mutations
     def resolve(ruling_id:, reason: nil)
       require_official!("chief")
       target = Ruling.find(ruling_id)
-      record(event: target.event, kind: "revert", payload: { ruling_id: target.id }, reason:)
+      return refuse("An undo can't be undone") if target.kind == "revert"
+      # Under the event lock, so two officials undoing the same fix can't both succeed.
+      target.event.with_lock do
+        next refuse("That fix is already undone") if RulingHistory.new(target.event).undone?(target)
+        record(event: target.event, kind: "revert", payload: { ruling_id: target.id }, reason:)
+      end
     end
   end
 end

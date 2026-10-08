@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortRaces, statusLabel, unassignedLabel } from "./races";
+import { DEFAULT_START_SORT, sortRaces, startSortFromSearch, startSortToSearch, statusLabel, unassignedLabel, type StartSort } from "./races";
 
 describe("sortRaces", () => {
   it("orders by scheduled start time, then race name; unscheduled races last", () => {
@@ -10,6 +10,37 @@ describe("sortRaces", () => {
       { id: "4", name: "Masters 35+", scheduledAtMs: 18_00, startAtMs: null },
     ];
     expect(sortRaces(rows).map((r) => r.name)).toEqual(["Masters 35+", "Women Open", "Elite Men", "Juniors"]);
+  });
+
+  const rows = [
+    { id: "1", name: "Women Open", scheduledAtMs: 18_00, startAtMs: 18_05 },
+    { id: "2", name: "Juniors", scheduledAtMs: null, startAtMs: null },
+    { id: "3", name: "Elite Men", scheduledAtMs: 19_00, startAtMs: null },
+    { id: "4", name: "Masters 35+", scheduledAtMs: 18_00, startAtMs: 18_01 },
+    { id: "5", name: "Cat 10", scheduledAtMs: 19_00, startAtMs: null },
+    { id: "6", name: "Cat 9", scheduledAtMs: 19_00, startAtMs: null },
+  ];
+  const names = (sort: StartSort) => sortRaces(rows, sort).map((r) => r.name);
+
+  it("sorts by race name, numbers in order, either way", () => {
+    expect(names({ key: "race", dir: "asc" })).toEqual(["Cat 9", "Cat 10", "Elite Men", "Juniors", "Masters 35+", "Women Open"]);
+    expect(names({ key: "race", dir: "desc" })).toEqual(["Women Open", "Masters 35+", "Juniors", "Elite Men", "Cat 10", "Cat 9"]);
+  });
+
+  it("sorts by scheduled time either way; unscheduled races stay last; ties by name", () => {
+    expect(names({ key: "scheduled", dir: "desc" })).toEqual(["Cat 9", "Cat 10", "Elite Men", "Masters 35+", "Women Open", "Juniors"]);
+  });
+
+  it("sorts by status: not started first (by schedule), then started by start time", () => {
+    expect(names({ key: "status", dir: "asc" })).toEqual(["Cat 9", "Cat 10", "Elite Men", "Juniors", "Masters 35+", "Women Open"]);
+    expect(names({ key: "status", dir: "desc" })).toEqual(["Women Open", "Masters 35+", "Cat 9", "Cat 10", "Elite Men", "Juniors"]);
+  });
+
+  it("keeps the sort in the address", () => {
+    expect(startSortFromSearch("?sort=status&dir=desc")).toEqual({ key: "status", dir: "desc" });
+    expect(startSortFromSearch("?sort=bogus")).toEqual(DEFAULT_START_SORT);
+    expect(startSortToSearch({ key: "race", dir: "asc" })).toBe("?sort=race&dir=asc");
+    expect(startSortToSearch(DEFAULT_START_SORT)).toBe("");
   });
 });
 

@@ -4,8 +4,8 @@ module Mutations
 
     private
 
-    def record(event:, kind:, payload:, reason: nil)
-      official = require_official!("chief")
+    def record(event:, kind:, payload:, reason: nil, role: "chief")
+      official = require_official!(role)
       ruling = RulingWriter.write(event:, official:, kind:, payload:, reason:)
       ruling.persisted? ? { ruling:, errors: [] } : { ruling: nil, errors: ruling.errors.full_messages }
     end

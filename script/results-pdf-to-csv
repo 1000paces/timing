@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+# Turns a published results PDF (RaceResult style: "Pl. Bib Time Laps Lap1 … AvgLap",
+# one heading per category) into the results.csv a replay dataset reads.
+#   script/results-pdf-to-csv sample_data/Results.pdf > lib/race_simulator/data/<name>/results.csv
+# Needs pdftotext (poppler). Checks every row's laps add up to its time.
+require "csv"
+require "open3"
+
+pdf = ARGV.fetch(0) { abort "usage: script/results-pdf-to-csv RESULTS.pdf" }
+text, status = Open3.capture2("pdftotext", "-layout", pdf, "-")
+abort "pdftotext failed" unless status.success?
+
+# Some PDFs embed fonts whose glyphs map to the wrong codes: every character comes
+# out shifted by a fixed amount (layout spaces, line and page breaks don't). Undo it.
+unless text.include?("Results")
+  shift = (1..64).find { |n| text.lines.first(3).join.chars.map { it.match?(/[ \n\f]/) ? it : (it.ord + n).chr }.join.include?("Results") }
+  abort "can't read #{pdf}: no \"Results\" heading" unless shift
+  text = text.chars.map { it.match?(/[ \n\f]/) ? it : (it.ord + shift).chr }.join
+end
+
+def seconds(time)
+  parts = time.split(":")
+  parts.size == 3 ? parts[0].to_i * 3600 + parts[1].to_i * 60 + parts[2].to_f : parts[0].to_i * 60 + parts[1].to_f
+end
+
+title = text.lines.first.strip
+category = nil
+csv = CSV.new($stdout)
+csv << %w[category place bib laps time] + (1..8).map { "lap#{it}" }
+text.each_line do |line|
+  line = line.strip
+  next if line.empty? || line == title || line.start_with?("Results", "Pl. Bib") || line.match?(/\A\d+\z/)
+  if (m = line.match(/\A(\d+)\.\s+(\d+)\s+\S*?\s*(\d+:\d\d[:.]\d\d)\s+(\d+)\s+(.*)\z/))
+    place, bib, total, laps, rest = m.captures
+    times = rest.split.grep(/\A\d+:\d\d[:.]\d\d\z/)
+    laps = laps.to_i
+    abort "#{line}: expected #{laps} laps and an average" unless times.size == laps + 1
+    lap_times = times.first(laps)
+    tolerance = total.count(":") == 2 ? 1.01 : 0.05 # h:mm:ss rows are rounded to the second
+    abort "#{line}: laps don't add up" if (lap_times.sum { seconds(it) } - seconds(total)).abs > tolerance
+    csv << [category, place.to_i, bib, laps, total, *lap_times]
+  else
+    category = line
+  end
+end
+warn "#{title}: done"

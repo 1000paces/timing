@@ -127,7 +127,7 @@ module Results
     end
 
     def lapping_suggestions
-      @cohorts.reject(&:finish_open_at).flat_map do |cohort|
+      @cohorts.reject { it.finish_open_at || it.flag_out_at }.flat_map do |cohort|
         racing = cohort.racers.select { it.status == :racing && it.counted.any? }
         leader = racing.min_by { [-it.counted.size, it.counted.last.at_ms, it.counted.last.ref] }
         next [] unless leader

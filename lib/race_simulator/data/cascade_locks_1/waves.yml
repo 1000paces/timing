@@ -1,0 +1,86 @@
+# Cross Crusade Cascade Locks 1 (2026-09-27). results.csv is transcribed from the published
+# results PDF; waves are from crosscrusade.com/race-day-schedule.
+# Each wave's gun is the schedule time. Lap times in results.csv are measured from the moment
+# the wave was ARMED (after everyone rolled over the line), so every first lap is short.
+#   arm_s:    seconds from the gun to arming (estimated from the first lap shortfall).
+#   start_s:  each race's start after the gun. Races that went off later in the wave have a
+#             smaller first-lap shortfall; estimated from that and rounded to 30 s. Correct freely.
+#   flag_out_s: when the finish flag came out, in seconds after arming: everyone but the wave's
+#             leader finished on their next crossing. Fitted to the results (e.g. 11:00: riders crossing
+#             up to 38:38 rode on, from 39:07 they stopped).
+#   finish_with_leader: false for a race that finishes on its own lap count, not the wave's.
+event:
+  name: "Cross Crusade Cascade Locks 1"
+  date: "2026-09-27"
+  location: "Cascade Locks, OR"
+  timezone: "America/Los_Angeles"
+  discipline: "cyclocross"
+waves:
+  - gun: "09:30"
+    minutes: 25
+    arm_s: 15
+    races:
+      - { name: "Unicycles", start_s: 0 }
+      - { name: "Running Race", start_s: 0, finish_with_leader: false }
+  - gun: "10:00"
+    flag_out_s: 2330
+    minutes: 45
+    arm_s: 150
+    races:
+      - { name: "Masters 50+", start_s: 0 }
+      - { name: "Masters 60+", start_s: 30 }
+      - { name: "Clydesdale", start_s: 60 }
+      - { name: "Masters 80+", start_s: 60 }
+      - { name: "Vintage", start_s: 90 }
+      - { name: "Masters 70+", start_s: 120 }
+  - gun: "11:00"
+    flag_out_s: 2330
+    minutes: 45
+    arm_s: 120
+    races:
+      - { name: "Category 3 Masters Open 35+", start_s: 0 }
+      - { name: "Category 4 Masters Open 35+", start_s: 60 }
+      - { name: "Category 4 Open", start_s: 90 }
+      - { name: "Beginner Open", start_s: 120 }
+  - gun: "11:50"
+    flag_out_s: 1860
+    minutes: 45
+    arm_s: 150
+    races:
+      - { name: "Category 3 Masters Women 35+", start_s: 0 }
+      - { name: "Athenas", start_s: 30 }
+      - { name: "Masters Women 50+", start_s: 60 }
+      - { name: "Masters Women 70+", start_s: 90 }
+      - { name: "Masters Women 60+", start_s: 90 }
+      - { name: "Category 4 Women", start_s: 120 }
+      - { name: "Beginner Women", start_s: 120 }
+  - gun: "13:05"
+    flag_out_s: 2370
+    minutes: 45
+    arm_s: 90
+    races:
+      - { name: "Singlespeed Open", start_s: 0 }
+      - { name: "Singlespeed Women", start_s: 30 }
+      - { name: "Tracklocross", start_s: 60 }
+  - gun: "13:55"
+    flag_out_s: 1740
+    minutes: 35
+    arm_s: 180
+    races:
+      - { name: "Junior Open 17-18", start_s: 0 }
+      - { name: "Junior Women 13-14", start_s: 60 }
+      - { name: "Junior Open 13-14", start_s: 90 }
+      - { name: "Junior Open 15-16", start_s: 90 }
+      - { name: "Junior Women 11-12", start_s: 120 }
+      - { name: "Junior Open 9-10", start_s: 120 }
+      - { name: "Junior Open 11-12", start_s: 150 }
+  - gun: "14:45"
+    flag_out_s: 2805
+    minutes: 50
+    arm_s: 120
+    races:
+      - { name: "Category 1/2 Open", start_s: 0 }
+      - { name: "Category 1/2 Masters Open 35+", start_s: 30 }
+      - { name: "Category 1/2 Women", start_s: 60 }
+      - { name: "Category 3 Women", start_s: 60 }
+      - { name: "Category 3 Open", start_s: 90 }

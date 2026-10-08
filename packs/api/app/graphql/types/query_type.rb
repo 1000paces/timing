@@ -11,10 +11,20 @@ module Types
       argument :event_id, ID
     end
 
-    field :rulings, [RulingType], null: false, description: "Newest first" do
+    field :rulings, [RulingType], null: false, description: "History: newest first; search by bib or racer name" do
       argument :event_id, ID
+      argument :search, String, required: false
+      argument :limit, Integer, required: false, default_value: 50
+      argument :offset, Integer, required: false, default_value: 0
     end
 
+    field :current_wave, WaveType, description: "The wave on course whose finish flag isn't out yet (latest started), or null" do
+      argument :event_id, ID
+    end
+    field :racer, RacerDetailType, description: "One racer's race: crossings, lap positions, fixes" do
+      argument :event_id, ID
+      argument :bib, String
+    end
     field :devices, [DeviceType], null: false do
       argument :event_id, ID
     end
@@ -41,12 +51,28 @@ module Types
       StandingsService.report(Event.find(event_id))
     end
 
-    def rulings(event_id:)
+    def rulings(event_id:, search: nil, limit: 50, offset: 0)
       require_official!
-      rulings = Ruling.where(event_id:).order(created_at_ms: :desc, id: :desc).to_a
-      engine_rulings = rulings.map { Results::Ruling.new(id: it.id, kind: it.kind, payload: it.payload, created_at_ms: it.created_at_ms) }
-      context[:cancelled_ruling_ids] = Results::ActiveRulings.new(engine_rulings).cancelled_ids
-      rulings
+      event = Event.find(event_id)
+      history = context[:ruling_history] = RulingHistory.new(event)
+      rulings = history.rulings
+      if (needle = search.to_s.strip.downcase).present?
+        names = event.registrations.includes(:racer).to_h { [it.bib, it.racer.full_name.downcase] }
+        rulings = rulings.select do |r|
+          history.describer.bibs_for(r).any? { it.downcase == needle || names[it]&.include?(needle) }
+        end
+      end
+      rulings.drop(offset.clamp(0, nil)).first(limit.clamp(1, 500))
+    end
+
+    def current_wave(event_id:)
+      require_official!
+      CurrentWave.for(Event.find(event_id))
+    end
+
+    def racer(event_id:, bib:)
+      require_official!
+      RacerDetail.for(Event.find(event_id), bib.to_s.strip)
     end
 
     def devices(event_id:)
