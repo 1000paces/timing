@@ -67,7 +67,7 @@ module Results
 
     def call
       dismissed = @resolved.rulings.of("dismiss_suggestion").map { it.payload["suggestion_key"] }.to_set
-      (lap_suggestions + lapping_suggestions + clock_suggestions + unassigned_suggestions)
+      (lap_suggestions + lapping_suggestions + overdue_suggestions + clock_suggestions + unassigned_suggestions)
         .reject { dismissed.include?(it.key) }
         .sort_by(&:key)
     end
@@ -133,6 +133,27 @@ module Results
         next [] unless leader
         lead_ref = lap_ref(leader)
         racing.reject { it.equal?(leader) }.filter_map { lapping(leader, lead_ref, it) }
+      end
+    end
+
+    # Once a cohort's finish is open (flag out or lap count reached), a rider
+    # still racing who hasn't crossed for 1.5x their usual lap has most likely
+    # stopped: suggest DNF.
+    def overdue_suggestions
+      @cohorts.flat_map do |cohort|
+        open_at = [ cohort.flag_out_at, cohort.finish_open_at ].compact.min
+        next [] unless open_at && @input.now_ms > open_at
+        cohort.racers.filter_map do |racer|
+          next unless racer.status == :racing && racer.counted.any?
+          last = racer.counted.last
+          due = last.at_ms + (lap_ref(racer) * 1.5).round
+          next unless @input.now_ms > due
+          bib = racer.entrant.bib
+          Suggestion.new(key: "overdue:#{bib}:#{last.ref}", kind: :overdue, bib:, race_id: racer.entrant.race_id,
+                         message: "Bib #{bib} hasn't crossed since lap #{racer.counted.size} " \
+                                  "(#{fmt(@input.now_ms - last.at_ms)} ago, usual lap #{fmt(lap_ref(racer))}) — stopped? Mark DNF",
+                         fix: { "kind" => "dnf", "bib" => bib })
+        end
       end
     end
 
