@@ -54,7 +54,14 @@ bin/rails hub:standings EVENT=<id> WATCH=1
 bin/replay-race                           # Cross Crusade Cascade Locks 1: 34 races, 219 racers, real bibs
 bin/replay-race --speed 60                # the whole day in about 6 minutes, to watch it live
 bin/replay-race --check <event id>        # compare the hub's results with the published ones
+bin/replay-race --dataset cascade_locks_2 # the second race (191 racers)
 ```
+
+To add a race: `script/results-pdf-to-csv results.pdf > lib/race_simulator/data/<name>/results.csv`
+(RaceResult-style PDFs; it undoes the shifted-glyph encoding some of them have), write
+`waves.yml` with the event details and the schedule's waves (gun, minutes, race names),
+then `bin/replay-race --dataset <name> --fit` prints it back with each wave's arming delay,
+start offsets and flag time estimated from the results.
 
 The data is in `lib/race_simulator/data/cascade_locks_1/`: `results.csv` (from the
 published results PDF) and `waves.yml` (the schedule's waves, each race's start offset
@@ -62,7 +69,8 @@ the delay before the timing system was armed — estimates, edit freely — and 
 wave's finish flag came out, fitted to the results). Each wave's lap count is its
 leader's. The check should report 3 riders who rode on after the flag (#386, and juniors
 #70 and #324; #386's lost lap moves eight riders up a place) and 7 riders who quit early,
-whom a chief marks DNF.
+whom a chief marks DNF. Race 2 leaves 3 riders (#330, and #46 and #472 with impossibly
+short last laps after the flag) and 6 who quit early.
 
 ## API
 

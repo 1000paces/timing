@@ -29,8 +29,8 @@ module RaceSimulator
         dir = Pathname(__dir__).join("../data", name)
         yaml = YAML.safe_load_file(dir.join("waves.yml"))
         waves = yaml.fetch("waves").map do |w|
-          Wave.new(gun: w.fetch("gun"), minutes: w.fetch("minutes"), arm_s: w.fetch("arm_s"), flag_out_s: w["flag_out_s"],
-                   races: w.fetch("races").map { RaceStart.new(name: it.fetch("name"), start_s: it.fetch("start_s"), finish_with_leader: it.fetch("finish_with_leader", true)) })
+          Wave.new(gun: w.fetch("gun"), minutes: w.fetch("minutes"), arm_s: w.fetch("arm_s", 0), flag_out_s: w["flag_out_s"],
+                   races: w.fetch("races").map { RaceStart.new(name: it.fetch("name"), start_s: it.fetch("start_s", 0), finish_with_leader: it.fetch("finish_with_leader", true)) })
         end
         results = CSV.read(dir.join("results.csv"), headers: true).map do |row|
           laps = Integer(row["laps"])

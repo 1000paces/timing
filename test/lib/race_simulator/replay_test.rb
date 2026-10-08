@@ -42,6 +42,30 @@ class RaceSimulator::ReplayTest < ActiveSupport::TestCase
     assert_equal check.stopped_early.size, check.stopped_early.map(&:bib).uniq.size
   end
 
+  test "a second real race replays with the same rules and the fitted waves" do
+    dataset = RaceSimulator::Replay::Dataset.load("cascade_locks_2")
+    event = RaceSimulator::Replay.setup!(dataset)
+    RaceSimulator::Replay.run(event:, dataset:, speed: 0, out: StringIO.new)
+    check = RaceSimulator::Replay::Check.new(event:, dataset:)
+    assert_equal 34, check.races_checked
+    assert_equal [
+      "Masters 50+ #330: laps ours 5, theirs 6",          # rode on 4 s after #402 stopped: one of them is off the flag
+      "Masters 60+ #46: laps ours 4, theirs 5",           # a 6:06 last lap after ~10:00 laps, after the flag (as at race 1)
+      "Masters 60+ #46: place ours 11, theirs 10",
+      "Masters 60+ #487: place ours 10, theirs 11",
+      "Masters Women 70+ #472: laps ours 3, theirs 4"     # a 4:50 last lap after ~14:00 laps, after the flag
+    ], check.mismatches.map(&:to_s).sort
+    assert_equal %w[273 316 400 513 536 69], check.stopped_early.map(&:bib).sort
+  end
+
+  test "the fitter recovers race 1's arming delays and flag times from its results" do
+    fitted = RaceSimulator::Replay::Fit.new(DATASET).waves
+    assert_equal DATASET.waves.map(&:arm_s), fitted.map(&:arm_s)
+    DATASET.waves.zip(fitted).select { it.first.flag_out_s && it.first.gun != "13:55" }.each do |mine, fit|
+      assert_in_delta mine.flag_out_s, fit.flag_out_s, 5, "#{mine.gun} wave" # juniors: the data allows 27:56 to 29:03
+    end
+  end
+
   # What the real event did that the hub's rules don't: everything else
   # (places, laps, every lap time) matches the published results.
   KNOWN_MISMATCHES = [

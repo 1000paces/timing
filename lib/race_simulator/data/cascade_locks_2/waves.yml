@@ -1,0 +1,76 @@
+# Cross Crusade Cascade Locks 2. results.csv from the published results PDF
+# (script/results-pdf-to-csv); waves from crosscrusade.com/race-day-schedule.
+# arm_s, start_s and flag_out_s were estimated by `bin/replay-race --dataset
+# cascade_locks_2 --fit` (see Replay::Fit and cascade_locks_1/waves.yml for what they mean).
+event:
+  name: "Cross Crusade Cascade Locks 2"
+  date: "2026-09-27"
+  location: "Cascade Locks, OR"
+  timezone: "America/Los_Angeles"
+  discipline: "cyclocross"
+waves:
+  - gun: "09:30"
+    minutes: 25
+    arm_s: 0
+    races:
+      - { name: "Unicycles", start_s: 0 }
+      - { name: "Running Race", start_s: 0, finish_with_leader: false }
+  - gun: "10:00"
+    minutes: 45
+    arm_s: 75
+    flag_out_s: 2316
+    races:
+      - { name: "Masters 50+", start_s: 0 }
+      - { name: "Masters 80+", start_s: 30 }
+      - { name: "Clydesdale", start_s: 60 }
+      - { name: "Masters 60+", start_s: 60 }
+      - { name: "Masters 70+", start_s: 60 }
+      - { name: "Vintage", start_s: 75 }
+  - gun: "11:00"
+    minutes: 45
+    arm_s: 90
+    races:
+      - { name: "Category 3 Masters Open 35+", start_s: 0 }
+      - { name: "Category 4 Open", start_s: 30 }
+      - { name: "Beginner Open", start_s: 30 }
+      - { name: "Category 4 Masters Open 35+", start_s: 90 }
+  - gun: "11:50"
+    minutes: 45
+    arm_s: 165
+    flag_out_s: 2260
+    races:
+      - { name: "Masters Women 60+", start_s: 0 }
+      - { name: "Category 3 Masters Women 35+", start_s: 0 }
+      - { name: "Masters Women 70+", start_s: 0 }
+      - { name: "Athenas", start_s: 30 }
+      - { name: "Masters Women 50+", start_s: 60 }
+      - { name: "Category 4 Women", start_s: 120 }
+      - { name: "Beginner Women", start_s: 120 }
+  - gun: "13:05"
+    minutes: 45
+    arm_s: 75
+    races:
+      - { name: "Singlespeed Open", start_s: 0 }
+      - { name: "Singlespeed Women", start_s: 30 }
+      - { name: "Tracklocross", start_s: 60 }
+  - gun: "13:55"
+    minutes: 35
+    arm_s: 105
+    flag_out_s: 1715
+    races:
+      - { name: "Junior Women 13-14", start_s: 0 }
+      - { name: "Junior Women 11-12", start_s: 0 }
+      - { name: "Junior Open 9-10", start_s: 30 }
+      - { name: "Junior Open 11-12", start_s: 60 }
+      - { name: "Junior Open 13-14", start_s: 60 }
+      - { name: "Junior Open 15-16", start_s: 60 }
+  - gun: "14:45"
+    minutes: 50
+    arm_s: 105
+    races:
+      - { name: "Category 1/2 Open", start_s: 0 }
+      - { name: "Category 1/2 Masters Open 35+", start_s: 30 }
+      - { name: "Category 1/2 Masters Women 35+", start_s: 60 }
+      - { name: "Category 1/2 Women", start_s: 60 }
+      - { name: "Category 3 Women", start_s: 60 }
+      - { name: "Category 3 Open", start_s: 90 }
