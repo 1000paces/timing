@@ -123,8 +123,12 @@ export const UPDATE_RACE = gql`
 export const DELETE_RACE = gql`
   mutation DeleteRace($id: ID!) { deleteRace(id: $id) { errors } }
 `;
+export type CurrentWave = { scheduledAtMs: number | null; startAtMs: number; races: { id: string; name: string }[] };
+export const CURRENT_WAVE = gql`
+  query CurrentWave($eventId: ID!) { currentWave(eventId: $eventId) { scheduledAtMs startAtMs races { id name } } }
+`;
 export const FLAG_OUT = gql`
-  mutation FlagOut($raceId: ID!, $atMs: Millis) { flagOut(raceId: $raceId, atMs: $atMs) { errors } }
+  mutation FlagOut($raceId: ID!, $atMs: Millis) { flagOut(raceId: $raceId, atMs: $atMs) { ruling { id payload } errors } }
 `;
 export const SET_RACE_START = gql`
   mutation SetRaceStart($raceId: ID!, $atMs: Millis) { setRaceStart(raceId: $raceId, atMs: $atMs) { errors } }

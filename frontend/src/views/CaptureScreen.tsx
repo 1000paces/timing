@@ -26,6 +26,7 @@ import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
 import { initialSearch, showSearch } from "../rememberedSearch";
 import { useEventChanges } from "../useEventChanges";
+import { CaptureFlagOut } from "./CaptureFlagOut";
 import { EventNav } from "./EventNav";
 import { PhonesPanel } from "./PhonesPanel";
 
@@ -121,13 +122,14 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
         />
       </form>
       {error && <Alert severity="error" sx={{ mt: 2 }} onClose={() => setError(null)}>{error}</Alert>}
-      <Stack direction="row" spacing={2} sx={{ mt: 2, alignItems: "center" }}>
+      <Stack direction="row" spacing={2} useFlexGap sx={{ mt: 2, alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
         <TextField select size="small" label="Device" value={device} onChange={(e) => setDevice(e.target.value)} sx={{ minWidth: 200 }}
           slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}>
           <option value="all">All devices</option>
           <option value="mine">Mine (this console)</option>
           {deviceNames.map((n) => <option key={n} value={n}>{n}</option>)}
         </TextField>
+        <CaptureFlagOut eventId={eventId} chief={chief} />
       </Stack>
       {onlyBib && <Chip label={`Bib ${onlyBib}`} color="primary" size="small" onDelete={() => setOnlyBib(null)} sx={{ mt: 2 }} />}
       <Paper sx={{ mt: 2 }}>

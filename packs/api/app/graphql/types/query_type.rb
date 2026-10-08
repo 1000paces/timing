@@ -18,6 +18,9 @@ module Types
       argument :offset, Integer, required: false, default_value: 0
     end
 
+    field :current_wave, WaveType, description: "The wave on course whose finish flag isn't out yet (latest started), or null" do
+      argument :event_id, ID
+    end
     field :racer, RacerDetailType, description: "One racer's race: crossings, lap positions, fixes" do
       argument :event_id, ID
       argument :bib, String
@@ -60,6 +63,11 @@ module Types
         end
       end
       rulings.drop(offset.clamp(0, nil)).first(limit.clamp(1, 500))
+    end
+
+    def current_wave(event_id:)
+      require_official!
+      CurrentWave.for(Event.find(event_id))
     end
 
     def racer(event_id:, bib:)

@@ -95,3 +95,41 @@ test("a timer records crossings by bib, or with no bib for review", async ({ pag
   await expect(corrected).toContainText("Masters 35+ Men");
   await expect(page.getByLabel("Bib for crossing")).toHaveCount(0);
 });
+
+test("flag out from the line: the hub picks the wave on course; a chief can undo it", async ({ page }) => {
+  await page.goto("/console/");
+  await page.getByLabel("Name").fill("E2E Chief");
+  await page.getByLabel("PIN").fill("2468");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("link", { name: /E2E Capture/ }).click();
+  await page.getByRole("tab", { name: "Capture" }).click();
+
+  // Masters 35+ Men is the only race on course (seed), so its wave is the one flagged.
+  await page.getByRole("button", { name: "Flag out", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Masters 35+ Men");
+  await dialog.getByRole("button", { name: "Flag out" }).click();
+  const banner = page.getByTestId("flag-out-banner");
+  await expect(banner).toContainText(/Flag out at \d\d:\d\d:\d\d: .* wave/);
+  // A mistaken flag is undone right from the banner (chiefs), then put out again.
+  await banner.getByRole("button", { name: "Undo" }).click();
+  await expect(banner).toHaveCount(0);
+  await page.getByRole("button", { name: "Flag out", exact: true }).click();
+  await dialog.getByRole("button", { name: "Flag out" }).click();
+  await expect(banner).toContainText("Flag out at");
+
+  await page.getByRole("tab", { name: "Results" }).click();
+  await expect(page.getByRole("region", { name: "Masters 35+ Men" }).getByTestId("flag-out")).toBeVisible();
+  await page.getByRole("tab", { name: "Capture" }).click();
+
+  // Nothing else is on course, so a second press says so (the banner kept the undo).
+  await page.getByRole("button", { name: "Flag out", exact: true }).click();
+  await expect(banner).toContainText("No wave on course to flag");
+  await page.getByRole("tab", { name: "Results" }).click();
+  await page.getByRole("tab", { name: "Problems" }).click();
+  await page.getByRole("button", { name: "History" }).click();
+  const flag = page.getByTestId("history-entry").filter({ hasText: /^.*Flag out for/ }).filter({ hasNotText: "Undo:" }).first(); // newest first
+  await flag.getByRole("button", { name: "Undo" }).click();
+  await page.getByRole("dialog", { name: /Undo/ }).getByRole("button", { name: "Undo" }).click();
+  await expect(flag).toContainText("undone by E2E Chief");
+});

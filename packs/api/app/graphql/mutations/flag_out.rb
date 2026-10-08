@@ -6,9 +6,9 @@ module Mutations
     argument :at_ms, Types::Millis, required: false
 
     def resolve(race_id:, at_ms: nil)
-      require_official!("chief")
       race = Race.find(race_id)
-      record(event: race.event, kind: "flag_out", payload: { race_id: race.id, at_ms: at_ms || Clock.now_ms })
+      # Timers too: it records what happened at the line (undoing it stays with chiefs).
+      record(event: race.event, kind: "flag_out", payload: { race_id: race.id, at_ms: at_ms || Clock.now_ms }, role: "timer")
     end
   end
 end

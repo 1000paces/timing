@@ -39,10 +39,27 @@ class RulingMutationsTest < ActionDispatch::IntegrationTest
     assert_operator mutate("flagOut", "$id: ID!", "raceId: $id", id: @race.id).dig("ruling", "payload", "at_ms"), :>=, 7_000
   end
 
-  test "a timer can't put the flag out" do
+  CURRENT_WAVE = "query($id: ID!) { currentWave(eventId: $id) { scheduledAtMs startAtMs races { name } } }"
+
+  test "the current wave is the latest started one whose flag isn't out; timers can see it and put the flag out" do
+    @race.update!(scheduled_at_ms: 1_000)
+    partner = create_race(event: @event, category: "Cat 4", scheduled_at_ms: 1_000)
+    later = create_race(event: @event, category: "Juniors", scheduled_at_ms: 2_000)
+    create_race(event: @event, category: "Elite", scheduled_at_ms: 3_000) # never started
+    current = -> { gql(CURRENT_WAVE, id: @event.id).dig("data", "currentWave") }
+    assert_nil current.(), "nothing on course"
+
+    [[@race, 1_000], [partner, 1_030], [later, 2_000]].each { |race, at| mutate("setRaceStart", "$id: ID!", "raceId: $id, atMs: #{at}", id: race.id) }
     sign_in(create_official(role: "timer", pin: "1357"), "1357")
-    body = gql("mutation($id: ID!) { flagOut(raceId: $id) { errors } }", id: @race.id)
-    assert_equal "Requires the chief role", body["errors"].first["message"]
+    assert_equal({ "scheduledAtMs" => 2_000, "startAtMs" => 2_000, "races" => [{ "name" => later.name }] }, current.())
+
+    assert_empty mutate("flagOut", "$id: ID!", "raceId: $id", id: later.id)["errors"]
+    wave = current.()
+    assert_equal [1_000, 1_000], wave.values_at("scheduledAtMs", "startAtMs")
+    assert_equal [@race.name, partner.name].sort, wave["races"].map { it["name"] }.sort
+
+    mutate("flagOut", "$id: ID!", "raceId: $id", id: partner.id)
+    assert_nil current.(), "every started wave has its flag"
   end
 
   # Review Focus 5
