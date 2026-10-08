@@ -158,4 +158,17 @@ test("chief starts races in waves, unstarts a mistake, runs the race and clears 
   await page.getByRole("menuitem", { name: "Clear DSQ" }).click();
   await expect(statuses.filter({ hasText: "DSQ" })).toHaveCount(0);
   await expect(statuses.filter({ hasNotText: "Finished" })).toHaveCount(0);
+
+  // Wave view: the three races share a scheduled start, so one table, everyone in order on the road.
+  await panel.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Wave", exact: true }).click();
+  const wave = page.getByRole("region", { name: /^Wave / });
+  await expect(wave).toHaveCount(1);
+  await expect(wave.getByTestId("racer-status")).toHaveCount(12);
+  await expect(wave.getByRole("row").nth(1).getByRole("cell").first()).toHaveText("1");
+  await expect(wave).toContainText("Masters 50+ Men");
+  await page.reload();
+  await expect(wave.getByTestId("racer-status")).toHaveCount(12);
+  await page.getByRole("button", { name: "Category", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Masters 35+ Men" })).toBeVisible();
 });
