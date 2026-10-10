@@ -3,7 +3,7 @@
 module CurrentWave
   module_function
 
-  # { scheduled_at_ms:, start_at_ms:, races: [Race] } or nil.
+  # { scheduled_at_ms:, start_at_ms:, races: [Race], as_of_ms: } or nil.
   def for(event)
     results = StandingsService.report(event).output.races.index_by(&:race_id)
     waves = event.races.group_by { it.cohort.map(&:id).sort }.values.filter_map do |races|
@@ -11,6 +11,6 @@ module CurrentWave
       next if started.empty? || races.any? { results[it.id]&.flag_out_at_ms }
       { scheduled_at_ms: races.first.scheduled_at_ms, start_at_ms: started.min, races: races.sort_by(&:name) }
     end
-    waves.max_by { it[:start_at_ms] }
+    waves.max_by { it[:start_at_ms] }&.merge(as_of_ms: Clock.now_ms)
   end
 end

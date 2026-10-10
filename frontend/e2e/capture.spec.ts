@@ -108,9 +108,13 @@ test("flag out from the line: the hub picks the wave on course; a chief can undo
   await page.getByRole("button", { name: "Flag out", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Masters 35+ Men");
+  // Stamped when Flag out was first pressed, not when it's confirmed.
+  const pressed = (await dialog.textContent())?.match(/Recorded at (\d\d:\d\d:\d\d)/)?.[1];
+  expect(pressed).toBeTruthy();
+  await page.waitForTimeout(1500);
   await dialog.getByRole("button", { name: "Flag out" }).click();
   const banner = page.getByTestId("flag-out-banner");
-  await expect(banner).toContainText(/Flag out at \d\d:\d\d:\d\d: .* wave/);
+  await expect(banner).toContainText(`Flag out at ${pressed}: `);
   // A mistaken flag is undone right from the banner (chiefs), then put out again.
   await banner.getByRole("button", { name: "Undo" }).click();
   await expect(banner).toHaveCount(0);

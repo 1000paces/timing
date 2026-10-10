@@ -101,15 +101,13 @@ Items deliberately deferred. Each has enough context to pick up cold.
 ## Carry into upcoming plans
 
 ### Concerns from the flag-out / replay review (2026-10-07)
-Doing now:
-1. **Flag-out leader exemption is fragile.** The exempt rider can be a DNF/DSQ rider, a
-   phantom lap from a stray tap, or the wrong one of two riders tapped in swapped order;
-   nothing shows who was exempt. Skip DNF/DSQ/DNS riders; show the exempt rider on the wave.
-2. **Riders who quit stay "Racing" with no prompt.** Add an "overdue — mark DNF?" problem
-   once the flag is out (about-to-be-lapped switches off then).
-3. **Capture flag time is late by the confirm dialog.** Stamp it at the first tap.
+Done (2026-10-07, branch flag-out-hardening): the leader exemption skips DNF/DNS/DSQ and
+pulled riders and is shown on the flag chip; an "Overdue — mark DNF?" problem once the
+finish is open; the Capture flag is stamped when Flag out was first pressed.
 
 Later:
+- The lap count's finish can still be opened by a DNF/DSQ rider's crossing (only the
+  flag-out leader skips riders out of the race).
 - "Current wave" can pick wrong: overlapping waves (newer wins), races that finish on their
   own count as waves of one, and it groups by scheduled time while the engine also splits
   off races that started after the finish opened.

@@ -45,7 +45,7 @@ module Results
         end
         rows = Standings.rows(racers.select { it.entrant.race_id == race.id })
         RaceResult.new(race_id: race.id, state:, lap_count:, publication: :provisional, rows:, digest: digest(lap_count, rows),
-                       start_at_ms: starts[race.id], flag_out_at_ms: flag_out_at)
+                       start_at_ms: starts[race.id], flag_out_at_ms: flag_out_at, flag_out_leader: leader)
       end
       Scored.new(races:, lap_count:, finish_open_at:, flag_out_at:, racers:, race_results:)
     end
@@ -73,10 +73,14 @@ module Results
       @rulings.of("flag_out").select { ids.include?(it.payload["race_id"]) }.last&.payload&.fetch("at_ms")
     end
 
-    # Bib with the most laps before the flag, the first to have crossed on that lap.
+    # Bib with the most laps before the flag, the first to have crossed on that
+    # lap — among riders still in the race (not DNF/DNS/DSQ, not pulled by then).
     def leader_at(crossings, at_ms)
-      crossings.filter_map { |bib, list| (before = list.select { it.at_ms < at_ms }).any? && [ bib, before ] }
-               .min_by { |_, before| [ -before.size, before.last.at_ms, before.last.ref ] }&.first
+      crossings.filter_map do |bib, list|
+        next if @statuses.key?(bib) || ((pull = @pulls[bib]) && pull.payload["at_ms"] <= at_ms)
+        before = list.select { it.at_ms < at_ms }
+        [ bib, before ] if before.any?
+      end.min_by { |_, before| [ -before.size, before.last.at_ms, before.last.ref ] }&.first
     end
 
     # Each race starts at its own latest set_race_start (waves are started by hand).

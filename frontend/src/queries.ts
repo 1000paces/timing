@@ -123,9 +123,9 @@ export const UPDATE_RACE = gql`
 export const DELETE_RACE = gql`
   mutation DeleteRace($id: ID!) { deleteRace(id: $id) { errors } }
 `;
-export type CurrentWave = { scheduledAtMs: number | null; startAtMs: number; races: { id: string; name: string }[] };
+export type CurrentWave = { scheduledAtMs: number | null; startAtMs: number; asOfMs: number; races: { id: string; name: string }[] };
 export const CURRENT_WAVE = gql`
-  query CurrentWave($eventId: ID!) { currentWave(eventId: $eventId) { scheduledAtMs startAtMs races { id name } } }
+  query CurrentWave($eventId: ID!) { currentWave(eventId: $eventId) { scheduledAtMs startAtMs asOfMs races { id name } } }
 `;
 export const FLAG_OUT = gql`
   mutation FlagOut($raceId: ID!, $atMs: Millis) { flagOut(raceId: $raceId, atMs: $atMs) { ruling { id payload } errors } }
@@ -150,6 +150,7 @@ export type RaceStandings = {
   lapCount: number | null;
   startAtMs: number | null;
   flagOutAtMs: number | null;
+  flagOutLeaderBib: string | null;
   rows: Row[];
 };
 export type Suggestion = { key: string; kind: string; bib: string | null; raceId: string | null; message: string; needs: string[] };
@@ -169,6 +170,7 @@ export const STANDINGS = gql`
         lapCount
         startAtMs
         flagOutAtMs
+        flagOutLeaderBib
         rows { place bib name status laps elapsedMs gapLapsDown gapMs }
       }
       suggestions { key kind bib raceId message needs }

@@ -9,11 +9,12 @@ import { formatClock } from "../format";
 import { FLAG_OUT, type MutationResult } from "../queries";
 import { TimeDialog } from "./TimeDialog";
 
-type Props = { raceId: string; flagOutAtMs: number | null; canAct: boolean; onChanged: () => void };
+// leaderBib: the wave's leader when the flag came out, who rides on to the lap count.
+type Props = { raceId: string; flagOutAtMs: number | null; leaderBib: string | null; canAct: boolean; onChanged: () => void };
 
 // The finish flag for a race's wave: chiefs press it as the flag comes out (or
 // give the time afterwards). Undo is in History.
-export function FlagOut({ raceId, flagOutAtMs, canAct, onChanged }: Props) {
+export function FlagOut({ raceId, flagOutAtMs, leaderBib, canAct, onChanged }: Props) {
   const [flagOut] = useMutation<{ flagOut: MutationResult }>(FLAG_OUT);
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function FlagOut({ raceId, flagOutAtMs, canAct, onChanged }: Props) {
   }
 
   if (flagOutAtMs != null) {
-    return <Chip data-testid="flag-out" icon={<SportsScoreIcon />} color="warning" size="small" label={`Flag out at ${formatClock(flagOutAtMs)}`} />;
+    return <Chip data-testid="flag-out" icon={<SportsScoreIcon />} color="warning" size="small" label={`Flag out at ${formatClock(flagOutAtMs)}${leaderBib ? ` · leader ${leaderBib} rides on` : ""}`} />;
   }
   if (!canAct) return null;
   return (
