@@ -7,6 +7,7 @@ module Types
     field :last_seen_at_ms, Millis, description: "When it last reached the hub (any sync request, or its latest entry)"
     field :last_sync_at_ms, Millis, description: "When its log was last pushed successfully"
     field :sync_stopped_at_ms, Millis, description: "Set when a push didn't continue its chain; cleared by re-pairing"
+    field :checkpoint_id, ID, description: "Where it is on the course; null is the finish"
     field :entry_count, Integer, null: false
     field :clock_offset_ms, Millis, description: "The clock offset it reported, else the one on its latest capture"
 
