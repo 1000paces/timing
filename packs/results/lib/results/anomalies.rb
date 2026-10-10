@@ -58,11 +58,12 @@ module Results
       end
     end
 
-    def initialize(input, resolved, scored_cohorts)
+    def initialize(input, resolved, scored_cohorts, courses = [])
       @input = input
       @config = input.config
       @resolved = resolved
       @cohorts = scored_cohorts
+      @courses = courses
     end
 
     def call

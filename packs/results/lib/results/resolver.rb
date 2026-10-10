@@ -25,7 +25,7 @@ module Results
         at = c.captured_at_ms + (c.clock_offset_ms || 0)
         bib = (overrides[c.id]&.payload&.fetch("bib") || device_bibs[c.id] || c.bib)&.to_s
         if bib && registered.include?(bib)
-          crossings << Crossing.new(bib:, at_ms: at, ref: c.id, inserted: false)
+          crossings << Crossing.new(bib:, at_ms: at, ref: c.id, inserted: false, checkpoint_id: c.checkpoint_id)
         else
           unassigned << UnassignedCrossing.new(capture_id: c.id, at_ms: at, bib:)
         end
@@ -33,7 +33,7 @@ module Results
 
       rulings.of("insert_capture").each do |r|
         bib = r.payload["bib"].to_s
-        crossings << Crossing.new(bib:, at_ms: r.payload["at_ms"], ref: r.id, inserted: true) if registered.include?(bib)
+        crossings << Crossing.new(bib:, at_ms: r.payload["at_ms"], ref: r.id, inserted: true, checkpoint_id: r.payload["checkpoint_id"]) if registered.include?(bib)
       end
 
       by_bib, aliases, dropped = debounce(crossings)
@@ -43,13 +43,13 @@ module Results
 
     private
 
-    # Collapses taps for the same bib that fall within the debounce window of the
-    # last kept crossing, keeping the earliest. Returns
-    # [by_bib, dropped_ref => kept_ref, bib => dropped crossings].
+    # Collapses taps for the same bib at the same checkpoint that fall within the
+    # debounce window of the last kept one, keeping the earliest. Returns
+    # [by_bib (time order, every checkpoint), dropped_ref => kept_ref, bib => dropped crossings].
     def debounce(crossings)
       aliases = {}
       dropped = Hash.new { |h, k| h[k] = [] }
-      by_bib = crossings.group_by(&:bib).transform_values do |list|
+      kept_by_key = crossings.group_by { [ it.bib, it.checkpoint_id ] }.transform_values do |list|
         list.sort_by { [ it.at_ms, it.ref ] }.each_with_object([]) do |c, kept|
           if kept.any? && c.at_ms - kept.last.at_ms < @input.config.debounce_ms
             aliases[c.ref] = kept.last.ref
@@ -59,6 +59,8 @@ module Results
           end
         end
       end
+      by_bib = kept_by_key.group_by { |(bib, _), _| bib }
+                          .transform_values { |pairs| pairs.flat_map(&:last).sort_by { [ it.at_ms, it.ref ] } }
       [ by_bib, aliases, dropped.to_h ]
     end
   end

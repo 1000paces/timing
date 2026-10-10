@@ -21,7 +21,9 @@ module Results
         times.each_with_index do |t, i|
           id = "c-#{bib}-#{i + 1}"
           devices[id] = "d1"
-          captures << Capture.new(id:, device_id: "d1", device_seq: next_seq.("d1"), captured_at_ms: ms.(t), clock_offset_ms: 0, bib: bib.to_s)
+          at, checkpoint = t.is_a?(Hash) ? [ t["at"], t["cp"] ] : [ t, nil ]
+          captures << Capture.new(id:, device_id: "d1", device_seq: next_seq.("d1"), captured_at_ms: ms.(at), clock_offset_ms: 0,
+                                  bib: bib.to_s, checkpoint_id: checkpoint)
         end
       end
       (data["captures"] || []).each do |c|
@@ -49,6 +51,7 @@ module Results
           case k
           when "at" then [ "at_ms", ms.(v) ]
           when "bib" then [ "bib", v&.to_s ]
+          when "cp" then [ "checkpoint_id", v ]
           else [ k, v ]
           end
         end
@@ -58,12 +61,21 @@ module Results
       input = Input.new(
         races: races.map do
           RaceDef.new(id: it["id"], scheduled_at_ms: ms.(it.fetch("scheduled", 0)), finish_with_leader: it.fetch("fwl", true),
-                      expected_laps: it["laps"])
+                      expected_laps: it["laps"], course: course(it, ms))
         end,
         entrants: data.fetch("entrants").map { Entrant.new(bib: it["bib"].to_s, race_id: it["race"], name: it.fetch("name", "Racer #{it['bib']}")) },
         captures:, bib_assignments: assignments, rulings:, now_ms: ms.(data.fetch("now", 0))
       )
       [ input, data["expect"] || {} ]
+    end
+
+    # A race's course: its checkpoints in order, then the finish (id nil).
+    def course(race, ms)
+      return nil unless race.key?("course")
+      points = race["course"].each_with_index.map do |c, i|
+        Checkpoint.new(id: c.fetch("id"), name: c.fetch("name", c["id"]), position: i + 1, distance_km: c["km"], cutoff_at_ms: ms.(c["cutoff"]))
+      end
+      points + [ Checkpoint.new(id: nil, name: "Finish", position: points.size + 1, distance_km: race["finish_km"], cutoff_at_ms: ms.(race["finish_cutoff"])) ]
     end
   end
 end
