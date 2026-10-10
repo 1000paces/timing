@@ -1,3 +1,5 @@
+import type { CheckpointInfo, RaceStandings } from "./queries";
+
 // Cutoffs are stored as clock times; officials may type either a clock time
 // ("2:30 pm", "14:30") or an elapsed time from the start ("+6:30", "6:30 elapsed").
 
@@ -41,4 +43,45 @@ function zonedMs(date: string, hour: number, minute: number, timeZone: string): 
 
 export function formatCutoff(atMs: number, timeZone: string): string {
   return new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(atMs).replace(/\s?([AP])M$/, (_, x) => ` ${x.toLowerCase()}m`);
+}
+
+export type Board = {
+  points: { id: string | null; name: string; passed: number; toCome: number; cutoffAtMs: number | null }[];
+  out: { bib: string; name: string; lastName: string; lastAtMs: number | null; nextName: string; etaMs: number | null; late: boolean }[];
+};
+
+// The lower median: with an even count, the faster of the middle two.
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  return s.length ? s[Math.floor((s.length - 1) / 2)] : null;
+};
+
+// Where everyone is on a course race: per point, how many have passed and are
+// still to come; then each rider still out, furthest first, with an ETA at
+// their next point from the field's median time on that segment.
+export function courseBoard(race: RaceStandings, checkpoints: CheckpointInfo[], nowMs: number, finishCutoffAtMs: number | null = null): Board {
+  const names = [...checkpoints.map((c) => c.name), "Finish"];
+  const ids = [...checkpoints.map((c) => c.id), null];
+  const cutoffs = [...checkpoints.map((c) => c.cutoffAtMs), finishCutoffAtMs];
+  const racing = race.rows.filter((r) => r.status === "RACING");
+  const points = ids.map((id, i) => {
+    const passed = race.rows.filter((r) => r.splits[i]?.atMs != null).length;
+    return { id, name: names[i], passed, toCome: racing.filter((r) => r.splits[i]?.atMs == null).length, cutoffAtMs: cutoffs[i] };
+  });
+  const segment = (i: number) =>
+    median(race.rows.flatMap((r) => {
+      const to = r.splits[i]?.atMs;
+      const from = i === 0 ? race.startAtMs : r.splits[i - 1]?.atMs;
+      return to != null && from != null ? [to - from] : [];
+    }));
+  const out = racing.map((r) => {
+    const last = r.splits.reduce((acc, s, i) => (s.atMs != null ? i : acc), -1);
+    const lastAtMs = last >= 0 ? r.splits[last].atMs : race.startAtMs;
+    const next = Math.min(last + 1, ids.length - 1);
+    const seg = segment(next);
+    const etaMs = lastAtMs != null && seg != null ? lastAtMs + seg : null;
+    return { bib: r.bib, name: r.name, lastName: last >= 0 ? names[last] : "Start", lastAtMs, nextName: names[next], etaMs, late: etaMs != null && nowMs > etaMs, _last: last };
+  });
+  out.sort((a, b) => b._last - a._last || (a.lastAtMs ?? 0) - (b.lastAtMs ?? 0));
+  return { points, out: out.map(({ _last, ...rest }) => rest) };
 }

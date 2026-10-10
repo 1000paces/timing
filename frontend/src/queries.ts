@@ -141,6 +141,7 @@ export const SET_RACE_START = gql`
   mutation SetRaceStart($raceId: ID!, $atMs: Millis) { setRaceStart(raceId: $raceId, atMs: $atMs) { errors } }
 `;
 
+export type Split = { checkpointId: string | null; atMs: number | null; elapsedMs: number | null; segmentMs: number | null; inserted: boolean };
 export type Row = {
   place: number | null;
   bib: string;
@@ -150,6 +151,7 @@ export type Row = {
   elapsedMs: number | null;
   gapLapsDown: number | null;
   gapMs: number | null;
+  splits: Split[];
 };
 export type RaceStandings = {
   race: { id: string; name: string };
@@ -178,7 +180,7 @@ export const STANDINGS = gql`
         startAtMs
         flagOutAtMs
         flagOutLeaderBib
-        rows { place bib name status laps elapsedMs gapLapsDown gapMs }
+        rows { place bib name status laps elapsedMs gapLapsDown gapMs splits { checkpointId atMs elapsedMs segmentMs inserted } }
       }
       suggestions { key kind bib raceId message needs }
       unassigned { captureId atMs bib }
@@ -359,7 +361,7 @@ export const CREATE_PAIRING_TOKEN = gql`
 export const REVOKE_DEVICE = gql`
   mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
 `;
-export type RacerCrossing = { ref: string; atMs: number; inserted: boolean; kind: string; lap: number | null; lapMs: number | null; source: string };
+export type RacerCrossing = { ref: string; checkpointId: string | null; atMs: number; inserted: boolean; kind: string; lap: number | null; lapMs: number | null; source: string };
 export type RacerFix = { id: string; kind: string; description: string; officialName: string | null; createdAtMs: number; undone: boolean; undoneBy: string | null };
 export type RacerDetail = {
   bib: string;
@@ -375,6 +377,7 @@ export type RacerDetail = {
   pullAtMs: number | null;
   finishRef: string | null;
   lapPositions: number[];
+  splits: Split[];
   crossings: RacerCrossing[];
   rulings: RacerFix[];
 };
@@ -382,7 +385,8 @@ export const RACER = gql`
   query Racer($eventId: ID!, $bib: String!) {
     racer(eventId: $eventId, bib: $bib) {
       bib name race { id name } status place laps elapsedMs gapLapsDown gapMs startAtMs pullAtMs finishRef lapPositions
-      crossings { ref atMs inserted kind lap lapMs source }
+      splits { checkpointId atMs elapsedMs segmentMs inserted }
+      crossings { ref checkpointId atMs inserted kind lap lapMs source }
       rulings { id kind description officialName createdAtMs undone undoneBy }
     }
   }

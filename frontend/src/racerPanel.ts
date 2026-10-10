@@ -5,8 +5,10 @@ export function positionLabel(n: number): string {
   return `${n}${suffix}`;
 }
 
-// Why a crossing didn't count (null for counted ones).
-export function kindLabel(kind: string): string | null {
+// Why a crossing didn't count (null for counted ones). A checkpoint crossing
+// (SPLIT) is labelled with its checkpoint's name.
+export function kindLabel(kind: string, checkpointId: string | null = null, names: Map<string, string> = new Map()): string | null {
+  if (kind === "SPLIT") return (checkpointId && names.get(checkpointId)) || "checkpoint";
   return ({ DUPLICATE: "duplicate", BEFORE_START: "before start", AFTER_FINISH: "after finish", AFTER_PULL: "after pull" } as Record<string, string>)[kind] ?? null;
 }
 

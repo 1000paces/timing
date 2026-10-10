@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCutoff, parseCutoff } from "./course";
+import { courseBoard, formatCutoff, parseCutoff } from "./course";
 
 const zone = "America/Los_Angeles";
 const start = Date.parse("2026-10-17T15:00:00Z"); // 8:00 am Pacific
@@ -44,5 +44,28 @@ describe("parseCutoff range checks", () => {
 describe("formatCutoff", () => {
   it("shows the clock time in the event's zone", () => {
     expect(formatCutoff(Date.parse("2026-10-17T21:30:00Z"), zone)).toBe("2:30 pm");
+  });
+});
+
+const checkpoints = [{ id: "a1", name: "Aid 1", position: 1, distanceKm: 30, cutoffAtMs: null }];
+const split = (checkpointId: string | null, atMs: number | null) => ({ checkpointId, atMs, elapsedMs: null, segmentMs: null, inserted: false });
+const race = {
+  startAtMs: 0,
+  rows: [
+    { bib: "1", name: "Ann", status: "FINISHED", splits: [split("a1", 1_000), split(null, 3_000)] },
+    { bib: "2", name: "Bo", status: "RACING", splits: [split("a1", 1_200), split(null, null)] },
+    { bib: "3", name: "Cy", status: "RACING", splits: [split("a1", null), split(null, null)] },
+  ],
+} as never;
+
+describe("courseBoard", () => {
+  it("counts who has passed each point and lists riders still out, furthest first, with an ETA at their next point", () => {
+    const board = courseBoard(race, checkpoints, 3_000);
+    expect(board.points.map((p) => [p.name, p.passed, p.toCome])).toEqual([["Aid 1", 2, 1], ["Finish", 1, 2]]);
+    expect(board.out.map((r) => [r.bib, r.lastName, r.nextName, r.etaMs])).toEqual([
+      ["2", "Aid 1", "Finish", 1_200 + 2_000],
+      ["3", "Start", "Aid 1", 1_000],
+    ]);
+    expect(board.out.map((r) => r.late)).toEqual([false, true]);
   });
 });
