@@ -13,6 +13,7 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
   const discipline = disciplines.find((d) => d.id === value.discipline);
   const defaultFor = (d: Discipline | undefined, sub: string | null) =>
     sub ? (d?.subDisciplines.find((s) => s.id === sub)?.finishWithLeader ?? false) : (d?.finishWithLeader ?? false);
+  const formatFor = (d: Discipline | undefined, sub: string | null) => ((sub ? d?.subDisciplines.find((s) => s.id === sub)?.course : d?.course) ? "course" : "laps");
   const set = (patch: Partial<EventInput>) => onChange({ ...value, ...patch });
 
   return (
@@ -26,7 +27,7 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
         value={value.discipline}
         onChange={(e) => {
           const d = disciplines.find((x) => x.id === e.target.value);
-          set({ discipline: e.target.value, subDiscipline: null, finishWithLeader: defaultFor(d, null), ageNextYear: d?.ageNextYear ?? false });
+          set({ discipline: e.target.value, subDiscipline: null, finishWithLeader: defaultFor(d, null), raceFormat: formatFor(d, null), ageNextYear: d?.ageNextYear ?? false });
         }}
         slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
       >
@@ -41,7 +42,7 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
           select
           label="Sub-discipline"
           value={value.subDiscipline ?? ""}
-          onChange={(e) => set({ subDiscipline: e.target.value || null, finishWithLeader: defaultFor(discipline, e.target.value || null) })}
+          onChange={(e) => set({ subDiscipline: e.target.value || null, finishWithLeader: defaultFor(discipline, e.target.value || null), raceFormat: formatFor(discipline, e.target.value || null) })}
           slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}
         >
           <option value="">—</option>
@@ -66,10 +67,15 @@ export function EventFields({ value, onChange, disciplines, bibRange = false }: 
           </option>
         ))}
       </TextField>
-      <FormControlLabel
+      <TextField select label="Format" value={value.raceFormat} onChange={(e) => set({ raceFormat: e.target.value })}
+        slotProps={{ select: { native: true }, inputLabel: { shrink: true } }}>
+        <option value="laps">Laps</option>
+        <option value="course">Point to point / single loop</option>
+      </TextField>
+      {value.raceFormat !== "course" && <FormControlLabel
         control={<Checkbox checked={value.finishWithLeader} onChange={(e) => set({ finishWithLeader: e.target.checked })} />}
         label="Finish with leader"
-      />
+      />}
       <FormControlLabel
         control={<Checkbox checked={value.ageNextYear} onChange={(e) => set({ ageNextYear: e.target.checked })} />}
         label="Age as of next year (cross season)"

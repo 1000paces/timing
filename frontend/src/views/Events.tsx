@@ -76,7 +76,7 @@ function NewEventDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (list && !value) {
       const first = list[0];
-      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader, ageNextYear: first.ageNextYear, timezone: browserTimeZone() });
+      setValue({ name: "", date: new Date().toISOString().slice(0, 10), location: null, discipline: first.id, subDiscipline: null, finishWithLeader: first.finishWithLeader, ageNextYear: first.ageNextYear, timezone: browserTimeZone(), raceFormat: first.course ? "course" : "laps" });
     }
   }, [list, value]);
 

@@ -27,6 +27,7 @@ export type RaceInfo = {
   bibFrom: number | null;
   bibTo: number | null;
 };
+export type CheckpointInfo = { id: string; name: string; position: number; distanceKm: number | null; cutoffAtMs: number | null };
 export type EventInfo = {
   id: string;
   name: string;
@@ -39,6 +40,10 @@ export type EventInfo = {
   ageNextYear: boolean;
   bibFrom: number | null;
   bibTo: number | null;
+  raceFormat: string;
+  checkpoints: CheckpointInfo[];
+  finishDistanceKm: number | null;
+  finishCutoffAtMs: number | null;
   races: RaceInfo[];
 };
 export type EventData = { event: EventInfo };
@@ -50,15 +55,16 @@ export const EVENT = gql`
   query Event($id: ID!) {
     event(id: $id) {
       id name date location discipline subDiscipline finishWithLeader ageNextYear timezone bibFrom bibTo
+      raceFormat checkpoints { id name position distanceKm cutoffAtMs } finishDistanceKm finishCutoffAtMs
       races { ${RACE_FIELDS} }
     }
   }
 `;
 
-export type Discipline = { id: string; label: string; finishWithLeader: boolean; ageNextYear: boolean; subDisciplines: { id: string; label: string; finishWithLeader: boolean }[] };
+export type Discipline = { id: string; label: string; finishWithLeader: boolean; course: boolean; ageNextYear: boolean; subDisciplines: { id: string; label: string; finishWithLeader: boolean; course: boolean }[] };
 export type DisciplinesData = { disciplines: Discipline[] };
 export const DISCIPLINES = gql`
-  query Disciplines { disciplines { id label finishWithLeader ageNextYear subDisciplines { id label finishWithLeader } } }
+  query Disciplines { disciplines { id label finishWithLeader course ageNextYear subDisciplines { id label finishWithLeader course } } }
 `;
 
 export type EventInput = {
@@ -70,23 +76,24 @@ export type EventInput = {
   finishWithLeader: boolean;
   ageNextYear: boolean;
   timezone: string;
+  raceFormat: string;
   bibFrom?: number | null;
   bibTo?: number | null;
 };
 export const CREATE_EVENT = gql`
   mutation CreateEvent($name: String!, $date: ISO8601Date!, $location: String, $discipline: String!, $subDiscipline: String,
-                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String) {
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String, $raceFormat: String) {
     createEvent(name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
-                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone) {
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone, raceFormat: $raceFormat) {
       event { id } errors
     }
   }
 `;
 export const UPDATE_EVENT = gql`
   mutation UpdateEvent($id: ID!, $name: String, $date: ISO8601Date, $location: String, $discipline: String, $subDiscipline: String,
-                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String, $bibFrom: Int, $bibTo: Int) {
+                       $finishWithLeader: Boolean, $ageNextYear: Boolean, $timezone: String, $raceFormat: String, $bibFrom: Int, $bibTo: Int) {
     updateEvent(id: $id, name: $name, date: $date, location: $location, discipline: $discipline, subDiscipline: $subDiscipline,
-                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone, bibFrom: $bibFrom, bibTo: $bibTo) {
+                finishWithLeader: $finishWithLeader, ageNextYear: $ageNextYear, timezone: $timezone, raceFormat: $raceFormat, bibFrom: $bibFrom, bibTo: $bibTo) {
       event { id } errors
     }
   }
@@ -339,14 +346,15 @@ export type PhoneRow = {
   lastSyncAtMs: number | null;
   syncStoppedAtMs: number | null;
   clockOffsetMs: number | null;
+  checkpointId: string | null;
 };
 export const DEVICES = gql`
   query Devices($eventId: ID!) {
-    devices(eventId: $eventId) { id name pairedAtMs revokedAtMs lastSeenAtMs lastSyncAtMs syncStoppedAtMs clockOffsetMs }
+    devices(eventId: $eventId) { id name pairedAtMs revokedAtMs lastSeenAtMs lastSyncAtMs syncStoppedAtMs clockOffsetMs checkpointId }
   }
 `;
 export const CREATE_PAIRING_TOKEN = gql`
-  mutation CreatePairingToken($eventId: ID!) { createPairingToken(eventId: $eventId) { token pairingUrl expiresAtMs errors } }
+  mutation CreatePairingToken($eventId: ID!, $checkpointId: ID) { createPairingToken(eventId: $eventId, checkpointId: $checkpointId) { token pairingUrl expiresAtMs errors } }
 `;
 export const REVOKE_DEVICE = gql`
   mutation RevokeDevice($id: ID!) { revokeDevice(deviceId: $id) { errors } }
@@ -399,4 +407,13 @@ export const RULINGS = gql`
   query Rulings($eventId: ID!, $search: String, $limit: Int) {
     rulings(eventId: $eventId, search: $search, limit: $limit) { id kind description bib officialName createdAtMs undone undoneBy undoneAtMs }
   }
+`;
+
+export const SET_CHECKPOINTS = gql`
+  mutation SetCheckpoints($eventId: ID!, $checkpoints: [CheckpointInput!]!, $finishDistanceKm: Float, $finishCutoffAtMs: Millis) {
+    setCheckpoints(eventId: $eventId, checkpoints: $checkpoints, finishDistanceKm: $finishDistanceKm, finishCutoffAtMs: $finishCutoffAtMs) { errors }
+  }
+`;
+export const SET_DEVICE_CHECKPOINT = gql`
+  mutation SetDeviceCheckpoint($deviceId: ID!, $checkpointId: ID) { setDeviceCheckpoint(deviceId: $deviceId, checkpointId: $checkpointId) { errors } }
 `;
