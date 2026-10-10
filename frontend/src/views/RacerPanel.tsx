@@ -63,6 +63,9 @@ type Asking =
   | { kind: "undo"; fix: RacerFix }
   | null;
 
+// A crossing that counted: a lap, a checkpoint or the finish.
+const isCounted = (c: RacerCrossing) => c.lap != null || c.kind === "SPLIT" || c.kind === "FINISH";
+
 // One racer's race: crossings with what they counted as, lap times and
 // positions, and (for chiefs) fixes and undo. Opened from a Results row.
 export function RacerPanel({ eventId, bib, canAct, racerNames, checkpoints = [], onClose, onChanged }: Props) {
@@ -103,7 +106,7 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, checkpoints = [],
   }
 
   const r = racer.data?.racer;
-  const counted = r ? r.crossings.filter((c) => c.lap != null) : [];
+  const counted = r ? r.crossings.filter(isCounted) : [];
 
   function chosen(action: string) {
     if (!menu || !r) return;
@@ -115,7 +118,7 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, checkpoints = [],
     if (action === "move") setAsking({ kind: "move", crossing });
     if (action === "insert") {
       setWhere(crossing.checkpointId ?? "");
-      const before = r.crossings.slice(0, index).filter((c) => c.lap != null).at(-1)?.atMs ?? r.startAtMs ?? crossing.atMs;
+      const before = r.crossings.slice(0, index).filter(isCounted).at(-1)?.atMs ?? r.startAtMs ?? crossing.atMs;
       setAsking({ kind: "insert", atMs: midpoint(before, crossing.atMs) });
     }
   }

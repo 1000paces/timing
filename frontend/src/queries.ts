@@ -402,7 +402,7 @@ export type FixResults = {
 };
 export const VOID_CROSSING = gql`mutation VoidCrossing($eventId: ID!, $ref: String!) { voidCrossing(eventId: $eventId, ref: $ref) { ruling { id } errors } }`;
 export const MOVE_CROSSING = gql`mutation MoveCrossing($eventId: ID!, $captureId: ID!, $bib: String!) { moveCrossing(eventId: $eventId, captureId: $captureId, bib: $bib) { ruling { id } errors } }`;
-export const INSERT_CROSSING = gql`mutation InsertCrossing($eventId: ID!, $bib: String!, $atMs: Millis!) { insertCrossing(eventId: $eventId, bib: $bib, atMs: $atMs) { ruling { id } errors } }`;
+export const INSERT_CROSSING = gql`mutation InsertCrossing($eventId: ID!, $bib: String!, $atMs: Millis!, $checkpointId: ID) { insertCrossing(eventId: $eventId, bib: $bib, atMs: $atMs, checkpointId: $checkpointId) { ruling { id } errors } }`;
 export const PULL_RACER = gql`mutation PullRacer($eventId: ID!, $bib: String!, $atMs: Millis!) { pullRacer(eventId: $eventId, bib: $bib, atMs: $atMs) { ruling { id } errors } }`;
 export const FLAG_FINISH = gql`mutation FlagFinish($eventId: ID!, $bib: String!, $ref: String!) { flagFinish(eventId: $eventId, bib: $bib, ref: $ref) { ruling { id } errors } }`;
 export const REVERT_RULING = gql`mutation RevertRuling($id: ID!) { revertRuling(rulingId: $id) { ruling { id } errors } }`;
