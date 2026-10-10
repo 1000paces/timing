@@ -10,12 +10,12 @@ import { courseBoard, formatCutoff } from "../course";
 import { formatClock } from "../format";
 import type { CheckpointInfo, RaceStandings, Row } from "../queries";
 
-type Props = { race: RaceStandings; checkpoints: CheckpointInfo[]; finishCutoffAtMs: number | null; timeZone: string; onRowClick?: (row: Row) => void };
+type Props = { race: RaceStandings; checkpoints: CheckpointInfo[]; finishCutoffAtMs: number | null; finishDistanceKm: number | null; timeZone: string; onRowClick?: (row: Row) => void };
 
 // Where everyone is on a course race: a tile per point, then who is still out.
 // Recomputed on each render; the standings poll every few seconds.
-export function CourseBoard({ race, checkpoints, finishCutoffAtMs, timeZone, onRowClick }: Props) {
-  const board = courseBoard(race, checkpoints, Date.now(), finishCutoffAtMs);
+export function CourseBoard({ race, checkpoints, finishCutoffAtMs, finishDistanceKm, timeZone, onRowClick }: Props) {
+  const board = courseBoard(race, checkpoints, Date.now(), { finishCutoffAtMs, finishDistanceKm });
   return (
     <Paper component="section" aria-label={`${race.race.name} course`} sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" component="h3" gutterBottom>{race.race.name}</Typography>

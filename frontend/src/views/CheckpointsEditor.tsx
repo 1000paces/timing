@@ -10,18 +10,15 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { formatCutoff, parseCutoff } from "../course";
+import { cutoffToSave, describeCutoff, formatCutoff, parseCutoff } from "../course";
 import { SET_CHECKPOINTS, type EventInfo, type MutationResult } from "../queries";
 
-type Row = { key: string; id: string | null; name: string; distance: string; cutoff: string };
+type Row = { key: string; id: string | null; name: string; distance: string; cutoff: string; saved: { text: string; atMs: number | null } };
 
-const toRow = (id: string | null, name: string, km: number | null, cutoffAtMs: number | null, zone: string): Row => ({
-  key: id ?? crypto.randomUUID(),
-  id,
-  name,
-  distance: km == null ? "" : String(km),
-  cutoff: cutoffAtMs == null ? "" : formatCutoff(cutoffAtMs, zone),
-});
+const toRow = (id: string | null, name: string, km: number | null, cutoffAtMs: number | null, zone: string): Row => {
+  const cutoff = cutoffAtMs == null ? "" : formatCutoff(cutoffAtMs, zone);
+  return { key: id ?? crypto.randomUUID(), id, name, distance: km == null ? "" : String(km), cutoff, saved: { text: cutoff, atMs: cutoffAtMs } };
+};
 
 // The course of a point-to-point / single-loop event: ordered checkpoints, then the finish.
 export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSaved: () => void }) {
@@ -35,11 +32,12 @@ export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSave
   // Elapsed cutoffs count from the earliest scheduled race start.
   const startMs = event.races.length ? Math.min(...event.races.map((r) => r.scheduledAtMs)) : null;
   const parse = (text: string) => parseCutoff(text, startMs, zone, event.date);
-  const cutoffError = (text: string) => {
-    const c = parse(text);
+  const cutoffOf = (r: Row) => cutoffToSave(r.cutoff, r.saved, parse);
+  const cutoffError = (r: Row) => {
+    const c = cutoffOf(r);
     return c && "error" in c ? c.error : null;
   };
-  const hasError = [...rows, finish].some((r) => cutoffError(r.cutoff));
+  const hasError = [...rows, finish].some((r) => cutoffError(r));
 
   const update = (key: string, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   const move = (i: number, by: number) =>
@@ -48,8 +46,8 @@ export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSave
       [next[i], next[i + by]] = [next[i + by], next[i]];
       return next;
     });
-  const atMs = (text: string) => {
-    const c = parse(text);
+  const atMs = (r: Row) => {
+    const c = cutoffOf(r);
     return c && "atMs" in c ? c.atMs : null;
   };
   const km = (text: string) => (text.trim() === "" ? null : Number(text));
@@ -62,9 +60,9 @@ export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSave
         await setCheckpoints({
           variables: {
             eventId: event.id,
-            checkpoints: rows.map((r) => ({ id: r.id, name: r.name, distanceKm: km(r.distance), cutoffAtMs: atMs(r.cutoff) })),
+            checkpoints: rows.map((r) => ({ id: r.id, name: r.name, distanceKm: km(r.distance), cutoffAtMs: atMs(r) })),
             finishDistanceKm: km(finish.distance),
-            finishCutoffAtMs: atMs(finish.cutoff),
+            finishCutoffAtMs: atMs(finish),
           },
         })
       ).data?.setCheckpoints;
@@ -80,8 +78,8 @@ export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSave
   }
 
   const cutoffField = (r: Row, label: string, onChange: (v: string) => void) => {
-    const err = cutoffError(r.cutoff);
-    const parsed = atMs(r.cutoff);
+    const err = cutoffError(r);
+    const parsed = atMs(r);
     return (
       <TextField
         size="small"
@@ -89,7 +87,7 @@ export function CheckpointsEditor({ event, onSaved }: { event: EventInfo; onSave
         value={r.cutoff}
         onChange={(e) => onChange(e.target.value)}
         error={err != null}
-        helperText={err ?? (parsed != null ? formatCutoff(parsed, zone) : " ")}
+        helperText={err ?? (parsed != null ? describeCutoff(parsed, zone, event.date) : " ")}
         placeholder="2:30 pm or +6:30"
         sx={{ width: 170 }}
       />

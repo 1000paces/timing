@@ -58,7 +58,7 @@ export function CourseStandings({ race, checkpoints, controls, onRowClick }: { r
               {[...checkpoints.map((c) => c.id), null].map((id) => (
                 <SplitCell key={id ?? "finish"} split={row.splits.find((s) => s.checkpointId === id)} />
               ))}
-              <TableCell sx={num}>{formatElapsed(row.elapsedMs)}</TableCell>
+              <TableCell sx={num}>{row.status === "FINISHED" ? formatElapsed(row.elapsedMs) : ""}</TableCell>
               <TableCell sx={num}>{formatGap(row.gapLapsDown, row.gapMs)}</TableCell>
             </TableRow>
           ))}

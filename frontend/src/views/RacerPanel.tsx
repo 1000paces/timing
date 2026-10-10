@@ -272,7 +272,8 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, checkpoints = [],
             void run(() => (kind === "insert" ? insertCrossing({ variables: { eventId, bib, atMs, checkpointId: where || null } }) : pullRacer({ variables: { eventId, bib, atMs } })));
           }}>
           {asking.kind === "insert" && checkpoints.length > 0 && (
-            <TextField select label="Where" value={where} onChange={(e) => setWhere(e.target.value)} fullWidth sx={{ mt: 2 }}>
+            <TextField select label="Where" value={where} onChange={(e) => setWhere(e.target.value)} fullWidth sx={{ mt: 2 }}
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
               <MenuItem value="">Finish</MenuItem>
               {checkpoints.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
             </TextField>

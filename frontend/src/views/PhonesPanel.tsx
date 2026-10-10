@@ -33,7 +33,8 @@ export function ago(ms: number | null, now = Date.now()): string {
 function CheckpointSelect({ value, checkpoints, onChange, label = "Location" }: { value: string | null; checkpoints: CheckpointInfo[]; onChange: (id: string | null) => void; label?: string }) {
   const removed = value != null && !checkpoints.some((c) => c.id === value);
   return (
-    <TextField select size="small" label={label} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} sx={{ minWidth: 160 }}>
+    <TextField select size="small" label={label} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} sx={{ minWidth: 160 }}
+      slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
       <MenuItem value="">Finish</MenuItem>
       {checkpoints.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
       {removed && <MenuItem value={value}>Removed checkpoint</MenuItem>}

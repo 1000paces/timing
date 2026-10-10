@@ -217,6 +217,7 @@ export type CaptureScreenData = {
   event: {
     id: string;
     name: string;
+    raceFormat: string;
     races: { id: string; name: string }[];
     registrations: { bib: string; raceId: string; racer: { firstName: string; lastName: string } }[];
     captures: CaptureRow[];
@@ -225,7 +226,7 @@ export type CaptureScreenData = {
 export const CAPTURE_SCREEN = gql`
   query CaptureScreen($id: ID!) {
     event(id: $id) {
-      id name
+      id name raceFormat
       races { id name }
       registrations { bib raceId racer { firstName lastName } }
       captures { id bib enteredBib bibSource capturedAtMs atMs deviceName mine lap lapMs typicalLapMs lapFlag }

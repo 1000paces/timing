@@ -113,6 +113,7 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
         ))}
         {activeView === "course" && shown.map((race) => (
           <CourseBoard key={race.race.id} race={race} checkpoints={checkpoints} finishCutoffAtMs={event.data!.event.finishCutoffAtMs}
+            finishDistanceKm={event.data!.event.finishDistanceKm}
             timeZone={event.data!.event.timezone} onRowClick={(row) => setRacer(row.bib)} />
         ))}
         {course && activeView === "category" && shown.map((race) => (
