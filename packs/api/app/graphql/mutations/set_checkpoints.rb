@@ -25,7 +25,11 @@ module Mutations
           error = "#{stuck.name} has crossings or phones recorded at it, so it can't be removed or moved"
           raise ActiveRecord::Rollback
         end
-        event.checkpoints.where.not(id: kept_ids).destroy_all
+        removed = event.checkpoints.where.not(id: kept_ids)
+        removed_ids = removed.pluck(:id)
+        Device.where(checkpoint_id: removed_ids).update_all(checkpoint_id: nil)
+        PairingToken.where(checkpoint_id: removed_ids).update_all(checkpoint_id: nil)
+        removed.update_all(removed_at_ms: Clock.now_ms, position: nil)
         event.checkpoints.update_all("position = position + 10000") # free the positions for the new order
         wanted.each.with_index(1) do |attrs, position|
           cp = attrs[:id] ? event.checkpoints.find(attrs[:id]) : event.checkpoints.build
@@ -37,6 +41,8 @@ module Mutations
       { event: event.reload, errors: [] }
     rescue ActiveRecord::RecordInvalid => e
       { event: nil, errors: e.record.errors.full_messages }
+    rescue ActiveRecord::RecordNotFound
+      { event: nil, errors: [ "That checkpoint isn't on this event's course" ] }
     end
 
     private

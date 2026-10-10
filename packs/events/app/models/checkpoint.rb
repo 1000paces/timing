@@ -5,6 +5,9 @@ class Checkpoint < ApplicationRecord
   belongs_to :event
 
   validates :name, presence: true
-  validates :position, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :event_id }
+  validates :position, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :event_id }, unless: :removed?
   validates :distance_km, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+
+  # Taken off the course, but kept: a phone's log may still name it.
+  def removed? = removed_at_ms.present?
 end

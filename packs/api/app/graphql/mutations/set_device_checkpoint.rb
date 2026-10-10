@@ -9,7 +9,7 @@ module Mutations
     def resolve(device_id:, checkpoint_id: nil)
       require_official!("chief")
       device = Device.find(device_id)
-      if checkpoint_id && !Checkpoint.exists?(id: checkpoint_id, event_id: device.event_id)
+      if checkpoint_id && !device.event.checkpoints.exists?(id: checkpoint_id)
         return { device: nil, errors: [ "That checkpoint isn't on this event's course" ] }
       end
       return { device: nil, errors: [ "The phone was moved more recently; try again" ] } unless device.move_to!(checkpoint_id, at_ms: Clock.now_ms)

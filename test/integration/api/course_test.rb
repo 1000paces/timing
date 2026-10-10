@@ -50,6 +50,27 @@ class CourseApiTest < ActionDispatch::IntegrationTest
     assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([])["errors"]
   end
 
+  test "removing an unused checkpoint keeps the row, off the course" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    body = set([ { id: ids.last, name: "Aid 2" } ])
+    assert_empty body["errors"]
+    assert_equal [ ids.last ], body.dig("event", "checkpoints").map { it["id"] }
+    assert_equal [ ids.last ], @event.reload.checkpoints.map(&:id)
+    removed = Checkpoint.find(ids.first)
+    assert_not_nil removed.removed_at_ms
+    assert_nil removed.position
+    assert_equal 1, @event.checkpoints.first.position
+  end
+
+  test "a removed checkpoint can't be chosen for a phone or a pairing code" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    set([ { id: ids.last, name: "Aid 2" } ])
+    device = create_device(event: @event)
+    msg = [ "That checkpoint isn't on this event's course" ]
+    assert_equal msg, gql("mutation($d: ID!, $cp: ID) { setDeviceCheckpoint(deviceId: $d, checkpointId: $cp) { errors } }", d: device.id, cp: ids.first).dig("data", "setDeviceCheckpoint", "errors")
+    assert_equal msg, gql("mutation($e: ID!, $cp: ID) { createPairingToken(eventId: $e, checkpointId: $cp) { errors } }", e: @event.id, cp: ids.first).dig("data", "createPairingToken", "errors")
+  end
+
   test "a duplicate checkpoint id is refused" do
     aid = set([ { name: "Aid 1" } ]).dig("event", "checkpoints", 0, "id")
     assert_equal [ "A checkpoint is listed more than once" ], set([ { id: aid, name: "A" }, { id: aid, name: "B" } ])["errors"]

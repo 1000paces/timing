@@ -142,6 +142,14 @@ class SyncTest < ActionDispatch::IntegrationTest
     assert_equal aid2.id, @device.reload.checkpoint_id
   end
 
+  test "an entry naming a checkpoint removed from the course is still accepted" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    aid.update!(removed_at_ms: 1, position: nil)
+    push(chain([ { kind: "location", checkpoint_id: aid.id, captured_at_ms: 1_000, clock_offset_ms: 0 } ]))
+    assert_response :ok
+    assert_equal 1, DeviceEntry.where(device: @device, checkpoint_id: aid.id).count
+  end
+
   test "the roster lists the course's checkpoints and where the hub has this device" do
     aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
     @device.move_to!(aid.id, at_ms: 7_000)

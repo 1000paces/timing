@@ -7,7 +7,9 @@ class Event < ApplicationRecord
   has_many :races, dependent: :destroy
   has_many :registrations, dependent: :destroy
   has_many :category_mappings, dependent: :destroy
-  has_many :checkpoints, -> { order(:position) }, dependent: :destroy, inverse_of: :event
+  # The active course; soft-removed checkpoints are only in all_checkpoints.
+  has_many :checkpoints, -> { where(removed_at_ms: nil).order(:position) }, inverse_of: :event
+  has_many :all_checkpoints, class_name: "Checkpoint", dependent: :destroy
 
   attribute :finish_with_leader, :boolean, default: nil
   attribute :age_next_year, :boolean, default: nil

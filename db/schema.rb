@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_10_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_000002) do
   create_table "category_mappings", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "external_category", null: false
@@ -25,10 +25,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_000001) do
 
   create_table "checkpoints", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
-    t.integer "position", null: false
+    t.integer "position"
     t.string "name", null: false
     t.decimal "distance_km", precision: 8, scale: 3
     t.bigint "cutoff_at_ms"
+    t.bigint "removed_at_ms"
     t.index ["event_id", "position"], name: "index_checkpoints_on_event_id_and_position", unique: true
     t.index ["event_id"], name: "index_checkpoints_on_event_id"
   end
