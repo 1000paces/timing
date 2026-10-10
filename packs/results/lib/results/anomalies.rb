@@ -68,7 +68,7 @@ module Results
 
     def call
       dismissed = @resolved.rulings.of("dismiss_suggestion").map { it.payload["suggestion_key"] }.to_set
-      (lap_suggestions + lapping_suggestions + overdue_suggestions + CourseAnomalies.new(@input, @courses).call + clock_suggestions + unassigned_suggestions)
+      (lap_suggestions + lapping_suggestions + overdue_suggestions + CourseAnomalies.new(@input, @courses, dismissed).call + clock_suggestions + unassigned_suggestions)
         .reject { dismissed.include?(it.key) }
         .sort_by(&:key)
     end

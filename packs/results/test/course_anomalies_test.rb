@@ -32,7 +32,7 @@ class CourseAnomaliesTest < Minitest::Test
   end
 
   def test_overdue_from_the_riders_own_pace
-    # 30 km in 3000 s: 30 more km should take 3000 s; overdue after 1.5x that (7500 s), and past the cutoff too.
+    # 30 km in 3000 s: 30 more km should take 3000 s; overdue after 1.5x that (7500 s), still before the 9000 s cutoff at Aid 2.
     assert_empty suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 7_400).select { it.kind == :overdue }
     found = suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 7_600).find { it.kind == :overdue }
     assert_equal [ "overdue:1:c-1-1", { "kind" => "dnf", "bib" => "1" } ], [ found.key, found.fix ]
@@ -64,5 +64,42 @@ class CourseAnomaliesTest < Minitest::Test
   def test_finished_and_dnf_riders_raise_nothing
     yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 6000, cp: a2}, 10000]\n  2: [{at: 3000, cp: a1}]\nrulings:\n  - {kind: dnf, bib: 2}\n"
     assert_empty suggestions(yaml, now: 99_000).select { %w[1 2].include?(it.bib) }
+  end
+
+  def test_a_dismissed_cutoff_does_not_hide_the_finish_cutoff
+    setup = SETUP.sub("finish_km: 100}", "finish_km: 100, finish_cutoff: 12000}")
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}]\n" \
+           "rulings:\n  - {kind: dismiss_suggestion, suggestion_key: \"cutoff:1:a2\"}\nnow: 12100\n"
+    found = Results.compute(input_from(setup + yaml)).suggestions.select { it.kind == :cutoff && it.bib == "1" }
+    assert_equal [ "cutoff:1:finish" ], found.map(&:key)
+  end
+
+  def test_overdue_falls_back_to_the_whole_event_when_the_race_has_too_few_riders
+    yaml = <<~YAML
+      races:
+        - {id: r1, start: 0, course: [{id: a1, name: Aid 1}, {id: a2, name: Aid 2}]}
+        - {id: r2, start: 0, course: [{id: a1, name: Aid 1}, {id: a2, name: Aid 2}]}
+      entrants:
+        - {bib: 1, race: r1}
+        - {bib: 2, race: r1}
+        - {bib: 3, race: r1}
+        - {bib: 4, race: r2}
+      crossings:
+        1: [{at: 1000, cp: a1}, {at: 2000, cp: a2}]
+        2: [{at: 1000, cp: a1}, {at: 2100, cp: a2}]
+        3: [{at: 1000, cp: a1}, {at: 2200, cp: a2}]
+        4: [{at: 1000, cp: a1}]
+      now: 2700
+    YAML
+    found = Results.compute(input_from(yaml)).suggestions.select { it.kind == :overdue }
+    assert_equal [ "4" ], found.map(&:bib)
+  end
+
+  def test_an_interpolated_insert_never_falls_outside_its_neighbours
+    # Aid 2 (60 km) is before Aid 1's distance here, so distance interpolation would run backwards.
+    setup = SETUP.sub("km: 30}", "km: 70}")
+    found = Results.compute(input_from(setup + "crossings:\n  1: [{at: 3000, cp: a1}, 10000]\nnow: 10000\n")).suggestions
+                   .find { it.kind == :missed_checkpoint }
+    assert_includes 3_000_000..10_000_000, found.fix["at_ms"]
   end
 end

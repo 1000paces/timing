@@ -5,9 +5,10 @@ module Results
     OVERDUE_FACTOR = 1.5
     MIN_FIELD = 3
 
-    def initialize(input, courses)
+    def initialize(input, courses, dismissed = Set.new)
       @now = input.now_ms
       @courses = courses
+      @dismissed = dismissed
     end
 
     def call = @courses.flat_map { |scored| scored.racers.flat_map { racer_suggestions(it, scored) } }
@@ -42,7 +43,7 @@ module Results
       from_km = before ? before.distance_km : 0
       to_at = racer.passes[after.id].at_ms
       if from_km && point.distance_km && after.distance_km && after.distance_km > from_km
-        from_at + ((to_at - from_at) * (point.distance_km - from_km) / (after.distance_km - from_km).to_f).round
+        (from_at + ((to_at - from_at) * (point.distance_km - from_km) / (after.distance_km - from_km).to_f).round).clamp(from_at..[ from_at, to_at ].max)
       else
         (from_at + to_at) / 2
       end
@@ -51,7 +52,7 @@ module Results
     # The first checkpoint whose cutoff has passed without the rider, or that they reached late.
     def cutoff(racer, course, scored)
       point = course.find do |p|
-        next false unless p.cutoff_at_ms
+        next false unless p.cutoff_at_ms && !@dismissed.include?("cutoff:#{racer.entrant.bib}:#{p.id || 'finish'}")
         pass = racer.passes[p.id]
         pass ? pass.at_ms > p.cutoff_at_ms : @now > p.cutoff_at_ms && course.drop(p.position).none? { racer.passes.key?(it.id) }
       end
@@ -66,7 +67,7 @@ module Results
       last_point = course.select { racer.passes.key?(it.id) }.max_by(&:position)
       last_at = last_point ? racer.passes[last_point.id].at_ms : racer.race_start
       next_point = course[last_point ? last_point.position : 0] or return nil
-      expected = own_pace(racer, last_point, next_point) || field(scored, last_point, next_point)
+      expected = own_pace(racer, last_point, next_point) || field(scored.racers, last_point, next_point) || field(everyone, last_point, next_point)
       return nil unless expected && @now > last_at + (expected * OVERDUE_FACTOR).round
       bib = racer.entrant.bib
       ref = last_point && racer.passes[last_point.id].ref
@@ -85,14 +86,17 @@ module Results
     end
 
     # The median time others in the race took between the same two points.
-    def field(scored, from, to)
-      times = scored.racers.filter_map do |r|
+    # Falls back to every course race in the event when this race has too few.
+    def field(racers, from, to)
+      times = racers.filter_map do |r|
         to_pass = r.passes[to.id] or next
         from_at = from ? r.passes[from.id]&.at_ms : r.race_start
         to_pass.at_ms - from_at if from_at
       end
       times.size >= MIN_FIELD ? Anomalies.median(times) : nil
     end
+
+    def everyone = @courses.flat_map(&:racers)
 
     def fmt(ms)
       minutes = (ms / 60_000.0).round
