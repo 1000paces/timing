@@ -1,4 +1,3 @@
-# test/integration/api/course_test.rb
 require "test_helper"
 
 class CourseApiTest < ActionDispatch::IntegrationTest
@@ -30,10 +29,36 @@ class CourseApiTest < ActionDispatch::IntegrationTest
   test "a checkpoint with captures can be renamed but not removed or moved" do
     ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 1_000, bib: "1", checkpoint: Checkpoint.find(ids.first))
-    assert_equal [ "Aid 1 has crossings recorded at it, so it can't be removed or moved" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
-    assert_equal [ "Aid 1 has crossings recorded at it, so it can't be removed or moved" ],
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ],
                  set([ { id: ids.last, name: "Aid 2" }, { id: ids.first, name: "Aid 1" } ])["errors"]
     assert_empty set([ { id: ids.first, name: "Aid One" }, { id: ids.last, name: "Aid 2" } ])["errors"]
+  end
+
+  test "a phone's location entry at a checkpoint blocks removing it, without an exception" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    device = create_device(event: @event)
+    DeviceEntry.append!(device:, type: "DeviceLocation", captured_at_ms: 1_000, checkpoint_id: ids.first)
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
+    assert_equal 2, @event.checkpoints.count
+  end
+
+  test "an inserted crossing at a checkpoint blocks removing it" do
+    aid = set([ { name: "Aid 1" } ]).dig("event", "checkpoints", 0, "id")
+    rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
+    gql("mutation($e: ID!, $cp: ID) { insertCrossing(eventId: $e, bib: \"1\", atMs: 5000, checkpointId: $cp) { errors } }", e: @event.id, cp: aid)
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([])["errors"]
+  end
+
+  test "a duplicate checkpoint id is refused" do
+    aid = set([ { name: "Aid 1" } ]).dig("event", "checkpoints", 0, "id")
+    assert_equal [ "A checkpoint is listed more than once" ], set([ { id: aid, name: "A" }, { id: aid, name: "B" } ])["errors"]
+  end
+
+  test "an invalid entry rolls the whole change back" do
+    set([ { name: "Aid 1" }, { name: "Aid 2" } ])
+    assert_not_empty set([ { name: "New" }, { name: "" } ])["errors"]
+    assert_equal [ "Aid 1", "Aid 2" ], @event.checkpoints.reorder(:position).pluck(:name)
   end
 
   test "standings carry splits; a missed checkpoint is a problem whose fix inserts a crossing there" do

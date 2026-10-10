@@ -12,7 +12,7 @@ module Mutations
       if checkpoint_id && !Checkpoint.exists?(id: checkpoint_id, event_id: device.event_id)
         return { device: nil, errors: [ "That checkpoint isn't on this event's course" ] }
       end
-      device.move_to!(checkpoint_id, at_ms: Clock.now_ms)
+      return { device: nil, errors: [ "The phone was moved more recently; try again" ] } unless device.move_to!(checkpoint_id, at_ms: Clock.now_ms)
       { device: device.reload, errors: [] }
     end
   end
