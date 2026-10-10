@@ -151,11 +151,32 @@ class SyncTest < ActionDispatch::IntegrationTest
   end
 
   test "the roster lists the course's checkpoints and where the hub has this device" do
+    @event.update!(race_format: "course")
     aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
     @device.move_to!(aid.id, at_ms: 7_000)
     get "/sync/v1/roster", headers: auth
     body = response.parsed_body
     assert_equal [ { "id" => aid.id, "name" => "Aid 1" } ], body["checkpoints"]
     assert_equal({ "checkpoint_id" => aid.id, "checkpoint_set_at_ms" => 7_000 }, body["device"])
+  end
+
+  test "a laps event's roster sends no checkpoints and no device checkpoint" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    @device.move_to!(aid.id, at_ms: 7_000)
+    get "/sync/v1/roster", headers: auth
+    body = response.parsed_body
+    assert_equal [], body["checkpoints"]
+    assert_equal({ "checkpoint_id" => nil, "checkpoint_set_at_ms" => nil }, body["device"])
+  end
+
+  test "status on a course event reports no laps and no lap flags" do
+    @event.update!(race_format: "course")
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    push(chain([ { captured_at_ms: 30_000, clock_offset_ms: 0, bib: "101", checkpoint_id: aid.id },
+                 { captured_at_ms: 60_000, clock_offset_ms: 0, bib: "101" } ]))
+    get "/sync/v1/status", headers: auth
+    captures = response.parsed_body["captures"]
+    assert_equal 2, captures.size
+    assert(captures.all? { it.values_at("lap", "lap_ms", "typical_lap_ms", "lap_flag").all?(&:nil?) })
   end
 end

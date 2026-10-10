@@ -26,20 +26,50 @@ class CourseApiTest < ActionDispatch::IntegrationTest
     assert_equal 100.0, body.dig("event", "finishDistanceKm")
   end
 
-  test "a checkpoint with captures can be renamed but not removed or moved" do
+  test "a checkpoint with captures can be renamed but not removed" do
     ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
     record_capture(device: create_device(event: @event), seq: 1, at_ms: 1_000, bib: "1", checkpoint: Checkpoint.find(ids.first))
-    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
-    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ],
-                 set([ { id: ids.last, name: "Aid 2" }, { id: ids.first, name: "Aid 1" } ])["errors"]
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
     assert_empty set([ { id: ids.first, name: "Aid One" }, { id: ids.last, name: "Aid 2" } ])["errors"]
+    assert_equal [ "Aid One", "Aid 2" ], @event.checkpoints.reload.map(&:name)
+  end
+
+  test "unused checkpoints can be added or moved around one in use" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    record_capture(device: create_device(event: @event), seq: 1, at_ms: 1_000, bib: "1", checkpoint: Checkpoint.find(ids.first))
+    body = set([ { name: "Aid 0" }, { id: ids.first, name: "Aid 1" }, { id: ids.last, name: "Aid 2" } ])
+    assert_empty body["errors"]
+    assert_equal [ [ "Aid 0", 1 ], [ "Aid 1", 2 ], [ "Aid 2", 3 ] ], body.dig("event", "checkpoints").map { it.values_at("name", "position") }
+    new_id = body.dig("event", "checkpoints", 0, "id")
+    assert_empty set([ { id: ids.last, name: "Aid 2" }, { id: ids.first, name: "Aid 1" }, { id: new_id, name: "Aid 0" } ])["errors"]
+    assert_equal [ ids.last, ids.first, new_id ], @event.checkpoints.reload.map(&:id)
+  end
+
+  test "two checkpoints in use can't swap places" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    device = create_device(event: @event)
+    ids.each_with_index { |id, i| record_capture(device:, seq: i + 1, at_ms: 1_000, bib: "1", checkpoint: Checkpoint.find(id)) }
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be moved past another such checkpoint" ],
+                 set([ { id: ids.last, name: "Aid 2" }, { name: "New" }, { id: ids.first, name: "Aid 1" } ])["errors"]
+    assert_equal ids, @event.checkpoints.reload.map(&:id)
+  end
+
+  test "removing a checkpoint a phone is at sends the phone to the finish with a new set time" do
+    ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
+    device = create_device(event: @event)
+    device.update_columns(checkpoint_id: ids.last, checkpoint_set_at_ms: 1_000)
+    before = Clock.now_ms
+    assert_empty set([ { id: ids.first, name: "Aid 1" } ])["errors"]
+    device.reload
+    assert_nil device.checkpoint_id
+    assert_includes before..Clock.now_ms, device.checkpoint_set_at_ms
   end
 
   test "a phone's location entry at a checkpoint blocks removing it, without an exception" do
     ids = set([ { name: "Aid 1" }, { name: "Aid 2" } ]).dig("event", "checkpoints").map { it["id"] }
     device = create_device(event: @event)
     DeviceEntry.append!(device:, type: "DeviceLocation", captured_at_ms: 1_000, checkpoint_id: ids.first)
-    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed" ], set([ { id: ids.last, name: "Aid 2" } ])["errors"]
     assert_equal 2, @event.checkpoints.count
   end
 
@@ -47,7 +77,7 @@ class CourseApiTest < ActionDispatch::IntegrationTest
     aid = set([ { name: "Aid 1" } ]).dig("event", "checkpoints", 0, "id")
     rule(event: @event, kind: "set_race_start", race_id: @race.id, at_ms: 0)
     gql("mutation($e: ID!, $cp: ID) { insertCrossing(eventId: $e, bib: \"1\", atMs: 5000, checkpointId: $cp) { errors } }", e: @event.id, cp: aid)
-    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed or moved" ], set([])["errors"]
+    assert_equal [ "Aid 1 has crossings or phones recorded at it, so it can't be removed" ], set([])["errors"]
   end
 
   test "removing an unused checkpoint keeps the row, off the course" do
