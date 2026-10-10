@@ -50,10 +50,9 @@ export type Board = {
   out: { bib: string; name: string; lastName: string; lastAtMs: number | null; nextName: string; etaMs: number | null; late: boolean }[];
 };
 
-// The lower median: with an even count, the faster of the middle two.
 const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
-  return s.length ? s[Math.floor((s.length - 1) / 2)] : null;
+  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null;
 };
 
 // Where everyone is on a course race: per point, how many have passed and are

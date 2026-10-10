@@ -64,7 +64,7 @@ describe("courseBoard", () => {
     expect(board.points.map((p) => [p.name, p.passed, p.toCome])).toEqual([["Aid 1", 2, 1], ["Finish", 1, 2]]);
     expect(board.out.map((r) => [r.bib, r.lastName, r.nextName, r.etaMs])).toEqual([
       ["2", "Aid 1", "Finish", 1_200 + 2_000],
-      ["3", "Start", "Aid 1", 1_000],
+      ["3", "Start", "Aid 1", 1_100],
     ]);
     expect(board.out.map((r) => r.late)).toEqual([false, true]);
   });
