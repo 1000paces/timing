@@ -8,6 +8,7 @@ require_relative "results/cohort_scorer"
 require_relative "results/course_standings"
 require_relative "results/course_scorer"
 require_relative "results/publication"
+require_relative "results/course_anomalies"
 require_relative "results/anomalies"
 require_relative "results/engine"
 

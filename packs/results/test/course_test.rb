@@ -78,9 +78,23 @@ class CourseTest < Minitest::Test
   end
 
   def test_a_laps_race_ignores_captures_taken_at_checkpoints
-    yaml = setup_yaml(bibs: [ 1 ], laps: 3) + "crossings:\n  1: [100, {at: 150, cp: a1}, 200]\n"
+    yaml = setup_yaml(bibs: [ 1 ], laps: 3) + "crossings:\n  1: [100, {at: 150, cp: a1}, {at: 152, cp: a1}, {at: 154, cp: a1}, 200]\n"
     row = Results.compute(input_from(yaml)).races.first.rows.first
     assert_equal 2, row.laps
     assert_equal [], row.splits
+    assert_equal [ nil ], row.crossings.map(&:checkpoint_id).uniq
+    assert_equal [ 100_000, 200_000 ], row.crossings.map(&:at_ms)
+  end
+
+  def test_riders_still_out_tie_break_on_the_time_at_their_furthest_checkpoint
+    # Both reached Aid 2 (rider 1 first), but rider 1 has a later-timed inserted Aid 1 pass.
+    out = compute(<<~YAML)
+      crossings:
+        1: [{at: 2000, cp: a2}]
+        2: [{at: 1000, cp: a1}, {at: 2100, cp: a2}]
+      rulings:
+        - {kind: insert_capture, bib: 1, at: 2500, cp: a1}
+    YAML
+    assert_equal %w[1 2], out.races.first.rows.first(2).map(&:bib)
   end
 end

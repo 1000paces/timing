@@ -9,7 +9,7 @@ module Results
     def rows(racers, course)
       position = course.to_h { [ it.id, it.position ] }
       reached = ->(r) { r.passes.keys.map { position[it] }.max || 0 }
-      last_at = ->(r) { r.passes.values.map(&:at_ms).max || Float::INFINITY }
+      last_at = ->(r) { r.passes.max_by { |id, _| position[id] }&.last&.at_ms || Float::INFINITY }
       finished = racers.select { it.status == :finished }.sort_by { [ it.finish.at_ms, it.finish.ref, it.entrant.bib ] }
       out = racers.select { %i[racing pulled].include?(it.status) }
                   .sort_by { [ it.status == :pulled ? 1 : 0, -reached.(it), last_at.(it), it.entrant.bib ] }
