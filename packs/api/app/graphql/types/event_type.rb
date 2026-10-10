@@ -10,6 +10,10 @@ module Types
     field :timezone, String, null: false
     field :age_rule, String, null: false
     field :age_next_year, Boolean, null: false, description: "Racing age as of the end of the following year (season crosses the year boundary, e.g. CX)"
+    field :race_format, String, null: false, description: "laps, or course (point to point / single loop)"
+    field :checkpoints, [ CheckpointType ], null: false, description: "A course's timing points in order; the finish is after the last"
+    field :finish_distance_km, Float
+    field :finish_cutoff_at_ms, Millis
     field :races, [ RaceType ], null: false, description: "In scheduled order, then name"
     field :registrations, [ RegistrationType ], null: false, description: "By bib, then racers without one by name"
     field :registration_counts, RegistrationCountsType, null: false
@@ -22,6 +26,7 @@ module Types
       argument :limit, Integer, required: false, default_value: 20
     end
 
+    def finish_distance_km = object.finish_distance_km&.to_f
     def races = object.races.to_a.sort_by { [ it.scheduled_at_ms, it.name ] }
     def captures(limit:)
       voided = CaptureLaps.voided_ids(object).to_a

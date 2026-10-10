@@ -2,7 +2,7 @@ class Ruling < ApplicationRecord
   include BroadcastsEventChange
   include AppendOnly
 
-  # kind => payload keys that must be present
+  # kind => payload keys that must be present (insert_capture may also carry checkpoint_id)
   KINDS = {
     "set_race_start" => %w[race_id at_ms],
     "set_lap_count" => %w[race_id laps],

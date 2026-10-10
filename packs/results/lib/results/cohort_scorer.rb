@@ -89,9 +89,10 @@ module Results
       races.to_h { |r| [ r.id, starts[r.id]&.payload&.fetch("at_ms") ] }
     end
 
+    # Finish-line crossings since the start (a laps race ignores checkpoint captures).
     def post_start(entrant, start)
       return [] unless start
-      @resolved.crossings_by_bib.fetch(entrant.bib, []).select { it.at_ms >= start }
+      @resolved.crossings_by_bib.fetch(entrant.bib, []).select { it.at_ms >= start && it.checkpoint_id.nil? }
     end
 
     def racer_state(entrant, start, crossings, finish_open_at, flag_out_at)
@@ -108,7 +109,7 @@ module Results
       else crossings
       end
       RacerState.new(entrant:, race_start: start, crossings:, counted:, status:, finish: (finish if status == :finished), pull_at:,
-                     seen: @resolved.crossings_by_bib.fetch(entrant.bib, []), dropped: @resolved.dropped.fetch(entrant.bib, []))
+                     seen: @resolved.crossings_by_bib.fetch(entrant.bib, []).select { it.checkpoint_id.nil? }, dropped: @resolved.dropped.fetch(entrant.bib, []).select { it.checkpoint_id.nil? })
     end
 
     # Earliest of: the flagged crossing (early checkered flag), the first

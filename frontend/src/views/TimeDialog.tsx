@@ -4,11 +4,11 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { fromLocalInput, toLocalInput } from "../format";
 
 // Pick a time of day (to the second), pre-filled with atMs.
-export function TimeDialog({ title, action, atMs, onCancel, onSave }: { title: string; action: string; atMs: number; onCancel: () => void; onSave: (atMs: number) => void }) {
+export function TimeDialog({ title, action, atMs, onCancel, onSave, children }: { title: string; action: string; atMs: number; onCancel: () => void; onSave: (atMs: number) => void; children?: ReactNode }) {
   const [value, setValue] = useState(toLocalInput(atMs, { seconds: true }));
   const parsed = fromLocalInput(value);
   return (
@@ -17,6 +17,7 @@ export function TimeDialog({ title, action, atMs, onCancel, onSave }: { title: s
       <DialogContent>
         <TextField label="Time" type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} sx={{ mt: 1 }}
           slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 1 } }} />
+        {children}
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel}>Cancel</Button>

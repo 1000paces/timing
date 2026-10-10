@@ -10,6 +10,7 @@ module Mutations
     argument :bib_from, Integer, required: false
     argument :bib_to, Integer, required: false
     argument :timezone, String, required: false
+    argument :race_format, String, required: false
     argument :age_rule, String, required: false
 
     field :event, Types::EventType

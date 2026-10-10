@@ -15,6 +15,17 @@ class DeviceHashTest < ActiveSupport::TestCase
     end
   end
 
+  # Pinned literally (from before checkpoints existed) so a regenerated vector can't hide a change:
+  # a finish capture, with or without a null checkpoint_id, hashes exactly as old phones hash it.
+  GOLDEN_FINISH = { "id" => "e1", "kind" => "capture", "device_seq" => 1, "captured_at_ms" => 1000, "clock_offset_ms" => -25, "bib" => "101",
+                    "prev_hash" => "0388fb626ca89a127847443989334b8c29e17567bc03a7a2ed13effca701a4a1" }.freeze
+  GOLDEN_FINISH_HASH = "4b12d73ab756f7c1d5f7892cd87da2b3d29b95827e5d1a95e3527878ceaefb4e"
+
+  test "a finish capture hashes as it always has (also checked by the phone app)" do
+    assert_equal GOLDEN_FINISH_HASH, DeviceHash.digest(GOLDEN_FINISH)
+    assert_equal GOLDEN_FINISH_HASH, DeviceHash.digest(GOLDEN_FINISH.merge("checkpoint_id" => nil))
+  end
+
   test "hub-side entries chain from genesis and verify with the canonical rule" do
     device = create_device(event: create_event)
     capture = Capture.record!(device:, at_ms: 1_000, bib: "101")

@@ -112,4 +112,71 @@ class SyncTest < ActionDispatch::IntegrationTest
     get "/sync/v1/roster", headers: auth.merge("If-None-Match" => body["version"])
     assert_response :not_modified
   end
+
+  test "captures carry the checkpoint they were taken at; a capture without one is a finish capture" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    push(chain([ { captured_at_ms: 1_000, bib: "101", checkpoint_id: aid.id }, { captured_at_ms: 2_000, bib: "101" } ]))
+    assert_response :ok
+    assert_equal [ aid.id, nil ], Capture.where(device: @device).order(:device_seq).pluck(:checkpoint_id)
+  end
+
+  test "a checkpoint from another event rejects the whole batch" do
+    other = create_event(name: "Other").checkpoints.create!(position: 1, name: "Aid 1")
+    push(chain([ { captured_at_ms: 1_000, bib: "101", checkpoint_id: other.id } ]))
+    assert_response :conflict
+    assert_equal 0, Capture.where(device: @device).count
+  end
+
+  test "a location entry moves the device, unless an official moved it later" do
+    aid1 = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    aid2 = @event.checkpoints.create!(position: 2, name: "Aid 2")
+    push(chain([ { kind: "location", checkpoint_id: aid1.id, captured_at_ms: 1_000, clock_offset_ms: 0 } ]))
+    assert_response :ok
+    assert_equal [ aid1.id, 1_000 ], @device.reload.values_at(:checkpoint_id, :checkpoint_set_at_ms)
+
+    @device.move_to!(aid2.id, at_ms: 5_000) # the chief, later
+    entries = chain([ { kind: "location", captured_at_ms: 3_000, clock_offset_ms: 0 } ], from: 2,
+                    prev: DeviceEntry.where(device: @device).order(:device_seq).last.entry_hash)
+    push(entries) # the phone was offline: its move back to the finish happened before the chief's
+    assert_response :ok
+    assert_equal aid2.id, @device.reload.checkpoint_id
+  end
+
+  test "an entry naming a checkpoint removed from the course is still accepted" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    aid.update!(removed_at_ms: 1, position: nil)
+    push(chain([ { kind: "location", checkpoint_id: aid.id, captured_at_ms: 1_000, clock_offset_ms: 0 } ]))
+    assert_response :ok
+    assert_equal 1, DeviceEntry.where(device: @device, checkpoint_id: aid.id).count
+  end
+
+  test "the roster lists the course's checkpoints and where the hub has this device" do
+    @event.update!(race_format: "course")
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    @device.move_to!(aid.id, at_ms: 7_000)
+    get "/sync/v1/roster", headers: auth
+    body = response.parsed_body
+    assert_equal [ { "id" => aid.id, "name" => "Aid 1" } ], body["checkpoints"]
+    assert_equal({ "checkpoint_id" => aid.id, "checkpoint_set_at_ms" => 7_000 }, body["device"])
+  end
+
+  test "a laps event's roster sends no checkpoints and no device checkpoint" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    @device.move_to!(aid.id, at_ms: 7_000)
+    get "/sync/v1/roster", headers: auth
+    body = response.parsed_body
+    assert_equal [], body["checkpoints"]
+    assert_equal({ "checkpoint_id" => nil, "checkpoint_set_at_ms" => nil }, body["device"])
+  end
+
+  test "status on a course event reports no laps and no lap flags" do
+    @event.update!(race_format: "course")
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    push(chain([ { captured_at_ms: 30_000, clock_offset_ms: 0, bib: "101", checkpoint_id: aid.id },
+                 { captured_at_ms: 60_000, clock_offset_ms: 0, bib: "101" } ]))
+    get "/sync/v1/status", headers: auth
+    captures = response.parsed_body["captures"]
+    assert_equal 2, captures.size
+    assert(captures.all? { it.values_at("lap", "lap_ms", "typical_lap_ms", "lap_flag").all?(&:nil?) })
+  end
 end

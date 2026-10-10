@@ -9,11 +9,11 @@ import { formatClock } from "../format";
 import { SET_LAP_COUNT, type MutationResult } from "../queries";
 import { FlagOut } from "./FlagOut";
 
-type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; flagOutAtMs: number | null; flagOutLeaderBib: string | null; canAct: boolean; onChanged: () => void };
+type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; flagOutAtMs: number | null; flagOutLeaderBib: string | null; canAct: boolean; onChanged: () => void; course?: boolean };
 
 // A race's start status and lap count. Setting laps applies to every race that
 // finishes with this one.
-export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, flagOutLeaderBib, canAct, onChanged }: Props) {
+export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, flagOutLeaderBib, canAct, onChanged, course = false }: Props) {
   const [setLapCount] = useMutation<{ setLapCount: MutationResult }>(SET_LAP_COUNT);
   const [laps, setLaps] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +37,8 @@ export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, flagOut
       <Typography color={startAtMs ? "text.primary" : "text.secondary"}>
         {startAtMs ? `Started at ${formatClock(startAtMs)}` : "Not started — start it on the Start tab"}
       </Typography>
-      <Typography>Lap count: {lapCount ?? "not set"}</Typography>
-      {canAct && (
+      {!course && <Typography>Lap count: {lapCount ?? "not set"}</Typography>}
+      {canAct && !course && (
         <Stack component="form" direction="row" spacing={1} onSubmit={submit} sx={{ alignItems: "center" }}>
           <TextField label="Laps" type="number" size="small" value={laps} onChange={(e) => setLaps(e.target.value)}
             slotProps={{ htmlInput: { min: 1 } }} sx={{ width: 96 }} />
@@ -47,7 +47,7 @@ export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, flagOut
           </Button>
         </Stack>
       )}
-      {startAtMs && <FlagOut raceId={raceId} flagOutAtMs={flagOutAtMs} leaderBib={flagOutLeaderBib} canAct={canAct} onChanged={onChanged} />}
+      {startAtMs && !course && <FlagOut raceId={raceId} flagOutAtMs={flagOutAtMs} leaderBib={flagOutLeaderBib} canAct={canAct} onChanged={onChanged} />}
       {error && <Alert severity="error">{error}</Alert>}
     </Stack>
   );

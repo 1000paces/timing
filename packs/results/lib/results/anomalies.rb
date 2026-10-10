@@ -58,16 +58,17 @@ module Results
       end
     end
 
-    def initialize(input, resolved, scored_cohorts)
+    def initialize(input, resolved, scored_cohorts, courses = [])
       @input = input
       @config = input.config
       @resolved = resolved
       @cohorts = scored_cohorts
+      @courses = courses
     end
 
     def call
       dismissed = @resolved.rulings.of("dismiss_suggestion").map { it.payload["suggestion_key"] }.to_set
-      (lap_suggestions + lapping_suggestions + overdue_suggestions + clock_suggestions + unassigned_suggestions)
+      (lap_suggestions + lapping_suggestions + overdue_suggestions + CourseAnomalies.new(@input, @courses, dismissed).call + clock_suggestions + unassigned_suggestions)
         .reject { dismissed.include?(it.key) }
         .sort_by(&:key)
     end

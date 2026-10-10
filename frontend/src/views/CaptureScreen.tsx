@@ -129,7 +129,7 @@ export function CaptureScreen({ eventId, official, onSignedOut }: Props) {
           <option value="mine">Mine (this console)</option>
           {deviceNames.map((n) => <option key={n} value={n}>{n}</option>)}
         </TextField>
-        <CaptureFlagOut eventId={eventId} chief={chief} />
+        {event.raceFormat !== "course" && <CaptureFlagOut eventId={eventId} chief={chief} />}
       </Stack>
       {onlyBib && <Chip label={`Bib ${onlyBib}`} color="primary" size="small" onDelete={() => setOnlyBib(null)} sx={{ mt: 2 }} />}
       <Paper sx={{ mt: 2 }}>

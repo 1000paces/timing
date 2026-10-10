@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
 import { openCaptureDb } from "./db";
 import { digest, genesis } from "./hash";
-import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, startNewPairing, unsent } from "./log";
+import { allEntries, appendBibAssignment, appendCapture, appendLocation, appendVoid, canUnpair, startNewPairing, unsent } from "./log";
 
 let n = 0;
 const fresh = async () => {
@@ -12,6 +12,16 @@ const fresh = async () => {
 };
 
 describe("the phone's log", () => {
+  it("stamps a capture with its checkpoint, and logs location changes", async () => {
+    const db = await fresh();
+    const capture = await appendCapture(db, { atMs: 1_000, offsetMs: 0, bib: "7", checkpointId: "a1" });
+    expect(capture.checkpoint_id).toBe("a1");
+    const finish = await appendCapture(db, { atMs: 2_000, offsetMs: 0, bib: "7", checkpointId: null });
+    expect("checkpoint_id" in finish).toBe(false); // omitted, so it hashes as before
+    const moved = await appendLocation(db, "a2", 3_000, 0);
+    expect([moved.kind, moved.checkpoint_id, moved.captured_at_ms]).toEqual(["location", "a2", 3_000]);
+  });
+
   it("numbers entries from 1 and chains them from the device's genesis", async () => {
     const db = await fresh();
     const a = await appendCapture(db, { atMs: 1000, offsetMs: -20, bib: "101" });

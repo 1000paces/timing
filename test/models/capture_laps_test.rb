@@ -83,4 +83,27 @@ class CaptureLapsTest < ActiveSupport::TestCase
     Ruling.create!(event: @event, kind: "revert", payload: { "ruling_id" => assign.id })
     assert_nil CaptureLaps.new(@event).bib(loose)
   end
+
+  test "a checkpoint capture isn't a lap on a laps event" do
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    first = Capture.record!(device: @tablet, at_ms: 70_000, bib: "101")
+    elsewhere = record_capture(device: @tablet, seq: 99, at_ms: 100_000, bib: "101", checkpoint: aid)
+    second = Capture.record!(device: @tablet, at_ms: 130_000, bib: "101")
+    laps = CaptureLaps.new(@event)
+    assert_equal [ 1, nil, 2 ], [ first, elsewhere, second ].map { laps.lap(it) }
+    assert_equal 60_000, laps.info(second).lap_ms
+  end
+
+  test "a course event has no laps and no flags, finish or checkpoint" do
+    @event.update!(race_format: "course")
+    aid = @event.checkpoints.create!(position: 1, name: "Aid 1")
+    register(race: @race, bib: "102")
+    register(race: @race, bib: "103")
+    lap_at("102", 65, 125, 185)
+    lap_at("103", 70, 130, 190)
+    captures = lap_at("101", 60, 120, 240) + [ record_capture(device: @tablet, seq: 99, at_ms: 30_000, bib: "101", checkpoint: aid) ]
+    laps = CaptureLaps.new(@event)
+    assert captures.all? { laps.info(it) == CaptureLaps::NONE }
+    assert_equal "101", laps.bib(captures.last)
+  end
 end

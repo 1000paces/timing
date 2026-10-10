@@ -34,6 +34,7 @@ import {
   RACER,
   REVERT_RULING,
   VOID_CROSSING,
+  type CheckpointInfo,
   type FixResults,
   type RacerCrossing,
   type RacerDetail,
@@ -50,6 +51,7 @@ type Props = {
   bib: string;
   canAct: boolean; // chief and above: fixing controls
   racerNames: Map<string, string>; // bib → name, for Move to bib
+  checkpoints?: CheckpointInfo[]; // a course event's checkpoints, in order (none for laps)
   onClose: () => void;
   onChanged: () => void; // refresh the standings behind the panel
 };
@@ -61,9 +63,14 @@ type Asking =
   | { kind: "undo"; fix: RacerFix }
   | null;
 
+// A crossing that counted: a lap, a checkpoint or the finish.
+const isCounted = (c: RacerCrossing) => c.lap != null || c.kind === "SPLIT" || c.kind === "FINISH";
+
 // One racer's race: crossings with what they counted as, lap times and
 // positions, and (for chiefs) fixes and undo. Opened from a Results row.
-export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChanged }: Props) {
+export function RacerPanel({ eventId, bib, canAct, racerNames, checkpoints = [], onClose, onChanged }: Props) {
+  const names = new Map(checkpoints.map((c) => [c.id, c.name] as const));
+  const [where, setWhere] = useState(""); // checkpoint id to insert a crossing at; "" is the finish
   const racer = useQuery<{ racer: RacerDetail }>(RACER, { variables: { eventId, bib }, fetchPolicy: "cache-and-network" });
   const [voidCrossing] = useMutation<FixResults>(VOID_CROSSING);
   const [moveCrossing] = useMutation<FixResults>(MOVE_CROSSING);
@@ -99,7 +106,7 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
   }
 
   const r = racer.data?.racer;
-  const counted = r ? r.crossings.filter((c) => c.lap != null) : [];
+  const counted = r ? r.crossings.filter(isCounted) : [];
 
   function chosen(action: string) {
     if (!menu || !r) return;
@@ -110,7 +117,8 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
     if (action === "pull") void run(() => pullRacer({ variables: { eventId, bib, atMs: crossing.atMs } }));
     if (action === "move") setAsking({ kind: "move", crossing });
     if (action === "insert") {
-      const before = r.crossings.slice(0, index).filter((c) => c.lap != null).at(-1)?.atMs ?? r.startAtMs ?? crossing.atMs;
+      setWhere(crossing.checkpointId ?? "");
+      const before = r.crossings.slice(0, index).filter(isCounted).at(-1)?.atMs ?? r.startAtMs ?? crossing.atMs;
       setAsking({ kind: "insert", atMs: midpoint(before, crossing.atMs) });
     }
   }
@@ -145,6 +153,35 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
               ].filter(Boolean).join(" · ")}
             </Typography>
 
+            {r.splits.length > 0 && (
+              <>
+                <Typography variant="subtitle2">Checkpoints</Typography>
+                <Table size="small" data-testid="panel-splits" sx={{ mb: 2 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Point</TableCell>
+                      <TableCell>Crossed</TableCell>
+                      <TableCell align="right">Segment</TableCell>
+                      <TableCell align="right">Elapsed</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {r.splits.map((s) => (
+                      <TableRow key={s.checkpointId ?? "finish"} data-testid="panel-split">
+                        <TableCell>
+                          {s.checkpointId ? (names.get(s.checkpointId) ?? "Checkpoint") : "Finish"}
+                          {s.inserted && <Chip size="small" variant="outlined" label="inserted" sx={{ ml: 1 }} />}
+                        </TableCell>
+                        <TableCell sx={{ fontFamily: "monospace" }}>{s.atMs != null ? formatClock(s.atMs) : "—"}</TableCell>
+                        <TableCell align="right">{s.segmentMs != null ? formatElapsed(s.segmentMs) : "—"}</TableCell>
+                        <TableCell align="right">{s.elapsedMs != null ? formatElapsed(s.elapsedMs) : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -158,10 +195,10 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
               </TableHead>
               <TableBody>
                 {r.crossings.map((c, i) => {
-                  const ignored = kindLabel(c.kind);
+                  const ignored = c.kind === "SPLIT" ? null : kindLabel(c.kind);
                   return (
                     <TableRow key={c.ref} data-testid="panel-crossing" sx={ignored ? { "& td": { color: "text.disabled" } } : undefined}>
-                      <TableCell>{c.kind === "FINISH" ? "Finish" : (c.lap ?? "—")}</TableCell>
+                      <TableCell>{c.kind === "FINISH" ? "Finish" : c.kind === "SPLIT" ? kindLabel(c.kind, c.checkpointId, names) : (c.lap ?? "—")}</TableCell>
                       <TableCell sx={{ fontFamily: "monospace" }}>{formatClock(c.atMs)}</TableCell>
                       <TableCell align="right">{c.lapMs != null ? formatElapsed(c.lapMs) : ""}</TableCell>
                       <TableCell align="right">{c.lap != null && r.lapPositions[c.lap - 1] ? positionLabel(r.lapPositions[c.lap - 1]) : ""}</TableCell>
@@ -188,7 +225,7 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
             {canAct && (
               <Stack direction="row" spacing={1} sx={{ my: 2 }}>
                 <Button size="small" variant="outlined"
-                  onClick={() => setAsking({ kind: "insert", atMs: (counted.at(-1)?.atMs ?? r.startAtMs ?? Date.now()) + (counted.at(-1)?.lapMs ?? 60_000) })}>
+                  onClick={() => { setWhere(""); setAsking({ kind: "insert", atMs: (counted.at(-1)?.atMs ?? r.startAtMs ?? Date.now()) + (counted.at(-1)?.lapMs ?? 60_000) }); }}>
                   Insert crossing at…
                 </Button>
                 <Button size="small" variant="outlined" color="warning" onClick={() => setAsking({ kind: "pull", atMs: Date.now() })}>Pull now</Button>
@@ -232,8 +269,16 @@ export function RacerPanel({ eventId, bib, canAct, racerNames, onClose, onChange
           onSave={(atMs) => {
             const kind = asking.kind;
             setAsking(null);
-            void run(() => (kind === "insert" ? insertCrossing({ variables: { eventId, bib, atMs } }) : pullRacer({ variables: { eventId, bib, atMs } })));
-          }} />
+            void run(() => (kind === "insert" ? insertCrossing({ variables: { eventId, bib, atMs, checkpointId: where || null } }) : pullRacer({ variables: { eventId, bib, atMs } })));
+          }}>
+          {asking.kind === "insert" && checkpoints.length > 0 && (
+            <TextField select label="Where" value={where} onChange={(e) => setWhere(e.target.value)} fullWidth sx={{ mt: 2 }}
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
+              <MenuItem value="">Finish</MenuItem>
+              {checkpoints.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+            </TextField>
+          )}
+        </TimeDialog>
       ) : null}
       {asking?.kind === "move" && (
         <MoveDialog crossing={asking.crossing} racerNames={racerNames} onCancel={() => setAsking(null)}
