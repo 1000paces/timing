@@ -40,7 +40,8 @@ Laps events (cyclocross, crits, XCC) work exactly as today.
 
 Checkpoints can be added, renamed, reordered and deleted from the Event screen until a
 capture references one; after that a referenced checkpoint can be renamed or have its
-distance or cutoff edited, but not deleted or reordered.
+distance or cutoff edited, but not deleted, and referenced checkpoints keep their order
+among themselves (unreferenced ones can still be added, deleted or moved around them).
 
 ## Capture and sync
 
@@ -101,8 +102,8 @@ All use the existing suggestion → fix → ruling flow and the Problems screen.
 | Kind | Raised when | Fix offered |
 |---|---|---|
 | `missed_checkpoint` | A racer has a crossing at a later checkpoint or the finish but none at an earlier checkpoint. | `insert_capture` at that checkpoint, time interpolated between the neighbouring crossings by distance (or the midpoint without distances). The chief can dismiss (missed tap) or rule DSQ by hand. |
-| `overdue` (course) | A racer is still out and `now` is more than 1.5× their expected segment time past their last crossing. | `dnf`. |
-| `cutoff` | A checkpoint's cutoff has passed and a racer still out has no crossing there, or crossed it after the cutoff. | `pull` at the cutoff time. |
+| `overdue` (course) | A racer is still out and `now` is more than 1.5× their expected segment time past their last crossing. | `dnf`; or `dns` for a racer with no crossings at all (never started), who gets no `cutoff` problem. |
+| `cutoff` | A checkpoint's cutoff has passed and a racer still out has no crossing there, or a racer (still out or finished) crossed it after the cutoff. | `pull` at the cutoff time. |
 
 **Expected segment time** to the next checkpoint: the racer's own pace (time per km over
 their crossings so far) × the segment distance when distances are set; otherwise the

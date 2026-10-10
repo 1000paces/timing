@@ -18,8 +18,9 @@ module Results
     def racer_suggestions(racer, scored)
       return [] unless racer.race_start && %i[racing finished].include?(racer.status)
       course = scored.race.course
+      return Array(overdue(racer, course, scored)) if racer.passes.empty?
       missed = missed_checkpoints(racer, course, scored)
-      return missed if racer.status == :finished
+      return missed + Array(cutoff(racer, course, scored)) if racer.status == :finished
       missed + Array(cutoff(racer, course, scored)) + Array(overdue(racer, course, scored))
     end
 
@@ -50,6 +51,7 @@ module Results
     end
 
     # The first checkpoint whose cutoff has passed without the rider, or that they reached late.
+    # A finisher reached every point they skipped later, so only a late pass counts for them.
     def cutoff(racer, course, scored)
       point = course.find do |p|
         next false unless p.cutoff_at_ms && !@dismissed.include?("cutoff:#{racer.entrant.bib}:#{p.id || 'finish'}")
@@ -70,10 +72,14 @@ module Results
       expected = own_pace(racer, last_point, next_point) || field(scored.racers, last_point, next_point) || field(everyone, last_point, next_point)
       return nil unless expected && @now > last_at + (expected * OVERDUE_FACTOR).round
       bib = racer.entrant.bib
-      ref = last_point && racer.passes[last_point.id].ref
-      where = last_point ? "at #{last_point.name}" : "since the start"
-      Suggestion.new(key: "overdue:#{bib}:#{ref || 'start'}", kind: :overdue, bib:, race_id: scored.race.id,
-                     message: "Bib #{bib} is overdue at #{next_point.name}: last seen #{where} #{fmt(@now - last_at)} ago, " \
+      key = "overdue:#{bib}:#{(last_point && racer.passes[last_point.id].ref) || 'start'}"
+      unless last_point
+        return Suggestion.new(key:, kind: :overdue, bib:, race_id: scored.race.id,
+                              message: "Bib #{bib} hasn't been seen since the start — never started? Mark DNS",
+                              fix: { "kind" => "dns", "bib" => bib })
+      end
+      Suggestion.new(key:, kind: :overdue, bib:, race_id: scored.race.id,
+                     message: "Bib #{bib} is overdue at #{next_point.name}: last seen at #{last_point.name} #{fmt(@now - last_at)} ago, " \
                               "expected about #{fmt(expected)} — stopped? Mark DNF",
                      fix: { "kind" => "dnf", "bib" => bib })
     end

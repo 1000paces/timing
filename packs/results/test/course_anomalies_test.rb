@@ -102,4 +102,34 @@ class CourseAnomaliesTest < Minitest::Test
                    .find { it.kind == :missed_checkpoint }
     assert_includes 3_000_000..10_000_000, found.fix["at_ms"]
   end
+
+  def test_a_finisher_who_passed_the_finish_cutoff_late_gets_a_pull_at_the_cutoff
+    setup = SETUP.sub("finish_km: 100}", "finish_km: 100, finish_cutoff: 10000}")
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 6000, cp: a2}, 10500]\n"
+    found = Results.compute(input_from(setup + yaml + "now: 11000\n")).suggestions.select { it.kind == :cutoff && it.bib == "1" }
+    assert_equal [ [ "cutoff:1:finish", { "kind" => "pull", "bib" => "1", "at_ms" => 10_000_000 } ] ], found.map { [ it.key, it.fix ] }
+
+    accepted = Results.compute(input_from(setup + yaml + "rulings:\n  - {kind: pull, bib: 1, at: 10000}\nnow: 11000\n"))
+    assert_equal :pulled, accepted.races.first.rows.find { it.bib == "1" }.status
+    assert_empty accepted.suggestions.select { it.kind == :cutoff && it.bib == "1" }
+  end
+
+  def test_a_finisher_late_at_a_checkpoint_gets_that_cutoff_unless_dismissed
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}, 12000]\n"
+    assert_equal [ "cutoff:1:a2" ], suggestions(yaml, now: 12_100).select { it.kind == :cutoff }.map(&:key)
+    dismissed = yaml + "rulings:\n  - {kind: dismiss_suggestion, suggestion_key: \"cutoff:1:a2\"}\n"
+    assert_empty suggestions(dismissed, now: 12_100).select { it.kind == :cutoff }
+  end
+
+  def test_a_rider_never_seen_after_the_start_is_offered_dns_and_no_cutoff
+    crossings = "crossings:\n  1: [{at: 3000, cp: a1}]\n  2: [{at: 3100, cp: a1}]\n  3: [{at: 3200, cp: a1}]\n"
+    found = suggestions(crossings, now: 9_500).select { it.bib == "4" }
+    assert_equal [ :overdue ], found.map(&:kind)
+    assert_equal [ "overdue:4:start", { "kind" => "dns", "bib" => "4" } ], [ found.first.key, found.first.fix ]
+    assert_match(/hasn't been seen since the start .* Mark DNS/, found.first.message)
+
+    accepted = Results.compute(input_from(SETUP + crossings + "rulings:\n  - {kind: dns, bib: 4}\nnow: 9500\n"))
+    assert_equal :dns, accepted.races.first.rows.find { it.bib == "4" }.status
+    assert_empty accepted.suggestions.select { it.bib == "4" }
+  end
 end

@@ -73,14 +73,14 @@ Items deliberately deferred. Each has enough context to pick up cold.
 - **Done (2026-10-10):** an event can be a course event with checkpoints (name, distance,
   optional cutoff), a finish distance and cutoff; phones are paired to a checkpoint;
   Results shows splits, the Course view shows who has passed where, and problems flag
-  missed checkpoints, overdue riders and missed cutoffs.
+  missed checkpoints, overdue riders and missed cutoffs. A registered rider never seen
+  after the start gets one overdue problem offering DNS (no cutoff problem).
 - **Left:**
   - splits within laps (checkpoints on a laps course);
   - out-and-back / repeated checkpoints;
   - individual-start time trials;
   - fixed-time races (most laps in N hours);
   - per-race courses (short and long course in one event);
-  - registered riders who never start get overdue/missed-cutoff problems once the field moves on; DNS would be the right fix;
   - clock-time cutoffs resolve on the event's date, so a race past midnight needs the elapsed (+h:mm) form;
   - `bin/replay-race --check/--fit` don't apply to course datasets.
 - **Raised:** 2026-10-07.
