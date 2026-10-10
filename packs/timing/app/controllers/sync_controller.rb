@@ -21,13 +21,15 @@ class SyncController < ApplicationController
     render json: { ack_seq: result.ack_seq }
   end
 
-  # Bib, name and race only — nothing else about racers leaves the hub.
+  # Bib, name and race only — nothing else about racers leaves the hub. Plus the course's checkpoints and where the hub has this phone.
   def roster
     event = @device.event
     races = event.races.to_a.sort_by { [ it.scheduled_at_ms, it.name ] }
     racers = event.registrations.where.not(bib: nil).includes(:racer).order(:bib)
                   .map { { bib: it.bib, name: it.racer.full_name, race_id: it.race_id } }
-    body = { event: { name: event.name, races: races.map { { id: it.id, name: it.name } } }, racers: }
+    checkpoints = event.checkpoints.map { { id: it.id, name: it.name } }
+    device = { checkpoint_id: @device.checkpoint_id, checkpoint_set_at_ms: @device.checkpoint_set_at_ms }
+    body = { event: { name: event.name, races: races.map { { id: it.id, name: it.name } } }, racers:, checkpoints:, device: }
     version = Digest::SHA256.hexdigest(body.to_json)[0, 16]
     return head :not_modified if request.headers["If-None-Match"] == version
     render json: body.merge(version:)

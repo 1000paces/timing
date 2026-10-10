@@ -17,9 +17,9 @@ module BuildHelpers
     Device.create!(event:, name:, paired_at_ms: 0, credential_digest: "test-digest")
   end
 
-  def record_capture(device:, seq:, at_ms:, bib: nil, offset_ms: 0, id: SecureRandom.uuid_v7)
+  def record_capture(device:, seq:, at_ms:, bib: nil, offset_ms: 0, id: SecureRandom.uuid_v7, checkpoint: nil)
     Capture.create!(id:, event_id: device.event_id, device:, device_seq: seq, captured_at_ms: at_ms,
-                    clock_offset_ms: offset_ms, bib:, prev_hash: "p#{seq}", entry_hash: "h#{seq}")
+                    clock_offset_ms: offset_ms, bib:, checkpoint_id: checkpoint&.id, prev_hash: "p#{seq}", entry_hash: "h#{seq}")
   end
 
   def rule(event:, kind:, created_at_ms: nil, **payload)

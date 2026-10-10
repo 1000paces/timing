@@ -12,14 +12,15 @@ class PairingToken < ApplicationRecord
   class Invalid < StandardError; end
 
   belongs_to :event
+  belongs_to :checkpoint, optional: true
 
-  def self.issue!(event:, official:)
+  def self.issue!(event:, official:, checkpoint_id: nil)
     code = loop do
       candidate = Array.new(6) { ALPHABET[SecureRandom.random_number(ALPHABET.size)] }.join
       break candidate unless exists?(token_digest: Device.digest(candidate))
     end
     record = create!(event:, token_digest: Device.digest(code), expires_at_ms: Clock.now_ms + TTL_MS,
-                     created_by_official_id: official.id)
+                     created_by_official_id: official.id, checkpoint_id:)
     [ record, "#{code[0, 3]}-#{code[3, 3]}" ]
   end
 
@@ -30,7 +31,7 @@ class PairingToken < ApplicationRecord
       raise Invalid, "This pairing code has already been used" if token.used_at_ms
       raise Invalid, "This pairing code has expired" if token.expires_at_ms < Clock.now_ms
       token.update!(used_at_ms: Clock.now_ms)
-      Device.pair!(event: token.event, name: device_name.presence || "Tablet")
+      Device.pair!(event: token.event, name: device_name.presence || "Tablet", checkpoint_id: token.checkpoint_id)
     end
   end
 end
