@@ -1,8 +1,8 @@
 import "fake-indexeddb/auto";
 import { describe, expect, it } from "vitest";
-import type { Api } from "./api";
+import type { Api, Roster } from "./api";
 import { openCaptureDb, type CaptureDb } from "./db";
-import { appendCapture, type Entry } from "./log";
+import { allEntries, appendCapture, type Entry } from "./log";
 import { RevokedError } from "./api";
 import { createSync } from "./sync";
 
@@ -122,7 +122,7 @@ describe("sync", () => {
     const db = await setup();
     const { api } = fakeHub();
     const calls: string[] = [];
-    api.roster = async () => { calls.push("roster"); return { event: { name: "CX", races: [] }, racers: [], version: "v" }; };
+    api.roster = async () => { calls.push("roster"); return { event: { name: "CX", races: [] }, racers: [], checkpoints: [], device: { checkpoint_id: null, checkpoint_set_at_ms: null }, version: "v" }; };
     const clock = api.clock;
     api.clock = async (t0) => { calls.push("clock"); return clock(t0); };
     const s = createSync({ db, api, now: () => 0, setTimer: () => 0, clearTimer: () => {} });
@@ -131,5 +131,44 @@ describe("sync", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(calls[0]).toBe("roster");
     expect(s.state().contacted).toBe(true);
+  });
+});
+
+const rosterWith = (device: Roster["device"]): Roster =>
+  ({ event: { name: "E", races: [] }, racers: [], checkpoints: [{ id: "a1", name: "Aid 1" }], device, version: "v1" });
+
+describe("location", () => {
+  it("adopts a move the chief made after the phone's own last change, and logs it", async () => {
+    const db = await setup();
+    await db.put("state", { checkpointId: null, changedAtMs: 1_000 }, "location");
+    const { api } = fakeHub();
+    api.roster = async () => rosterWith({ checkpoint_id: "a1", checkpoint_set_at_ms: 2_000 });
+    const s = sync(db, api);
+    await s.load();
+    await s.refreshRoster();
+    expect(s.state().location).toEqual({ checkpointId: "a1", changedAtMs: 2_000 });
+    const [entry] = await allEntries(db);
+    expect([entry.kind, entry.checkpoint_id, entry.captured_at_ms]).toEqual(["location", "a1", 2_000]);
+  });
+
+  it("keeps the phone's choice when it is newer than the hub's", async () => {
+    const db = await setup();
+    await db.put("state", { checkpointId: null, changedAtMs: 3_000 }, "location");
+    const { api } = fakeHub();
+    api.roster = async () => rosterWith({ checkpoint_id: "a1", checkpoint_set_at_ms: 2_000 });
+    const s = sync(db, api);
+    await s.load();
+    await s.refreshRoster();
+    expect(s.state().location).toEqual({ checkpointId: null, changedAtMs: 3_000 });
+    expect(await allEntries(db)).toEqual([]);
+  });
+
+  it("setLocation logs the move and remembers it", async () => {
+    const db = await setup();
+    const s = sync(db, fakeHub().api);
+    await s.load();
+    await s.setLocation("a1");
+    expect(s.state().location?.checkpointId).toBe("a1");
+    expect((await allEntries(db)).map((e) => e.kind)).toEqual(["location"]);
   });
 });

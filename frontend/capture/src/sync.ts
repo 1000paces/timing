@@ -1,7 +1,8 @@
 import { RevokedError, type Api, type Roster, type Status } from "./api";
 import { pickOffset, type ClockSample } from "./clock";
 import type { CaptureDb } from "./db";
-import { unsent } from "./log";
+import { shouldAdopt, type Location } from "./location";
+import { appendLocation, unsent } from "./log";
 
 export type SyncState = {
   pending: number; // entries the hub hasn't stored yet
@@ -13,6 +14,7 @@ export type SyncState = {
   clockSynced: boolean;
   offsetMs: number | null; // hub time - phone time
   lastSyncAtMs: number | null;
+  location: Location | null; // where this phone is on the course
   roster: Roster | null;
   status: Status | null;
   error: string | null;
@@ -46,7 +48,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
   let pushing: Promise<void> | null = null;
   const due = { clock: 0, status: 0, roster: 0, push: 0 };
   let halted = false; // stop() was called: no more timers
-  let state: SyncState = { pending: 0, online: true, contacted: false, stopped: false, revoked: false, ackSeq: 0, clockSynced: false, offsetMs: null, lastSyncAtMs: null, roster: null, status: null, error: null };
+  let state: SyncState = { pending: 0, online: true, contacted: false, stopped: false, revoked: false, ackSeq: 0, clockSynced: false, offsetMs: null, lastSyncAtMs: null, location: null, roster: null, status: null, error: null };
   const listeners = new Set<(s: SyncState) => void>();
   const set = (patch: Partial<SyncState>) => {
     state = { ...state, ...patch, ...(patch.online === true ? { contacted: true } : {}) };
@@ -66,6 +68,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
       offsetMs: ((await db.get("state", "offsetMs")) as number | undefined) ?? null,
       clockSynced: (await db.get("state", "offsetMs")) != null,
       lastSyncAtMs: ((await db.get("state", "lastSyncAtMs")) as number | undefined) ?? null,
+      location: ((await db.get("state", "location")) as Location | undefined) ?? null,
       roster: ((await db.get("state", "roster")) as Roster | undefined) ?? null,
       status: ((await db.get("state", "status")) as Status | undefined) ?? null,
     });
@@ -151,12 +154,22 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
     }
   }
 
+  // The volunteer (or, via the roster, an official) moved this phone.
+  async function setLocation(checkpointId: string | null, hubAtMs = now() + (state.offsetMs ?? 0)) {
+    const location = { checkpointId, changedAtMs: hubAtMs };
+    await appendLocation(db, checkpointId, hubAtMs - (state.offsetMs ?? 0), state.offsetMs);
+    await db.put("state", location, "location");
+    set({ location });
+    await countPending();
+  }
+
   async function refreshRoster() {
     try {
       const roster = await api.roster(state.roster?.version ?? null);
       if (roster) {
         await db.put("state", roster, "roster");
         set({ roster });
+        if (shouldAdopt(state.location, roster.device)) await setLocation(roster.device.checkpoint_id, roster.device.checkpoint_set_at_ms!);
       }
       set({ online: true });
     } catch (e) {
@@ -210,6 +223,7 @@ export function createSync({ db, api, now = Date.now, setTimer = (fn, ms) => set
     syncClock,
     refreshStatus,
     refreshRoster,
+    setLocation,
     // After a tap: count it, and push straight away (status follows).
     async kick() {
       await countPending();
