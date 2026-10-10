@@ -73,6 +73,12 @@ export function PhonesPanel({ eventId, event: given }: { eventId: string; event?
     }
   }
 
+  function startPairing() {
+    if (!isCourse) return void pair();
+    setPairAt(null);
+    setAsking(true);
+  }
+
   async function moveDevice(device: PhoneRow, checkpointId: string | null) {
     try {
       const errors = (await setDeviceCheckpoint({ variables: { deviceId: device.id, checkpointId } })).data?.setDeviceCheckpoint.errors ?? [];
@@ -101,7 +107,7 @@ export function PhonesPanel({ eventId, event: given }: { eventId: string; event?
     <Paper sx={{ mt: 2, p: 2 }}>
       <Stack direction="row" sx={{ alignItems: "center", mb: 1 }}>
         <Typography variant="h6" component="h2" sx={{ flex: 1 }}>Phones</Typography>
-        <Button variant="outlined" onClick={() => (isCourse ? (setPairAt(null), setAsking(true)) : void pair())}>Pair a phone</Button>
+        <Button variant="outlined" onClick={startPairing}>Pair a phone</Button>
       </Stack>
       {error && <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError(null)}>{error}</Alert>}
       {phones.length === 0 && <Typography color="text.secondary">No phones paired yet.</Typography>}
