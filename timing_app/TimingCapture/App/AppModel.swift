@@ -110,6 +110,26 @@ final class AuthBox: @unchecked Sendable {
         }
     }
 
+    // A correction or a delete is an entry too: written first, then shown and sent.
+    func correct(rowId: String, bib: String) async {
+        await write { _ = try await self.store.appendBibAssignment(captureId: rowId, bib: bib) }
+    }
+
+    func remove(rowId: String) async {
+        await write { _ = try await self.store.appendVoid(captureId: rowId) }
+    }
+
+    private func write(_ append: () async throws -> Void) async {
+        do {
+            try await append()
+            await reload()
+            await sync?.kick()
+        } catch {
+            self.error = "Not saved: \(error.localizedDescription)"
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+        }
+    }
+
     // MARK: lifecycle
 
     func scenePhaseChanged(_ phase: ScenePhase) {

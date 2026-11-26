@@ -52,3 +52,20 @@ func hubCapture(_ id: String, bib: String?, entered: String?, source: String, la
         #expect(captureRows(entries, roster: rowsRoster, status: status, ackSeq: 2)[0].bib == "12") // sent: the hub's view again
     }
 }
+
+@Suite struct FormatTests {
+    // From frontend/src/format.test.ts.
+    @Test func formatElapsedMinutesSecondsTenths() {
+        #expect(formatElapsed(61_500) == "1:01.5")
+        #expect(formatElapsed(0) == "0:00.0")
+        #expect(formatElapsed(3_600_000) == "1:00:00.0")
+        #expect(formatElapsed(59_960) == "1:00.0")
+    }
+
+    // formatClock: the time of day, 24-hour, with seconds (as toLocaleTimeString with hour12: false).
+    @Test func formatClockIsTimeOfDay() {
+        let utc = TimeZone(identifier: "UTC")!
+        #expect(formatClock(0, timeZone: utc) == "00:00:00")
+        #expect(formatClock(((13 * 60 + 5) * 60 + 9) * 1000 + 999, timeZone: utc) == "13:05:09")
+    }
+}

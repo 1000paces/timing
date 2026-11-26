@@ -62,3 +62,21 @@ func captureRows(_ entries: [Entry], roster: Roster?, status: Status?, ackSeq: I
                 locked: known?.bib_source == "ruling")
         }
 }
+
+// Elapsed time as m:ss.t or h:mm:ss.t (frontend/src/format.ts formatElapsed).
+func formatElapsed(_ ms: Int) -> String {
+    let tenths = Int((Double(ms) / 100 + 0.5).rounded(.down))
+    let total = tenths / 10
+    let hours = total / 3600
+    let minutes = (total % 3600) / 60
+    let seconds = String(format: "%02d.%d", total % 60, tenths % 10)
+    return hours > 0 ? String(format: "%d:%02d:", hours, minutes) + seconds : "\(minutes):\(seconds)"
+}
+
+// The time of day, 24-hour with seconds (frontend/src/format.ts formatClock).
+func formatClock(_ ms: Int, timeZone: TimeZone = .current) -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+    let parts = calendar.dateComponents([.hour, .minute, .second], from: Date(timeIntervalSince1970: Double(ms) / 1000))
+    return String(format: "%02d:%02d:%02d", parts.hour ?? 0, parts.minute ?? 0, parts.second ?? 0)
+}
