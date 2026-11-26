@@ -234,3 +234,12 @@ Later:
   - Phone rows show times with the current clock offset rather than each entry's own.
   - Console devices ("Console – name") are listed in the Phones panel; hide them or label them.
   - A phone's own delete (capture_void) can't be undone from the console's ruling history.
+
+### Native capture app (left out of the first version, 2026-11-26)
+See `docs/superpowers/specs/2026-11-26-native-capture-app-design.md`.
+- **Keep the screen awake** while on the capture screen (`isIdleTimerDisabled`) — a dimmed or locked phone at the line misses taps. Likely the first to add.
+- **Sync in the background** while the app is closed or the phone is locked (background tasks); today sync pauses until the app is foregrounded, though taps are safe on the phone.
+- **App Store release** (today: Xcode dev install / TestFlight). Needs icon, privacy text, review notes about the LAN hub.
+- **Open the app from the system camera** (universal links on the console's pairing QR), instead of scanning inside the app.
+- **iPad multi-window** (two capture screens side by side, e.g. two lines on one tablet).
+- **Automated end-to-end UI tests** against a live hub (today: a manual checklist in the Simulator).
