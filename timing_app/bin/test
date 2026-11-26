@@ -1,0 +1,19 @@
+#!/bin/sh
+# Generate the project and run the unit tests on an iOS Simulator.
+# Usage: bin/test [Suite ...]   (e.g. bin/test StoreTests SyncTests)
+# DEST overrides the simulator (default: the first available iPhone).
+set -e
+cd "$(dirname "$0")/.."
+xcodegen -q
+DEST=${DEST:-"platform=iOS Simulator,name=$(xcrun simctl list devices available | grep -m1 -o 'iPhone [^(]*' | sed 's/ *$//')"}
+ONLY=""
+for suite in "$@"; do ONLY="$ONLY -only-testing:TimingCaptureTests/$suite"; done
+LOG=$(mktemp -t timing-capture-test)
+set +e
+# shellcheck disable=SC2086
+xcodebuild test -project TimingCapture.xcodeproj -scheme TimingCapture -destination "$DEST" $ONLY > "$LOG" 2>&1
+status=$?
+set -e
+grep -E "(error:|✘|Test run with|\*\* TEST)" "$LOG" | grep -v IDESchemeActionSDKRecord | tail -40
+[ $status -eq 0 ] || echo "Full log: $LOG"
+exit $status
