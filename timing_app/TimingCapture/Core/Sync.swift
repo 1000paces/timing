@@ -43,6 +43,7 @@ func syncLabel(_ s: SyncState) -> String {
     @ObservationIgnored private let api: HubAPI
     @ObservationIgnored private let now: () -> Int
     @ObservationIgnored private let sleep: (Int) async throws -> Void
+    @ObservationIgnored private let onOffset: (Int?) -> Void
     @ObservationIgnored private var ackSeq = 0
     @ObservationIgnored private var backoffMs = 0
     @ObservationIgnored private var due = (clock: 0, status: 0, roster: 0, push: 0)
@@ -52,11 +53,13 @@ func syncLabel(_ s: SyncState) -> String {
     @ObservationIgnored private var halted = false
 
     init(store: CaptureStore, api: HubAPI, now: @escaping () -> Int = { Int(Date().timeIntervalSince1970 * 1000) },
-         sleep: @escaping (Int) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0) * 1_000_000) }) {
+         sleep: @escaping (Int) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0) * 1_000_000) },
+         onOffset: @escaping (Int?) -> Void = { _ in }) {
         self.store = store
         self.api = api
         self.now = now
         self.sleep = sleep
+        self.onOffset = onOffset // the clock offset changed (the hub client sends it with every request)
     }
 
     func load() async {
@@ -65,6 +68,7 @@ func syncLabel(_ s: SyncState) -> String {
             state.stopped = try await store.get("stopped", as: Bool.self) ?? false
             state.offsetMs = try await store.get("offsetMs", as: Int.self)
             state.clockSynced = state.offsetMs != nil
+            onOffset(state.offsetMs)
             state.lastSyncAtMs = try await store.get("lastSyncAtMs", as: Int.self)
             state.location = try await store.get("location", as: Location.self)
             state.roster = try await store.get("roster", as: Roster.self)
@@ -95,6 +99,7 @@ func syncLabel(_ s: SyncState) -> String {
             let offset = pickOffset(samples).offsetMs
             try await store.put("offsetMs", offset)
             state.offsetMs = offset
+            onOffset(offset)
             state.clockSynced = true
             state.online = true
         } catch {

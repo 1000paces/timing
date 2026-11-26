@@ -294,3 +294,15 @@ final class FakeHub: HubAPI, @unchecked Sendable {
         #expect(syncLabel(stopped) == "Revoked")
     }
 }
+
+@MainActor @Suite struct SyncOffsetTests {
+    @Test func reportsOffsetOnLoadAndClockSync() async throws {
+        let store = try await pairedStore()
+        try await store.put("offsetMs", 7)
+        var seen: [Int?] = []
+        let s = Sync(store: store, api: FakeHub(), now: { 0 }, sleep: { _ in throw CancellationError() }, onOffset: { seen.append($0) })
+        await s.load()
+        await s.syncClock()
+        #expect(seen == [7, 50])
+    }
+}

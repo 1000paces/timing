@@ -6,7 +6,7 @@ set -e
 cd "$(dirname "$0")/.."
 xcodegen -q
 DEST=${DEST:-"platform=iOS Simulator,name=$(xcrun simctl list devices available | grep -m1 -o 'iPhone [^(]*' | sed 's/ *$//')"}
-ONLY=""
+ONLY="-skip-testing:TimingCaptureUITests"
 for suite in "$@"; do ONLY="$ONLY -only-testing:TimingCaptureTests/$suite"; done
 LOG=$(mktemp -t timing-capture-test)
 set +e

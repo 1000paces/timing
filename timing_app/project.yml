@@ -43,11 +43,25 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.tests
         GENERATE_INFOPLIST_FILE: YES
+  # Drives the app against a live dev hub; skipped unless HUB_ADDRESS and HUB_CODE are given
+  # (bin/e2e). Not part of bin/test.
+  TimingCaptureUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [TimingCaptureUITests]
+    dependencies:
+      - target: TimingCapture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: TimingCapture
 schemes:
   TimingCapture:
     build:
       targets:
         TimingCapture: all
         TimingCaptureTests: [test]
+        TimingCaptureUITests: [test]
     test:
-      targets: [TimingCaptureTests]
+      targets: [TimingCaptureTests, TimingCaptureUITests]
