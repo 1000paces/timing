@@ -21,7 +21,7 @@ xcrun simctl boot "$SIM" 2>/dev/null || true
 ONLY="-only-testing:TimingCaptureUITests/LiveHubUITests${1:+/$1}"
 LOG=$(mktemp -t timing-capture-e2e)
 set +e
-TEST_RUNNER_HUB_ADDRESS=${HUB_ADDRESS:-http://localhost:3000} TEST_RUNNER_HUB_CODE=$CODE TEST_RUNNER_HUB_BIB=$BIB TEST_RUNNER_HUB_NAME="$NAME" \
+TEST_RUNNER_HUB_ADDRESS=${HUB_ADDRESS:-http://localhost:3000} TEST_RUNNER_HUB_CODE=$CODE TEST_RUNNER_HUB_BIB=$BIB TEST_RUNNER_HUB_NAME="$NAME" TEST_RUNNER_HUB_RESOLVED_BIB=$RESOLVED_BIB \
   xcodebuild test -project TimingCapture.xcodeproj -scheme TimingCapture -destination "platform=iOS Simulator,name=$SIM" \
   -resultBundlePath "$LOG.xcresult" $ONLY > "$LOG" 2>&1
 status=$?

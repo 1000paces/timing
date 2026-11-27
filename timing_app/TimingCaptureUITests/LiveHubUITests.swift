@@ -128,8 +128,88 @@ final class LiveHubUITests: XCTestCase {
         XCTAssertTrue(app.textFields["hub-address"].waitForExistence(timeout: 5), "unpair didn't return to the pair screen")
     }
 
+    // The spec's offline check, in steps run with the hub stopped and started between them
+    // (see README, "End-to-end check").
+
+    // Hub stopped: three crossings, one correction and one delete wait on the phone.
+    func testOfflineRecord() throws {
+        try launchPaired()
+        let firstRow = app.descendants(matching: .any).matching(identifier: "crossing").firstMatch
+        enter() // a no-bib crossing
+        press("7001")
+        enter()
+        press("7002")
+        enter()
+        firstRow.buttons["Edit bib"].tap() // 7002 → 7003
+        let sheet = app.descendants(matching: .any).matching(identifier: "bib-sheet").firstMatch
+        XCTAssertTrue(sheet.waitForExistence(timeout: 5))
+        press("7003", in: sheet)
+        sheet.buttons["Save"].tap()
+        let second = app.descendants(matching: .any).matching(identifier: "crossing").element(boundBy: 1)
+        second.buttons["Delete crossing"].tap() // 7001
+        app.buttons["Delete"].tap()
+        waitForPill("Offline · 5 to send")
+        attach("offline")
+
+        app.buttons["Menu"].tap()
+        app.buttons["Pair again"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH '5 crossings on this phone'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["pair"].isEnabled)
+        attach("re-pair-warning")
+        app.buttons["Back to capture"].tap()
+        XCTAssertTrue(app.buttons["Enter"].waitForExistence(timeout: 5))
+    }
+
+    // Hub back: everything goes.
+    func testBackOnline() throws {
+        try launchPaired()
+        waitForPill("Synced", timeout: 60)
+        XCTAssertTrue(app.staticTexts["No bib"].exists)
+    }
+
+    // A chief resolved the no-bib crossing on the console (HUB_RESOLVED_BIB); the phone shows it, locked.
+    func testResolvedBibShows() throws {
+        let resolved = try env("HUB_RESOLVED_BIB")
+        try launchPaired()
+        let row = app.descendants(matching: .any).matching(identifier: "crossing")
+            .containing(NSPredicate(format: "label == 'entered: no bib'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 30), "the resolved crossing never showed")
+        XCTAssertEqual(row.buttons["Edit bib"].value as? String, resolved)
+        XCTAssertFalse(row.buttons["Edit bib"].isEnabled, "an official's ruling should lock the bib")
+        attach("resolved")
+    }
+
+    // Digits from a hardware keyboard reach the bib. (Return and Delete aren't checked:
+    // XCUITest's synthesized Return/Delete never reach the app, so check those by hand.)
+    func testHardwareKeyboard() throws {
+        try launchPaired()
+        waitForPill("Synced")
+        for key in "8889" { app.typeKey(String(key), modifierFlags: []) }
+        XCTAssertEqual(app.staticTexts["bib-display"].label, "8889", "typed digits didn't reach the bib")
+        for _ in 0..<4 { app.buttons["Backspace"].tap() }
+    }
+
+    // Screenshots in every orientation (run on an iPhone and an iPad simulator).
+    func testLayouts() throws {
+        try launchPaired()
+        waitForPill("Synced")
+        for (name, orientation) in [("portrait", UIDeviceOrientation.portrait), ("landscape", .landscapeLeft), ("landscape-right", .landscapeRight)] {
+            XCUIDevice.shared.orientation = orientation
+            sleep(1)
+            XCTAssertTrue(app.buttons["Enter"].isHittable, "Enter not reachable in \(name)")
+            attach(name)
+            if name == "landscape" {
+                app.descendants(matching: .any).matching(identifier: "crossing").firstMatch.buttons["Edit bib"].tap()
+                sleep(1)
+                attach("landscape-bib-sheet")
+                app.buttons["Cancel"].tap()
+            }
+        }
+        XCUIDevice.shared.orientation = .portrait
+    }
+
     private func attach(_ name: String) {
-        let shot = XCTAttachment(screenshot: app.screenshot())
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = name
         shot.lifetime = .keepAlways
         add(shot)

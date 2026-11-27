@@ -20,19 +20,37 @@ struct CaptureView: View {
         return (racer.name, roster.event.races.first { $0.id == racer.race_id }?.name)
     }
 
+    // Portrait stacks keypad over log; landscape (and a wide iPad) puts them side by side.
+    // The top bar and keypad stay put; only the log scrolls.
     var body: some View {
         VStack(spacing: 0) {
             topBar
             banners
-            VStack(spacing: 12) {
-                bibDisplay
-                Keypad(now: { model.tapClock.nowMs() }, onDigit: model.typeDigit, onBack: model.backspace,
-                       onEnter: { at in Task { await model.tap(atMs: at) } })
+            GeometryReader { geo in
+                let wide = geo.size.width > geo.size.height
+                let short = wide && geo.size.height < 500 // a phone in landscape
+                if wide {
+                    HStack(spacing: 0) {
+                        entry(compact: short, fill: true)
+                            .frame(width: max(260, geo.size.width * 0.4))
+                        Divider()
+                        crossingLog
+                    }
+                } else {
+                    VStack(spacing: 0) {
+                        entry(compact: false, fill: false)
+                        Divider()
+                        crossingLog
+                    }
+                }
             }
-            .padding()
-            Divider()
-            crossingLog
         }
+        .background(KeyCatcher(enabled: editing == nil && deleting == nil && !picking && exported == nil,
+                                onDigit: model.typeDigit, onDelete: model.backspace,
+                                onReturn: {
+                                    let at = model.tapClock.nowMs()
+                                    Task { await model.tap(atMs: at) }
+                                }))
         .background(model.flash ? Color.green.opacity(0.35) : Color(.systemBackground))
         .animation(.easeOut(duration: 0.15), value: model.flash)
         .sheet(isPresented: $picking) {
@@ -143,17 +161,27 @@ struct CaptureView: View {
         }
     }
 
-    private var bibDisplay: some View {
+    private func entry(compact: Bool, fill: Bool) -> some View {
+        VStack(spacing: compact ? 6 : 12) {
+            bibDisplay(compact: compact)
+            Keypad(compact: compact, fill: fill, now: { model.tapClock.nowMs() }, onDigit: model.typeDigit, onBack: model.backspace,
+                   onEnter: { at in Task { await model.tap(atMs: at) } })
+        }
+        .padding(compact ? 8 : 16)
+    }
+
+    private func bibDisplay(compact: Bool) -> some View {
         Group {
             if model.bib.isEmpty {
                 Text("Bib (or Enter for no bib)").font(.title3).foregroundStyle(.tertiary)
             } else {
-                Text(model.bib).font(.system(size: 56, weight: .bold)).tracking(4)
+                Text(model.bib).font(.system(size: compact ? 36 : 56, weight: .bold)).tracking(4)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 68)
+        .frame(maxWidth: .infinity, minHeight: compact ? 44 : 68)
         .accessibilityIdentifier("bib-display")
     }
+
 }
 
 struct Banner: View {

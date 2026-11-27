@@ -8,6 +8,7 @@ struct PairView: View {
     @State private var unsent = 0
     @State private var confirmed = false
     @State private var exported: URL?
+    @State private var scanning = false
 
     private var blocked: Bool { unsent > 0 && !confirmed }
 
@@ -31,6 +32,11 @@ struct PairView: View {
                     Text("On the console: Capture (or Event) → Phones → Pair a phone. Scan the QR code, or type the code shown under it.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                }
+                if QRScannerView.isAvailable {
+                    Section {
+                        Button { scanning = true } label: { Label("Scan QR code", systemImage: "qrcode.viewfinder") }
+                    }
                 }
                 Section("Hub") {
                     TextField("Hub address", text: $address, prompt: Text("192.168.1.10"))
@@ -65,13 +71,30 @@ struct PairView: View {
                     }
                     .disabled(model.pairBusy || blocked || (code.trimmingCharacters(in: .whitespaces).isEmpty && HubAddress.parse(address)?.code == nil))
                     .accessibilityIdentifier("pair")
-                    if model.pairing != nil {
-                        Button("Back to capture") { model.pairingAgain = false }.frame(maxWidth: .infinity)
-                    }
                 }
             }
             .navigationTitle("Pair this phone")
+            .toolbar {
+                if model.pairing != nil {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Back to capture") { model.pairingAgain = false }
+                    }
+                }
+            }
             .sheet(item: $exported) { url in ShareSheet(url: url) }
+            .sheet(isPresented: $scanning) {
+                NavigationStack {
+                    QRScannerView { scannedAddress, scannedCode in
+                        address = scannedAddress
+                        code = scannedCode
+                        scanning = false
+                    }
+                    .ignoresSafeArea()
+                    .navigationTitle("Scan the pairing code")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { scanning = false } } }
+                }
+            }
             .task {
                 name = model.pairing?.name ?? name
                 unsent = await model.unsentCount()

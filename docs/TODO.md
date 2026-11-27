@@ -242,4 +242,5 @@ See `docs/superpowers/specs/2026-11-26-native-capture-app-design.md`.
 - **App Store release** (today: Xcode dev install / TestFlight). Needs icon, privacy text, review notes about the LAN hub.
 - **Open the app from the system camera** (universal links on the console's pairing QR), instead of scanning inside the app.
 - **iPad multi-window** (two capture screens side by side, e.g. two lines on one tablet).
-- **Automated end-to-end UI tests** against a live hub (today: a manual checklist in the Simulator).
+- **Automated end-to-end UI tests** against a live hub: `timing_app/bin/e2e` drives each step against a dev hub, but stopping/starting the hub and resolving a bib on the console between steps is still by hand (see `timing_app/README.md`). Not in CI.
+- **Hardware keyboard Return/Delete** on the capture screen are unverified: XCUITest's synthesized keys never reach the app (digits do). Check with a real Bluetooth keyboard; if they don't work, look at what claims them ahead of `KeyCatcherView`.
