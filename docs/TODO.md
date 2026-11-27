@@ -234,3 +234,21 @@ Later:
   - Phone rows show times with the current clock offset rather than each entry's own.
   - Console devices ("Console – name") are listed in the Phones panel; hide them or label them.
   - A phone's own delete (capture_void) can't be undone from the console's ruling history.
+
+### Native capture app (left out of the first version, 2026-11-26)
+See `docs/superpowers/specs/2026-11-26-native-capture-app-design.md`.
+- **Keep the screen awake** while on the capture screen (`isIdleTimerDisabled`) — a dimmed or locked phone at the line misses taps. Likely the first to add.
+- **Sync in the background** while the app is closed or the phone is locked (background tasks); today sync pauses until the app is foregrounded, though taps are safe on the phone.
+- **App Store release** (today: Xcode dev install / TestFlight). Needs icon, privacy text, review notes about the LAN hub.
+- **Open the app from the system camera** (universal links on the console's pairing QR), instead of scanning inside the app.
+- **iPad multi-window** (two capture screens side by side, e.g. two lines on one tablet).
+- **Automated end-to-end UI tests** against a live hub: `timing_app/bin/e2e` drives each step against a dev hub, but stopping/starting the hub and resolving a bib on the console between steps is still by hand (see `timing_app/README.md`). Not in CI.
+- **Hardware keyboard Return/Delete** on the capture screen are unverified: XCUITest's synthesized keys never reach the app (digits do). Check with a real Bluetooth keyboard; if they don't work, look at what claims them ahead of `KeyCatcherView`.
+- Native capture review minors (2026-11-26):
+  - A tap within milliseconds of relaunch can be stamped Finish / without clock offset: await `Sync.load()` before showing the capture screen.
+  - Every foreground restarts the sync loop (a brief "Offline" from cancelled requests); start only after a background, and don't count cancellations as offline.
+  - Network-path changes (`NWPathMonitor`) don't call `online()`; reconnects are noticed by the 5 s push retry.
+  - An `http://` hub address in a release build says "Enter the hub address…"; say "use the https address on the console".
+  - SQLite uses `synchronous=FULL` without `PRAGMA fullfsync`; measure the cost of fullfsync per tap.
+  - Crossing rows are recomputed on every keystroke; cache them when entries/status/roster change (long logs get slow).
+  - After an Unpair, the next pairing archives the old log with no pairing info (as the PWA does).

@@ -27,6 +27,11 @@ bin/hub
 - `bin/hub` currently runs in the development environment, not production. See `docs/TODO.md`, "Run the venue hub in production mode".
 - Keep `storage/` backed up: it holds the database and the certificate authority. A new CA means re-trusting every tablet.
 
+## Native capture app
+
+An iPhone/iPad version of the capture app lives in `timing_app/`; see
+`timing_app/README.md` to build it, install it on a device and pair it.
+
 ## Ops console
 
 - Building the console needs Node 24 and npm, and network access for `npm ci` —

@@ -1,0 +1,68 @@
+name: TimingCapture
+options:
+  bundleIdPrefix: com.ronmiles
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: Q3KYUZGC72
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  TimingCapture:
+    type: application
+    platform: iOS
+    sources: [TimingCapture]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "Timing Capture"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSCameraUsageDescription: "Scan the pairing code shown on the timing console."
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Send crossings to the timing hub on this network."
+        # No encryption beyond what iOS provides, so TestFlight skips the export-compliance question.
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        # Debug builds may talk plain http to a dev hub (localhost:3000); release builds require https.
+        Debug:
+          INFOPLIST_FILE: TimingCapture/Info-Debug.plist
+  TimingCaptureTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [TimingCaptureTests]
+    dependencies:
+      - target: TimingCapture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.tests
+        GENERATE_INFOPLIST_FILE: YES
+  # Drives the app against a live dev hub; skipped unless HUB_ADDRESS and HUB_CODE are given
+  # (bin/e2e). Not part of bin/test.
+  TimingCaptureUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [TimingCaptureUITests]
+    dependencies:
+      - target: TimingCapture
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: TimingCapture
+schemes:
+  TimingCapture:
+    build:
+      targets:
+        TimingCapture: all
+        TimingCaptureTests: [test]
+        TimingCaptureUITests: [test]
+    test:
+      targets: [TimingCaptureTests, TimingCaptureUITests]
