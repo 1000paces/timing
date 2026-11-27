@@ -69,3 +69,15 @@ KEEP=1 bin/e2e testExportAndUnpair
 Check by hand: scanning the console QR on a real device, and a hardware keyboard's
 Return and Delete keys (XCUITest's synthesized Return/Delete never reach the app,
 so `testHardwareKeyboard` checks digits only).
+
+## TestFlight
+
+```sh
+bin/testflight             # archive a Release build and upload it (timing_app/ must be committed)
+bin/testflight --archive   # archive only
+```
+
+The build number is the repo's commit count; bump `MARKETING_VERSION` in `project.yml` for a
+new version. Signing is automatic with team Q3KYUZGC72, and Xcode must be signed in to that
+account. Release builds only accept `https://` hub addresses, so trust the hub's certificate
+on the phone first (`/onboarding`).
