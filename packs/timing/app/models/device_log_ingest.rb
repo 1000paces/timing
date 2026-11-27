@@ -3,10 +3,11 @@
 # and a hash that matches DeviceHash. Entries already stored are skipped (a
 # resend after a lost ack). Anything else — a gap, a bad hash, an unknown kind,
 # a fix for another device's capture — rejects the whole batch and flags the
-# device as sync-stopped.
+# device as sync-stopped. Location entries move the device (see Device#move_to!).
 class DeviceLogIngest
   Result = Data.define(:ack_seq, :error)
-  CLASSES = { "capture" => "Capture", "bib_assignment" => "BibAssignment", "capture_void" => "CaptureVoid" }.freeze
+  CLASSES = { "capture" => "Capture", "bib_assignment" => "BibAssignment", "capture_void" => "CaptureVoid",
+             "location" => "DeviceLocation" }.freeze
 
   class Mismatch < StandardError; end
 
@@ -29,6 +30,9 @@ class DeviceLogIngest
           raise Mismatch unless entry["device_seq"] == ack + 1 && entry["prev_hash"] == prev && DeviceHash.digest(entry) == entry["hash"]
           raise Mismatch unless build(entry).save
           ack += 1
+          if entry["kind"] == "location"
+            @device.move_to!(entry["checkpoint_id"], at_ms: entry["captured_at_ms"] + entry["clock_offset_ms"].to_i)
+          end
           prev = entry["hash"]
         end
       end
@@ -48,10 +52,21 @@ class DeviceLogIngest
     case entry["kind"]
     when "capture"
       raise Mismatch unless entry["captured_at_ms"].is_a?(Integer)
-      attrs.merge!(captured_at_ms: entry["captured_at_ms"], clock_offset_ms: entry["clock_offset_ms"], bib: entry["bib"].to_s.strip.presence)
+      attrs.merge!(captured_at_ms: entry["captured_at_ms"], clock_offset_ms: entry["clock_offset_ms"], bib: entry["bib"].to_s.strip.presence,
+                   checkpoint_id: checkpoint!(entry))
+    when "location"
+      raise Mismatch unless entry["captured_at_ms"].is_a?(Integer)
+      attrs.merge!(captured_at_ms: entry["captured_at_ms"], clock_offset_ms: entry["clock_offset_ms"], checkpoint_id: checkpoint!(entry))
     when "bib_assignment" then attrs.merge!(capture_id: entry["capture_id"], bib: entry["bib"].to_s.strip)
     when "capture_void" then attrs.merge!(capture_id: entry["capture_id"])
     end
     klass.new(attrs)
+  end
+
+  # A checkpoint must be one of the device's event's (absent: the finish).
+  def checkpoint!(entry)
+    id = entry["checkpoint_id"] or return nil
+    raise Mismatch unless Checkpoint.exists?(id:, event_id: @device.event_id)
+    id
   end
 end

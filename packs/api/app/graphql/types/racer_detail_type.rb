@@ -13,6 +13,7 @@ module Types
     field :pull_at_ms, Millis
     field :finish_ref, ID
     field :lap_positions, [ Integer ], null: false
+    field :splits, [ SplitType ], null: false, description: "Course races: one per checkpoint, then the finish"
     field :crossings, [ RacerCrossingType ], null: false
     field :rulings, [ RacerRulingType ], null: false, description: "Fixes affecting this racer, newest first"
   end

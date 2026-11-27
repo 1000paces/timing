@@ -5,7 +5,7 @@ import { captureRows } from "./rows";
 
 const e = (seq: number, kind: Entry["kind"], extra: Partial<Entry>): Entry =>
   ({ id: `e${seq}`, kind, device_seq: seq, prev_hash: "p", hash: "h", ...extra }) as Entry;
-const roster = { event: { name: "CX", races: [{ id: "r1", name: "Cat 3 Men" }] }, racers: [{ bib: "101", name: "Ann Lee", race_id: "r1" }], version: "v" };
+const roster = { event: { name: "CX", races: [{ id: "r1", name: "Cat 3 Men" }] }, racers: [{ bib: "101", name: "Ann Lee", race_id: "r1" }], checkpoints: [], device: { checkpoint_id: null, checkpoint_set_at_ms: null }, version: "v" };
 
 describe("captureRows", () => {
   it("before a sync: local corrections, roster names, chips, and no lap yet", () => {

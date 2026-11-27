@@ -3,7 +3,7 @@ import type { RaceStandings, Row } from "./queries";
 import { groupWaves } from "./waves";
 
 const row = (bib: string, laps: number, elapsedMs: number | null, status = "RACING", place: number | null = 1): Row =>
-  ({ place, bib, name: `Racer ${bib}`, status, laps, elapsedMs, gapLapsDown: null, gapMs: null });
+  ({ place, bib, name: `Racer ${bib}`, status, laps, elapsedMs, gapLapsDown: null, gapMs: null, splits: [] });
 const race = (id: string, startAtMs: number | null, rows: Row[]): RaceStandings =>
   ({ race: { id, name: `Race ${id}` }, state: "IN_PROGRESS", lapCount: null, startAtMs, flagOutAtMs: null, flagOutLeaderBib: null, rows });
 

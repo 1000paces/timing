@@ -14,7 +14,9 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { CREATE_PAIRING_TOKEN, DEVICES, REVOKE_DEVICE, type MutationResult, type PhoneRow } from "../queries";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import { CREATE_PAIRING_TOKEN, DEVICES, EVENT, REVOKE_DEVICE, SET_DEVICE_CHECKPOINT, type CheckpointInfo, type EventData, type EventInfo, type MutationResult, type PhoneRow } from "../queries";
 
 // "just now", "4 min ago", "2 h ago".
 export function ago(ms: number | null, now = Date.now()): string {
@@ -26,10 +28,32 @@ export function ago(ms: number | null, now = Date.now()): string {
 }
 
 // Pair phones to this event with a QR code; see when each last synced; revoke.
-export function PhonesPanel({ eventId }: { eventId: string }) {
+// On a course event each phone sits at a checkpoint (or the finish). A phone may
+// still point at a checkpoint since removed from the course.
+function CheckpointSelect({ value, checkpoints, onChange, label = "Location" }: { value: string | null; checkpoints: CheckpointInfo[]; onChange: (id: string | null) => void; label?: string }) {
+  const removed = value != null && !checkpoints.some((c) => c.id === value);
+  return (
+    <TextField select size="small" label={label} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} sx={{ minWidth: 160 }}
+      slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
+      <MenuItem value="">Finish</MenuItem>
+      {checkpoints.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+      {removed && <MenuItem value={value}>Removed checkpoint</MenuItem>}
+    </TextField>
+  );
+}
+
+export function PhonesPanel({ eventId, event: given }: { eventId: string; event?: EventInfo }) {
+  // Capture screen doesn't have the event; the cache usually does.
+  const fetched = useQuery<EventData>(EVENT, { variables: { id: eventId }, skip: given != null });
+  const event = given ?? fetched.data?.event;
+  const checkpoints = event?.checkpoints ?? [];
+  const isCourse = event?.raceFormat === "course";
+  const [pairAt, setPairAt] = useState<string | null>(null);
+  const [setDeviceCheckpoint] = useMutation<{ setDeviceCheckpoint: MutationResult }>(SET_DEVICE_CHECKPOINT);
   const devices = useQuery<{ devices: PhoneRow[] }>(DEVICES, { variables: { eventId }, pollInterval: 5000, fetchPolicy: "network-only" });
   const [createToken] = useMutation<{ createPairingToken: MutationResult & { token: string | null; pairingUrl: string | null; expiresAtMs: number | null } }>(CREATE_PAIRING_TOKEN);
   const [revoke] = useMutation<{ revokeDevice: MutationResult }>(REVOKE_DEVICE);
+  const [asking, setAsking] = useState(false);
   const [pairing, setPairing] = useState<{ url: string; code: string; qr: string; expiresAtMs: number } | null>(null);
   const [revoking, setRevoking] = useState<PhoneRow | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +66,28 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
   async function pair() {
     setError(null);
     try {
-      const result = (await createToken({ variables: { eventId } })).data?.createPairingToken;
+      const result = (await createToken({ variables: { eventId, checkpointId: isCourse ? pairAt : null } })).data?.createPairingToken;
       if (!result?.pairingUrl || !result.token || !result.expiresAtMs) return setError(result?.errors.join("; ") || "Couldn't create a pairing code");
       setPairing({ url: result.pairingUrl, code: result.token, qr: await QRCode.toDataURL(result.pairingUrl, { width: 280, margin: 1 }), expiresAtMs: result.expiresAtMs });
     } catch (e) {
       setError((e as Error).message);
     }
+  }
+
+  function startPairing() {
+    if (!isCourse) return void pair();
+    setPairAt(null);
+    setAsking(true);
+  }
+
+  async function moveDevice(device: PhoneRow, checkpointId: string | null) {
+    try {
+      const errors = (await setDeviceCheckpoint({ variables: { deviceId: device.id, checkpointId } })).data?.setDeviceCheckpoint.errors ?? [];
+      setError(errors.length ? errors.join("; ") : null);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    void devices.refetch().catch(() => {});
   }
 
   async function confirmRevoke(device: PhoneRow) {
@@ -68,7 +108,7 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
     <Paper sx={{ mt: 2, p: 2 }}>
       <Stack direction="row" sx={{ alignItems: "center", mb: 1 }}>
         <Typography variant="h6" component="h2" sx={{ flex: 1 }}>Phones</Typography>
-        <Button variant="outlined" onClick={() => void pair()}>Pair a phone</Button>
+        <Button variant="outlined" onClick={startPairing}>Pair a phone</Button>
       </Stack>
       {error && <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError(null)}>{error}</Alert>}
       {phones.length === 0 && <Typography color="text.secondary">No phones paired yet.</Typography>}
@@ -82,6 +122,7 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
                 {d.clockOffsetMs != null ? ` · Clock ${d.clockOffsetMs > 0 ? "+" : ""}${d.clockOffsetMs} ms` : " · Clock not synced"}
               </Typography>
             </Box>
+            {isCourse && !d.revokedAtMs && <CheckpointSelect value={d.checkpointId} checkpoints={checkpoints} onChange={(id) => void moveDevice(d, id)} />}
             {d.syncStoppedAtMs && <Chip size="small" color="error" label="Sync stopped" />}
             {d.revokedAtMs ? (
               <Chip size="small" label="Revoked" />
@@ -91,6 +132,17 @@ export function PhonesPanel({ eventId }: { eventId: string }) {
           </ListItem>
         ))}
       </List>
+
+      <Dialog open={asking} onClose={() => setAsking(false)}>
+        <DialogTitle>Where will this phone be?</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <CheckpointSelect value={pairAt} checkpoints={checkpoints} onChange={setPairAt} label="Checkpoint" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAsking(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => { setAsking(false); void pair(); }}>Create code</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={pairing != null} onClose={() => setPairing(null)}>
         <DialogTitle>Pair a phone</DialogTitle>

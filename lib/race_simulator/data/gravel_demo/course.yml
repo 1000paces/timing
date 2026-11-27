@@ -1,0 +1,21 @@
+# A made-up 100 km gravel race to exercise course events: elapsed times at each
+# checkpoint, then the finish; "-" is a missed tap; a short list means the rider stopped.
+event:
+  name: Gravel Demo
+  date: "2026-10-17"
+  timezone: America/Los_Angeles
+  discipline: gravel
+  location: Hood River, OR
+gun: "08:00"
+checkpoints:
+  - { name: Aid 1, km: 30 }
+  - { name: Aid 2, km: 62, cutoff: "10:30" }
+finish: { km: 100 }
+races:
+  - name: 100K Open
+    riders:
+      "105": ["1:02:00", "2:05:00", "3:20:00"]
+      "101": ["1:00:00", "2:10:00", "3:30:00"]
+      "102": ["1:05:00", "-", "3:40:00"]   # missed tap at Aid 2
+      "103": ["1:20:00", "2:50:00"]        # reached Aid 2 after the cutoff, still out
+      "104": ["1:10:00"]                   # stopped after Aid 1

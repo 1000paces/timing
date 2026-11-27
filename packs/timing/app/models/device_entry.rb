@@ -10,7 +10,7 @@ class DeviceEntry < ApplicationRecord
   validates :device_seq, numericality: { only_integer: true, greater_than: 0 }, uniqueness: { scope: :device_id }
   validates :prev_hash, :entry_hash, :received_at_ms, presence: true
 
-  KINDS = { "Capture" => "capture", "BibAssignment" => "bib_assignment", "CaptureVoid" => "capture_void" }.freeze
+  KINDS = { "Capture" => "capture", "BibAssignment" => "bib_assignment", "CaptureVoid" => "capture_void", "DeviceLocation" => "location" }.freeze
 
   # Appends to a hub-side device's log (the console, the simulator): the hub
   # numbers the entry and continues the device's hash chain itself, with the
@@ -31,6 +31,6 @@ class DeviceEntry < ApplicationRecord
   # The entry as a device sends it, without its hash.
   def wire
     { "id" => id, "kind" => kind, "device_seq" => device_seq, "prev_hash" => prev_hash, "captured_at_ms" => captured_at_ms,
-      "clock_offset_ms" => clock_offset_ms, "bib" => bib, "capture_id" => capture_id }.compact
+      "clock_offset_ms" => clock_offset_ms, "bib" => bib, "capture_id" => capture_id, "checkpoint_id" => checkpoint_id }.compact
   end
 end

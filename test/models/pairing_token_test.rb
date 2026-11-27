@@ -41,4 +41,13 @@ class PairingTokenTest < ActiveSupport::TestCase
     device, = PairingToken.redeem!("  #{code.downcase.delete('-')} ", device_name: "Phone")
     assert device.persisted?
   end
+
+  test "a pairing code can place the phone at a checkpoint" do
+    event = create_event(discipline: "gravel")
+    aid = event.checkpoints.create!(position: 1, name: "Aid 1")
+    _, code = PairingToken.issue!(event:, official: create_official, checkpoint_id: aid.id)
+    device, = PairingToken.redeem!(code, device_name: "Aid phone")
+    assert_equal aid.id, device.checkpoint_id
+    assert device.checkpoint_set_at_ms
+  end
 end

@@ -113,4 +113,10 @@ class ResolverTest < Minitest::Test
     ])
     assert_equal Set["v", "rd"], rulings.cancelled_ids
   end
+
+  def test_debounce_is_per_checkpoint
+    yaml = setup_yaml(bibs: [ 1 ]) + "crossings:\n  1: [{at: 100, cp: a1}, {at: 103, cp: a1}, 105]\n"
+    resolved = Results::Resolver.new(input_from(yaml)).call
+    assert_equal [ [ 100_000, "a1" ], [ 105_000, nil ] ], resolved.crossings_by_bib["1"].map { [ it.at_ms, it.checkpoint_id ] }
+  end
 end

@@ -18,4 +18,16 @@ describe("device log checksum", () => {
       expect(await digest(e.entry)).toBe(e.hash);
     }
   });
+
+  // Pinned literally (from before checkpoints existed), as in the hub's DeviceHash test:
+  // a finish capture, with or without a null checkpoint_id, hashes exactly as old phones hash it.
+  it("hashes a finish capture as it always has", async () => {
+    const finish = {
+      id: "e1", kind: "capture", device_seq: 1, captured_at_ms: 1000, clock_offset_ms: -25, bib: "101",
+      prev_hash: "0388fb626ca89a127847443989334b8c29e17567bc03a7a2ed13effca701a4a1",
+    };
+    const golden = "4b12d73ab756f7c1d5f7892cd87da2b3d29b95827e5d1a95e3527878ceaefb4e";
+    expect(await digest(finish)).toBe(golden);
+    expect(await digest({ ...finish, checkpoint_id: null })).toBe(golden);
+  });
 });

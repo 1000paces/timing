@@ -22,6 +22,8 @@ import { FilterWithChips } from "./FilterWithChips";
 import { RaceControls } from "./RaceControls";
 import { ReviewQueue } from "./ReviewQueue";
 import { RacerPanel } from "./RacerPanel";
+import { CourseBoard } from "./CourseBoard";
+import { CourseStandings } from "./CourseStandings";
 import { Standings } from "./Standings";
 import { WaveStandings } from "./WaveStandings";
 import { FlagOut } from "./FlagOut";
@@ -35,13 +37,16 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   const filterKey = `results:${eventId}`;
   const [raceFilter, setRaceFilter] = useState<string[]>(() => raceIdsFromSearch(initialSearch(filterKey, window.location.search)));
   // Category: a table per race. Wave: a table per scheduled start, in order on the road.
-  const [view, setView] = useState<"category" | "wave">(() =>
-    new URLSearchParams(initialSearch(filterKey, window.location.search)).get("view") === "wave" ? "wave" : "category");
+  // A course event instead offers Results (splits per race) and Course (where everyone is).
+  const [view, setView] = useState<"category" | "wave" | "course">(() => {
+    const v = new URLSearchParams(initialSearch(filterKey, window.location.search)).get("view");
+    return v === "wave" || v === "course" ? v : "category";
+  });
   // The open racer panel is in the address too (?racer=101), but isn't remembered across tabs.
   const [racer, setRacer] = useState<string | null>(() => new URLSearchParams(window.location.search).get("racer"));
   useEffect(() => {
     const remembered = new URLSearchParams(raceIdsToSearch(raceFilter));
-    if (view === "wave") remembered.set("view", "wave");
+    if (view !== "category") remembered.set("view", view);
     rememberSearch(filterKey, remembered.size ? `?${remembered}` : "");
     const params = new URLSearchParams(remembered);
     if (racer) params.set("racer", racer);
@@ -66,6 +71,10 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
   // Races in the event's order (scheduled start, then name).
   const byId = new Map((report?.races ?? []).map((r) => [r.race.id, r]));
   const races = event.data.event.races.flatMap((r) => byId.get(r.id) ?? []);
+  const course = event.data.event.raceFormat === "course";
+  const checkpoints = event.data.event.checkpoints;
+  // A remembered view from the other format falls back to the first one.
+  const activeView = course ? (view === "course" ? "course" : "category") : view === "wave" ? "wave" : "category";
   const allRaces = event.data.event.races.map((r) => ({ id: r.id, name: r.name }));
   const shown = raceFilter.length ? races.filter((r) => raceFilter.includes(r.race.id)) : races;
   const canAct = roleCanAct(official.role);
@@ -93,16 +102,26 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
             </Stack>
           )}
           <Box sx={{ flex: 1 }} />
-          <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v) => v && setView(v)} aria-label="Group results by">
-            <ToggleButton value="category">Category</ToggleButton>
-            <ToggleButton value="wave">Wave</ToggleButton>
+          <ToggleButtonGroup size="small" exclusive value={activeView} onChange={(_, v) => v && setView(v)} aria-label="Group results by">
+            <ToggleButton value="category">{course ? "Results" : "Category"}</ToggleButton>
+            <ToggleButton value={course ? "course" : "wave"}>{course ? "Course" : "Wave"}</ToggleButton>
           </ToggleButtonGroup>
         </Stack>
-        {view === "wave" && groupWaves(shown.map((r) => ({ ...r, scheduledAtMs: scheduledById.get(r.race.id) ?? null }))).map((wave) => (
+        {activeView === "wave" && groupWaves(shown.map((r) => ({ ...r, scheduledAtMs: scheduledById.get(r.race.id) ?? null }))).map((wave) => (
           <WaveStandings key={wave.scheduledAtMs ?? "none"} wave={wave} onRowClick={(row) => setRacer(row.bib)}
             controls={wave.startedRaceId && <FlagOut raceId={wave.startedRaceId} flagOutAtMs={wave.flagOutAtMs} leaderBib={wave.flagOutLeaderBib} canAct={canAct} onChanged={refresh} />} />
         ))}
-        {view === "category" && shown.map((race) => (
+        {activeView === "course" && shown.map((race) => (
+          <CourseBoard key={race.race.id} race={race} checkpoints={checkpoints} finishCutoffAtMs={event.data!.event.finishCutoffAtMs}
+            finishDistanceKm={event.data!.event.finishDistanceKm}
+            timeZone={event.data!.event.timezone} onRowClick={(row) => setRacer(row.bib)} />
+        ))}
+        {course && activeView === "category" && shown.map((race) => (
+          <CourseStandings key={race.race.id} race={race} checkpoints={checkpoints}
+            controls={<RaceControls course raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} flagOutAtMs={race.flagOutAtMs} flagOutLeaderBib={race.flagOutLeaderBib} canAct={canAct} onChanged={refresh} />}
+            onRowClick={(row) => setRacer(row.bib)} />
+        ))}
+        {!course && activeView === "category" && shown.map((race) => (
           <Standings
             key={race.race.id}
             race={race}
@@ -115,7 +134,7 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
         raceNames={new Map(races.map((r) => [r.race.id, r.race.name]))}
         racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
       {racer && (
-        <RacerPanel key={racer} eventId={eventId} bib={racer} canAct={canAct} onClose={() => setRacer(null)} onChanged={refresh}
+        <RacerPanel key={racer} eventId={eventId} bib={racer} checkpoints={course ? checkpoints : []} canAct={canAct} onClose={() => setRacer(null)} onChanged={refresh}
           racerNames={new Map(races.flatMap((r) => r.rows.map((row) => [row.bib, row.name] as const)))} />
       )}
     </Box>

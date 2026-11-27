@@ -69,11 +69,20 @@ Items deliberately deferred. Each has enough context to pick up cold.
   official has to untick the setting for those. Could default it from the event
   date (Sep–Dec → next year; Jan–Aug → this year).
 
-### Intermediate timing (split points on course)
-- Capture at points other than the finish line (e.g. a mid-course split), so
-  officials see positions and gaps between laps. Not in the first race-day slices.
-- Would need a capture "point" per device (finish / split N), splits per lap in
-  the engine and on the racer panel, and missed-split handling.
+### Course events (checkpoints on a point-to-point course)
+- **Done (2026-10-10):** an event can be a course event with checkpoints (name, distance,
+  optional cutoff), a finish distance and cutoff; phones are paired to a checkpoint;
+  Results shows splits, the Course view shows who has passed where, and problems flag
+  missed checkpoints, overdue riders and missed cutoffs. A registered rider never seen
+  after the start gets one overdue problem offering DNS (no cutoff problem).
+- **Left:**
+  - splits within laps (checkpoints on a laps course);
+  - out-and-back / repeated checkpoints;
+  - individual-start time trials;
+  - fixed-time races (most laps in N hours);
+  - per-race courses (short and long course in one event);
+  - clock-time cutoffs resolve on the event's date, so a race past midnight needs the elapsed (+h:mm) form;
+  - `bin/replay-race --check/--fit` don't apply to course datasets.
 - **Raised:** 2026-10-07.
 
 ## Hub operations & hardening

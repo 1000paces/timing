@@ -72,6 +72,17 @@ leader's. The check should report 3 riders who rode on after the flag (#386, and
 whom a chief marks DNF. Race 2 leaves 3 riders (#330, and #46 and #472 with impossibly
 short last laps after the flag) and 6 who quit early.
 
+## Course events
+
+For a point-to-point or single-loop race (gravel, ultra), set the format to Course and add the
+checkpoints (name, distance, optional cutoff) and the finish distance on the Event screen. Pair each
+aid-station phone with its checkpoint (or pick it on the phone); the chief can move phones to another
+checkpoint on the Devices screen. Results shows each rider's splits; the Course view shows how many
+have passed each point and who is still out. Problems flags a missed checkpoint, an overdue rider and a
+missed cutoff.
+
+For a demo course event: `bin/replay-race --dataset gravel_demo`.
+
 ## API
 
 - `POST /session` with `{"name": "...", "pin": "..."}` signs in (session cookie).

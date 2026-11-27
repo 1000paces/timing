@@ -16,6 +16,8 @@ import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
@@ -28,6 +30,7 @@ import { formatClock, formatElapsed } from "../../src/format";
 import { hubApi } from "./api";
 import { openCaptureDb, type CaptureDb, type Pairing } from "./db";
 import { Keypad } from "./Keypad";
+import { locationName } from "./location";
 import { allEntries, appendBibAssignment, appendCapture, appendVoid, canUnpair, startNewPairing, type Entry } from "./log";
 import { captureRows, type Row } from "./rows";
 import { checkStorage, storageWarning, type StorageHealth } from "./storageHealth";
@@ -184,6 +187,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   const [error, setError] = useState<string | null>(null);
   const [shown, setShown] = useState(PAGE);
   const [onlyBib, setOnlyBib] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [menu, setMenu] = useState<HTMLElement | null>(null);
@@ -217,7 +221,7 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
   const record = useCallback(async (atMs: number, typed: string) => {
     const sync = syncRef.current;
     try {
-      await appendCapture(db, { atMs, offsetMs: sync?.state().offsetMs ?? null, bib: typed });
+      await appendCapture(db, { atMs, offsetMs: sync?.state().offsetMs ?? null, bib: typed, checkpointId: sync?.state().location?.checkpointId ?? null });
       setBib("");
       setError(null);
       setFlash(true);
@@ -287,10 +291,23 @@ function CaptureScreen({ db, pairing, health, onUnpaired }: { db: CaptureDb; pai
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
           <Typography noWrap sx={{ flex: 1, fontWeight: 600 }}>{state?.roster?.event.name ?? "Capture"}</Typography>
+          {(state?.roster?.checkpoints.length ?? 0) > 0 && (
+            <Chip data-testid="location" size="small" color="primary" label={locationName(state?.location?.checkpointId ?? null, state?.roster ?? null)} onClick={() => setPicking(true)} />
+          )}
           {state && <SyncPill state={state} />}
           <IconButton aria-label="Menu" edge="end" onClick={(e) => setMenu(e.currentTarget)}><MoreVertIcon /></IconButton>
         </Toolbar>
       </AppBar>
+      <Dialog open={picking} onClose={() => setPicking(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Where is this phone?</DialogTitle>
+        <List>
+          {[{ id: null, name: "Finish" }, ...(state?.roster?.checkpoints ?? [])].map((c) => (
+            <ListItemButton key={c.id ?? "finish"} selected={c.id === (state?.location?.checkpointId ?? null)} onClick={() => { void syncRef.current?.setLocation(c.id); setPicking(false); }}>
+              <ListItemText primary={c.name} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Dialog>
       <Menu anchorEl={menu} open={menu != null} onClose={() => setMenu(null)}>
         <MenuItem disabled>{pairing.name}</MenuItem>
         <MenuItem disabled>Last sync: {state?.lastSyncAtMs ? formatClock(state.lastSyncAtMs) : "never"}</MenuItem>

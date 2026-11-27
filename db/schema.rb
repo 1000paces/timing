@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_000002) do
   create_table "category_mappings", id: :string, force: :cascade do |t|
     t.string "event_id", null: false
     t.string "external_category", null: false
@@ -21,6 +21,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
     t.index ["event_id", "external_category"], name: "index_category_mappings_on_event_id_and_external_category", unique: true
     t.index ["event_id"], name: "index_category_mappings_on_event_id"
     t.index ["race_id"], name: "index_category_mappings_on_race_id"
+  end
+
+  create_table "checkpoints", id: :string, force: :cascade do |t|
+    t.string "event_id", null: false
+    t.integer "position"
+    t.string "name", null: false
+    t.decimal "distance_km", precision: 8, scale: 3
+    t.bigint "cutoff_at_ms"
+    t.bigint "removed_at_ms"
+    t.index ["event_id", "position"], name: "index_checkpoints_on_event_id_and_position", unique: true
+    t.index ["event_id"], name: "index_checkpoints_on_event_id"
   end
 
   create_table "device_entries", id: :string, force: :cascade do |t|
@@ -36,7 +47,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
     t.string "prev_hash", null: false
     t.string "entry_hash", null: false
     t.bigint "received_at_ms", null: false
+    t.string "checkpoint_id"
     t.index ["capture_id"], name: "index_device_entries_on_capture_id"
+    t.index ["checkpoint_id"], name: "index_device_entries_on_checkpoint_id"
     t.index ["device_id", "device_seq"], name: "index_device_entries_on_device_id_and_device_seq", unique: true
     t.index ["device_id"], name: "index_device_entries_on_device_id"
     t.index ["event_id"], name: "index_device_entries_on_event_id"
@@ -54,6 +67,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
     t.bigint "last_sync_at_ms"
     t.bigint "clock_offset_ms"
     t.bigint "sync_stopped_at_ms"
+    t.string "checkpoint_id"
+    t.bigint "checkpoint_set_at_ms"
+    t.index ["checkpoint_id"], name: "index_devices_on_checkpoint_id"
     t.index ["event_id"], name: "index_devices_on_event_id"
   end
 
@@ -71,6 +87,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
     t.integer "bib_from"
     t.integer "bib_to"
     t.boolean "age_next_year", default: false, null: false
+    t.string "race_format", default: "laps", null: false
+    t.decimal "finish_distance_km", precision: 8, scale: 3
+    t.bigint "finish_cutoff_at_ms"
   end
 
   create_table "officials", id: :string, force: :cascade do |t|
@@ -91,6 +110,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
     t.string "created_by_official_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "checkpoint_id"
+    t.index ["checkpoint_id"], name: "index_pairing_tokens_on_checkpoint_id"
     t.index ["event_id"], name: "index_pairing_tokens_on_event_id"
     t.index ["token_digest"], name: "index_pairing_tokens_on_token_digest", unique: true
   end
@@ -158,10 +179,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000004) do
 
   add_foreign_key "category_mappings", "events"
   add_foreign_key "category_mappings", "races"
+  add_foreign_key "checkpoints", "events"
+  add_foreign_key "device_entries", "checkpoints"
   add_foreign_key "device_entries", "device_entries", column: "capture_id"
   add_foreign_key "device_entries", "devices"
   add_foreign_key "device_entries", "events"
+  add_foreign_key "devices", "checkpoints", on_delete: :nullify
   add_foreign_key "devices", "events"
+  add_foreign_key "pairing_tokens", "checkpoints", on_delete: :nullify
   add_foreign_key "pairing_tokens", "events"
   add_foreign_key "races", "events"
   add_foreign_key "registrations", "events"

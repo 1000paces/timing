@@ -2,6 +2,7 @@ module Types
   class MutationType < BaseObject
     field :create_event, mutation: Mutations::CreateEvent
     field :update_event, mutation: Mutations::UpdateEvent
+    field :set_checkpoints, mutation: Mutations::SetCheckpoints
     field :create_race, mutation: Mutations::CreateRace
     field :update_race, mutation: Mutations::UpdateRace
     field :delete_race, mutation: Mutations::DeleteRace
@@ -34,5 +35,6 @@ module Types
     field :unstart_race, mutation: Mutations::UnstartRace
     field :create_pairing_token, mutation: Mutations::CreatePairingToken
     field :revoke_device, mutation: Mutations::RevokeDevice
+    field :set_device_checkpoint, mutation: Mutations::SetDeviceCheckpoint
   end
 end

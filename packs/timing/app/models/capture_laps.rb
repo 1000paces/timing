@@ -3,7 +3,8 @@
 # typed (the results engine's order). Its lap is how many captures that bib has
 # (from every device) since its race's current start, up to and including this
 # one. Raw taps, no debounce; voided (deleted) captures don't count. Results has
-# the official count.
+# the official count. Only finish-line captures (no checkpoint) are laps, and a
+# course event has no laps at all: every capture's info there is NONE.
 #
 # Each lap after the first is compared with the race's typical lap (the median
 # of its other laps after lap 1): roughly double is a suspected missed lap,
@@ -43,8 +44,9 @@ class CaptureLaps
       @sources[id] = assigned[id] ? :ruling : device_bibs[id] ? :device : :entered
       [ id, (assigned[id] || device_bibs[id] || bib).to_s.strip.presence ]
     end
-    captures = Capture.where(event:).where.not(id: @voided.to_a).order(:captured_at_ms, :id).pluck(:id, :captured_at_ms)
-                      .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [ bib, at, id ] }
+    finish = Capture.where(event:, checkpoint_id: nil).where.not(id: @voided.to_a).order(:captured_at_ms, :id)
+    captures = (event.course? ? [] : finish.pluck(:id, :captured_at_ms))
+               .filter_map { |id, at| (bib = @bibs[id]) && @start_by_bib.key?(bib) && [ bib, at, id ] }
     @info = {}
     laps_by_race = Hash.new { |h, k| h[k] = [] }
     captures.group_by(&:first).each do |bib, rows|

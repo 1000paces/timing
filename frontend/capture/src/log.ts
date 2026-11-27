@@ -3,7 +3,7 @@ import { digest, genesis, uuidv7 } from "./hash";
 
 export type Entry = {
   id: string;
-  kind: "capture" | "bib_assignment" | "capture_void";
+  kind: "capture" | "bib_assignment" | "capture_void" | "location";
   device_seq: number;
   prev_hash: string;
   hash: string;
@@ -11,6 +11,7 @@ export type Entry = {
   clock_offset_ms?: number;
   bib?: string;
   capture_id?: string;
+  checkpoint_id?: string;
 };
 
 type Body = Omit<Entry, "id" | "device_seq" | "prev_hash" | "hash">;
@@ -43,9 +44,15 @@ async function append(db: CaptureDb, body: Body): Promise<Entry> {
 }
 
 // Resolves only after the entry is committed to the phone's storage.
-export function appendCapture(db: CaptureDb, tap: { atMs: number; offsetMs: number | null; bib: string }): Promise<Entry> {
-  return append(db, { kind: "capture", captured_at_ms: Math.round(tap.atMs), clock_offset_ms: tap.offsetMs ?? undefined, bib: tap.bib.trim() || undefined });
+// checkpointId: where the phone is (absent or null: the finish, and the entry hashes exactly as before).
+export function appendCapture(db: CaptureDb, tap: { atMs: number; offsetMs: number | null; bib: string; checkpointId?: string | null }): Promise<Entry> {
+  return append(db, { kind: "capture", captured_at_ms: Math.round(tap.atMs), clock_offset_ms: tap.offsetMs ?? undefined, bib: tap.bib.trim() || undefined,
+    checkpoint_id: tap.checkpointId ?? undefined });
 }
+
+// The phone moved (null: to the finish). atMs is phone time, like a capture's.
+export const appendLocation = (db: CaptureDb, checkpointId: string | null, atMs: number, offsetMs: number | null) =>
+  append(db, { kind: "location", checkpoint_id: checkpointId ?? undefined, captured_at_ms: Math.round(atMs), clock_offset_ms: offsetMs ?? undefined });
 
 export const appendBibAssignment = (db: CaptureDb, captureId: string, bib: string) =>
   append(db, { kind: "bib_assignment", capture_id: captureId, bib: bib.trim() });

@@ -1,0 +1,135 @@
+require "test_helper"
+
+class CourseAnomaliesTest < Minitest::Test
+  include ResultsTestHelpers
+
+  # Gun at 0; Aid 1 at 30 km, Aid 2 at 60 km (cutoff 2:30 elapsed), finish at 100 km.
+  SETUP = <<~YAML
+    races:
+      - {id: r1, start: 0, course: [{id: a1, name: Aid 1, km: 30}, {id: a2, name: Aid 2, km: 60, cutoff: 9000}], finish_km: 100}
+    entrants:
+      - {bib: 1, race: r1}
+      - {bib: 2, race: r1}
+      - {bib: 3, race: r1}
+      - {bib: 4, race: r1}
+  YAML
+
+  def suggestions(yaml, now:) = Results.compute(input_from(SETUP + yaml + "now: #{now}\n")).suggestions
+
+  def test_a_rider_seen_later_but_not_at_a_checkpoint_gets_an_insert_interpolated_by_distance
+    found = suggestions("crossings:\n  1: [{at: 3000, cp: a1}, 10000]\n", now: 10_000).find { it.kind == :missed_checkpoint }
+    assert_equal "missed_checkpoint:1:a2", found.key
+    # 30 km at 3000 s, 100 km at 10000 s: 60 km at 6000 s.
+    assert_equal({ "kind" => "insert_capture", "bib" => "1", "at_ms" => 6_000_000, "checkpoint_id" => "a2" }, found.fix)
+    assert_match(/Aid 2/, found.message)
+  end
+
+  def test_without_distances_the_insert_is_the_midpoint
+    yaml = SETUP.gsub(/, km: \d+/, "").sub(", finish_km: 100", "")
+    found = Results.compute(input_from(yaml + "crossings:\n  1: [{at: 3000, cp: a1}, 10000]\nnow: 10000\n")).suggestions
+                   .find { it.kind == :missed_checkpoint }
+    assert_equal 6_500_000, found.fix["at_ms"]
+  end
+
+  def test_overdue_from_the_riders_own_pace
+    # 30 km in 3000 s: 30 more km should take 3000 s; overdue after 1.5x that (7500 s), still before the 9000 s cutoff at Aid 2.
+    assert_empty suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 7_400).select { it.kind == :overdue }
+    found = suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 7_600).find { it.kind == :overdue }
+    assert_equal [ "overdue:1:c-1-1", { "kind" => "dnf", "bib" => "1" } ], [ found.key, found.fix ]
+  end
+
+  def test_overdue_from_the_field_when_there_are_no_distances
+    yaml = SETUP.gsub(/, km: \d+/, "").sub(", finish_km: 100", "").sub(", cutoff: 9000", "")
+    crossings = "crossings:\n  1: [{at: 1000, cp: a1}, {at: 2000, cp: a2}]\n  2: [{at: 1000, cp: a1}, {at: 2100, cp: a2}]\n" \
+                "  3: [{at: 1000, cp: a1}, {at: 2200, cp: a2}]\n  4: [{at: 1000, cp: a1}]\n"
+    found = Results.compute(input_from(yaml + crossings + "now: 2700\n")).suggestions.select { it.kind == :overdue }
+    assert_equal [ "4" ], found.map(&:bib) # field median 1100 s × 1.5 = 1650 s after 1000 s
+    assert_empty Results.compute(input_from(yaml + "crossings:\n  4: [{at: 1000, cp: a1}]\nnow: 99000\n")).suggestions.select { it.kind == :overdue }
+  end
+
+  def test_cutoff_missed_or_reached_late_suggests_a_pull_at_the_cutoff
+    late = suggestions("crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}]\n", now: 9_600).find { it.kind == :cutoff }
+    assert_equal [ "cutoff:1:a2", { "kind" => "pull", "bib" => "1", "at_ms" => 9_000_000 } ], [ late.key, late.fix ]
+    assert suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 9_100).any? { it.kind == :cutoff }
+    assert_empty suggestions("crossings:\n  1: [{at: 3000, cp: a1}]\n", now: 8_900).select { it.kind == :cutoff }
+  end
+
+  def test_a_rider_pulled_at_the_cutoff_who_taps_the_finish_stays_pulled_with_no_new_problems
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}, 12000]\nrulings:\n  - {kind: pull, bib: 1, at: 9000}\n"
+    out = Results.compute(input_from(SETUP + yaml + "now: 12100\n"))
+    assert_equal :pulled, out.races.first.rows.find { it.bib == "1" }.status
+    assert_empty out.suggestions.select { it.bib == "1" }
+  end
+
+  def test_finished_and_dnf_riders_raise_nothing
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 6000, cp: a2}, 10000]\n  2: [{at: 3000, cp: a1}]\nrulings:\n  - {kind: dnf, bib: 2}\n"
+    assert_empty suggestions(yaml, now: 99_000).select { %w[1 2].include?(it.bib) }
+  end
+
+  def test_a_dismissed_cutoff_does_not_hide_the_finish_cutoff
+    setup = SETUP.sub("finish_km: 100}", "finish_km: 100, finish_cutoff: 12000}")
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}]\n" \
+           "rulings:\n  - {kind: dismiss_suggestion, suggestion_key: \"cutoff:1:a2\"}\nnow: 12100\n"
+    found = Results.compute(input_from(setup + yaml)).suggestions.select { it.kind == :cutoff && it.bib == "1" }
+    assert_equal [ "cutoff:1:finish" ], found.map(&:key)
+  end
+
+  def test_overdue_falls_back_to_the_whole_event_when_the_race_has_too_few_riders
+    yaml = <<~YAML
+      races:
+        - {id: r1, start: 0, course: [{id: a1, name: Aid 1}, {id: a2, name: Aid 2}]}
+        - {id: r2, start: 0, course: [{id: a1, name: Aid 1}, {id: a2, name: Aid 2}]}
+      entrants:
+        - {bib: 1, race: r1}
+        - {bib: 2, race: r1}
+        - {bib: 3, race: r1}
+        - {bib: 4, race: r2}
+      crossings:
+        1: [{at: 1000, cp: a1}, {at: 2000, cp: a2}]
+        2: [{at: 1000, cp: a1}, {at: 2100, cp: a2}]
+        3: [{at: 1000, cp: a1}, {at: 2200, cp: a2}]
+        4: [{at: 1000, cp: a1}]
+      now: 2700
+    YAML
+    found = Results.compute(input_from(yaml)).suggestions.select { it.kind == :overdue }
+    assert_equal [ "4" ], found.map(&:bib)
+  end
+
+  def test_an_interpolated_insert_never_falls_outside_its_neighbours
+    # Aid 2 (60 km) is before Aid 1's distance here, so distance interpolation would run backwards.
+    setup = SETUP.sub("km: 30}", "km: 70}")
+    found = Results.compute(input_from(setup + "crossings:\n  1: [{at: 3000, cp: a1}, 10000]\nnow: 10000\n")).suggestions
+                   .find { it.kind == :missed_checkpoint }
+    assert_includes 3_000_000..10_000_000, found.fix["at_ms"]
+  end
+
+  def test_a_finisher_who_passed_the_finish_cutoff_late_gets_a_pull_at_the_cutoff
+    setup = SETUP.sub("finish_km: 100}", "finish_km: 100, finish_cutoff: 10000}")
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 6000, cp: a2}, 10500]\n"
+    found = Results.compute(input_from(setup + yaml + "now: 11000\n")).suggestions.select { it.kind == :cutoff && it.bib == "1" }
+    assert_equal [ [ "cutoff:1:finish", { "kind" => "pull", "bib" => "1", "at_ms" => 10_000_000 } ] ], found.map { [ it.key, it.fix ] }
+
+    accepted = Results.compute(input_from(setup + yaml + "rulings:\n  - {kind: pull, bib: 1, at: 10000}\nnow: 11000\n"))
+    assert_equal :pulled, accepted.races.first.rows.find { it.bib == "1" }.status
+    assert_empty accepted.suggestions.select { it.kind == :cutoff && it.bib == "1" }
+  end
+
+  def test_a_finisher_late_at_a_checkpoint_gets_that_cutoff_unless_dismissed
+    yaml = "crossings:\n  1: [{at: 3000, cp: a1}, {at: 9500, cp: a2}, 12000]\n"
+    assert_equal [ "cutoff:1:a2" ], suggestions(yaml, now: 12_100).select { it.kind == :cutoff }.map(&:key)
+    dismissed = yaml + "rulings:\n  - {kind: dismiss_suggestion, suggestion_key: \"cutoff:1:a2\"}\n"
+    assert_empty suggestions(dismissed, now: 12_100).select { it.kind == :cutoff }
+  end
+
+  def test_a_rider_never_seen_after_the_start_is_offered_dns_and_no_cutoff
+    crossings = "crossings:\n  1: [{at: 3000, cp: a1}]\n  2: [{at: 3100, cp: a1}]\n  3: [{at: 3200, cp: a1}]\n"
+    found = suggestions(crossings, now: 9_500).select { it.bib == "4" }
+    assert_equal [ :overdue ], found.map(&:kind)
+    assert_equal [ "overdue:4:start", { "kind" => "dns", "bib" => "4" } ], [ found.first.key, found.first.fix ]
+    assert_match(/hasn't been seen since the start .* Mark DNS/, found.first.message)
+
+    accepted = Results.compute(input_from(SETUP + crossings + "rulings:\n  - {kind: dns, bib: 4}\nnow: 9500\n"))
+    assert_equal :dns, accepted.races.first.rows.find { it.bib == "4" }.status
+    assert_empty accepted.suggestions.select { it.bib == "4" }
+  end
+end

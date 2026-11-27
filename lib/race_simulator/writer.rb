@@ -1,13 +1,14 @@
 module RaceSimulator
   # Records the simulation as a "Simulator" device would.
   class Writer
-    def initialize(event:, device_name: "Simulator")
+    def initialize(event:, device_name: "Simulator", checkpoint: nil)
       @event = event
+      @checkpoint = checkpoint
       @device_name = device_name
     end
 
     def device
-      @device ||= Device.find_by(event: @event, name: @device_name) || Device.pair!(event: @event, name: @device_name).first
+      @device ||= Device.find_by(event: @event, name: @device_name) || Device.pair!(event: @event, name: @device_name, checkpoint_id: @checkpoint&.id).first
     end
 
     def start_races(races, at_ms:)

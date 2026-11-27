@@ -13,6 +13,8 @@ describe("problemType", () => {
     expect(problemType(suggestion({ kind: "SUSPECTED_MISSED_CROSSING" }))).toBe("missed");
     expect(problemType(suggestion({ kind: "SUSPECTED_DUPLICATE" }))).toBe("duplicate");
     expect(problemType(suggestion({ kind: "OVERDUE" }))).toBe("overdue");
+    expect(problemType(suggestion({ kind: "MISSED_CHECKPOINT" }))).toBe("missedCheckpoint");
+    expect(problemType(suggestion({ kind: "CUTOFF" }))).toBe("cutoff");
     expect(problemType(suggestion({ kind: "ABOUT_TO_BE_LAPPED" }))).toBe("lapped");
     expect(problemType(suggestion({ kind: "UNSYNCED_CLOCK", bib: null }))).toBe("clock");
     expect(problemType(suggestion({ kind: "UNASSIGNED_CAPTURE", bib: null }))).toBe("noBib");

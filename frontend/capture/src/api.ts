@@ -1,6 +1,12 @@
 import type { Entry } from "./log";
 
-export type Roster = { event: { name: string; races: { id: string; name: string }[] }; racers: { bib: string; name: string; race_id: string }[]; version: string };
+export type Roster = {
+  event: { name: string; races: { id: string; name: string }[] };
+  racers: { bib: string; name: string; race_id: string }[];
+  checkpoints: { id: string; name: string }[];
+  device: { checkpoint_id: string | null; checkpoint_set_at_ms: number | null };
+  version: string;
+};
 export type StatusCapture = {
   id: string;
   bib: string | null;

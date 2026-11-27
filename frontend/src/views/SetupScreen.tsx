@@ -39,6 +39,7 @@ import {
 import { cohortLapWarnings } from "../races";
 import { canAct as roleCanAct, isSignedOutError } from "../roles";
 import type { Official } from "../session";
+import { CheckpointsEditor } from "./CheckpointsEditor";
 import { EventFields } from "./EventFields";
 import { EventNav } from "./EventNav";
 import { PhonesPanel } from "./PhonesPanel";
@@ -67,7 +68,7 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
   const data = event.data?.event;
   useEffect(() => {
     if (data && !details) {
-      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader, ageNextYear: data.ageNextYear, timezone: data.timezone, bibFrom: data.bibFrom, bibTo: data.bibTo });
+      setDetails({ name: data.name, date: data.date, location: data.location, discipline: data.discipline, subDiscipline: data.subDiscipline, finishWithLeader: data.finishWithLeader, ageNextYear: data.ageNextYear, timezone: data.timezone, raceFormat: data.raceFormat, bibFrom: data.bibFrom, bibTo: data.bibTo });
     }
   }, [data, details]);
 
@@ -194,7 +195,8 @@ export function SetupScreen({ eventId, official, onSignedOut }: Props) {
         </Paper>
       </Stack>
 
-      <PhonesPanel eventId={eventId} />
+      {data.raceFormat === "course" && <CheckpointsEditor key={JSON.stringify([data.checkpoints, data.finishDistanceKm, data.finishCutoffAtMs, data.timezone])} event={data} onSaved={refetch} />}
+      <PhonesPanel eventId={eventId} event={data} />
       {editing && (
         <RaceDialog
           eventId={eventId}

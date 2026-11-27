@@ -7,7 +7,12 @@ describe("racer panel helpers", () => {
   });
 
   it("names why a crossing didn't count", () => {
-    expect(["DUPLICATE", "BEFORE_START", "AFTER_FINISH", "AFTER_PULL", "LAP"].map(kindLabel)).toEqual(["duplicate", "before start", "after finish", "after pull", null]);
+    expect(["DUPLICATE", "BEFORE_START", "AFTER_FINISH", "AFTER_PULL", "LAP"].map((k) => kindLabel(k))).toEqual(["duplicate", "before start", "after finish", "after pull", null]);
+  });
+
+  it("names a checkpoint crossing after its checkpoint", () => {
+    expect(kindLabel("SPLIT", "a1", new Map([["a1", "Aid 1"]]))).toBe("Aid 1");
+    expect(kindLabel("SPLIT", "gone", new Map())).toBe("checkpoint");
   });
 
   it("finds the midpoint between two crossings (or a lap after the last)", () => {

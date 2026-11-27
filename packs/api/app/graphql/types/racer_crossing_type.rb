@@ -4,6 +4,7 @@ module Types
     field :at_ms, Millis, null: false
     field :inserted, Boolean, null: false
     field :kind, CrossingKindEnum, null: false
+    field :checkpoint_id, ID, description: "Where it was taken; null is the finish"
     field :lap, Integer
     field :lap_ms, Millis
     field :source, String, null: false, description: "The device's name, or 'inserted by <official>'"
