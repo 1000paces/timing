@@ -17,7 +17,7 @@ CODE=$(printf %s "$INFO" | cut -f1)
 BIB=$(printf %s "$INFO" | cut -f2)
 NAME=$(printf %s "$INFO" | cut -f3)
 xcrun simctl boot "$SIM" 2>/dev/null || true
-[ -n "$KEEP" ] || xcrun simctl uninstall "$SIM" com.ronmiles.timingcapture 2>/dev/null || true
+[ -n "$KEEP" ] || xcrun simctl uninstall "$SIM" com.1000paces.timingcapture 2>/dev/null || true
 ONLY="-only-testing:TimingCaptureUITests/LiveHubUITests${1:+/$1}"
 LOG=$(mktemp -t timing-capture-e2e)
 set +e

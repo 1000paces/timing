@@ -1,6 +1,6 @@
 name: TimingCapture
 options:
-  bundleIdPrefix: com.ronmiles
+  bundleIdPrefix: com.1000paces
   deploymentTarget:
     iOS: "17.0"
 settings:
@@ -16,7 +16,7 @@ targets:
     sources: [TimingCapture]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture
+        PRODUCT_BUNDLE_IDENTIFIER: com.1000paces.timingcapture
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Timing Capture"
@@ -42,7 +42,7 @@ targets:
       - target: TimingCapture
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.1000paces.timingcapture.tests
         GENERATE_INFOPLIST_FILE: YES
   # Drives the app against a live dev hub; skipped unless HUB_ADDRESS and HUB_CODE are given
   # (bin/e2e). Not part of bin/test.
@@ -54,7 +54,7 @@ targets:
       - target: TimingCapture
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ronmiles.timingcapture.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: com.1000paces.timingcapture.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: TimingCapture
 schemes:
