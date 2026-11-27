@@ -1,6 +1,7 @@
 import { useApolloClient, useMutation } from "@apollo/client/react";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -15,7 +16,8 @@ const waveName = (wave: CurrentWave) => `${wave.scheduledAtMs != null ? formatSc
 type Flagged = { rulingId: string; atMs: number; wave: CurrentWave };
 
 // Flag out from the line: the hub picks the wave on course (the latest started
-// whose flag isn't out), the timer confirms it, and the flag is recorded at hub time.
+// whose flag isn't out), the timer confirms it, and the flag is stamped with the
+// hub's time when Flag out was first pressed, not when it was confirmed.
 export function CaptureFlagOut({ eventId, chief }: { eventId: string; chief: boolean }) {
   const client = useApolloClient();
   const [flagOut] = useMutation<{ flagOut: MutationResult & { ruling: { id: string; payload: { at_ms: number } } | null } }>(FLAG_OUT);
@@ -38,7 +40,7 @@ export function CaptureFlagOut({ eventId, chief }: { eventId: string; chief: boo
   async function confirm(wave: CurrentWave) {
     setAsking(null);
     try {
-      const { data } = await flagOut({ variables: { raceId: wave.races[0].id } });
+      const { data } = await flagOut({ variables: { raceId: wave.races[0].id, atMs: wave.asOfMs } });
       const result = data?.flagOut;
       if (result?.ruling) setFlagged({ rulingId: result.ruling.id, atMs: result.ruling.payload.at_ms, wave });
       else setMessage(result?.errors.join("; ") ?? "The flag wasn't recorded");
@@ -64,7 +66,10 @@ export function CaptureFlagOut({ eventId, chief }: { eventId: string; chief: boo
       </Button>
       <Dialog open={asking != null} onClose={() => setAsking(null)}>
         <DialogTitle>Flag out the {asking && waveName(asking)}?</DialogTitle>
-        <DialogContent>{asking?.races.map((r) => r.name).join(" · ")}</DialogContent>
+        <DialogContent>
+          {asking?.races.map((r) => r.name).join(" · ")}
+          {asking && <Box sx={{ mt: 1, color: "text.secondary" }}>Recorded at {formatClock(asking.asOfMs)}, when you pressed Flag out.</Box>}
+        </DialogContent>
         <DialogActions>
           <Button onClick={() => setAsking(null)}>Cancel</Button>
           <Button variant="contained" color="warning" onClick={() => asking && void confirm(asking)}>Flag out</Button>

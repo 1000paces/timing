@@ -9,6 +9,7 @@ module Types
     field :rows, [ StandingRowType ], null: false
     field :start_at_ms, Millis, description: "When the race actually started, or null"
     field :flag_out_at_ms, Millis, description: "When the finish flag came out for its wave, or null"
+    field :flag_out_leader_bib, String, description: "The wave's leader when the flag came out, who rides on to the lap count"
 
     def race = object[:race]
     def state = object[:result].state
@@ -18,5 +19,6 @@ module Types
     def rows = object[:result].rows
     def start_at_ms = object[:result].start_at_ms
     def flag_out_at_ms = object[:result].flag_out_at_ms
+    def flag_out_leader_bib = object[:result].flag_out_leader
   end
 end

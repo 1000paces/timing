@@ -6,6 +6,7 @@ export const PROBLEM_TYPES = [
   { id: "missed", label: "Missed crossing", color: "warning" },
   { id: "duplicate", label: "Duplicate tap", color: "warning" },
   { id: "lapped", label: "About to be lapped", color: "info" },
+  { id: "overdue", label: "Overdue", color: "warning" },
   { id: "noBib", label: "No bib", color: "error" },
   { id: "unknownRacer", label: "Unknown racer", color: "error" },
   { id: "clock", label: "Clock not synced", color: "default" },
@@ -17,6 +18,7 @@ const BY_KIND: Record<string, ProblemTypeId> = {
   SUSPECTED_MISSED_CROSSING: "missed",
   SUSPECTED_DUPLICATE: "duplicate",
   ABOUT_TO_BE_LAPPED: "lapped",
+  OVERDUE: "overdue",
   UNSYNCED_CLOCK: "clock",
 };
 

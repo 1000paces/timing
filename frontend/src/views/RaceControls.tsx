@@ -9,11 +9,11 @@ import { formatClock } from "../format";
 import { SET_LAP_COUNT, type MutationResult } from "../queries";
 import { FlagOut } from "./FlagOut";
 
-type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; flagOutAtMs: number | null; canAct: boolean; onChanged: () => void };
+type Props = { raceId: string; startAtMs: number | null; lapCount: number | null; flagOutAtMs: number | null; flagOutLeaderBib: string | null; canAct: boolean; onChanged: () => void };
 
 // A race's start status and lap count. Setting laps applies to every race that
 // finishes with this one.
-export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, canAct, onChanged }: Props) {
+export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, flagOutLeaderBib, canAct, onChanged }: Props) {
   const [setLapCount] = useMutation<{ setLapCount: MutationResult }>(SET_LAP_COUNT);
   const [laps, setLaps] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export function RaceControls({ raceId, startAtMs, lapCount, flagOutAtMs, canAct,
           </Button>
         </Stack>
       )}
-      {startAtMs && <FlagOut raceId={raceId} flagOutAtMs={flagOutAtMs} canAct={canAct} onChanged={onChanged} />}
+      {startAtMs && <FlagOut raceId={raceId} flagOutAtMs={flagOutAtMs} leaderBib={flagOutLeaderBib} canAct={canAct} onChanged={onChanged} />}
       {error && <Alert severity="error">{error}</Alert>}
     </Stack>
   );

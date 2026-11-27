@@ -100,13 +100,13 @@ export function RaceScreen({ eventId, official, onSignedOut }: Props) {
         </Stack>
         {view === "wave" && groupWaves(shown.map((r) => ({ ...r, scheduledAtMs: scheduledById.get(r.race.id) ?? null }))).map((wave) => (
           <WaveStandings key={wave.scheduledAtMs ?? "none"} wave={wave} onRowClick={(row) => setRacer(row.bib)}
-            controls={wave.startedRaceId && <FlagOut raceId={wave.startedRaceId} flagOutAtMs={wave.flagOutAtMs} canAct={canAct} onChanged={refresh} />} />
+            controls={wave.startedRaceId && <FlagOut raceId={wave.startedRaceId} flagOutAtMs={wave.flagOutAtMs} leaderBib={wave.flagOutLeaderBib} canAct={canAct} onChanged={refresh} />} />
         ))}
         {view === "category" && shown.map((race) => (
           <Standings
             key={race.race.id}
             race={race}
-            controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} flagOutAtMs={race.flagOutAtMs} canAct={canAct} onChanged={refresh} />}
+            controls={<RaceControls raceId={race.race.id} startAtMs={race.startAtMs} lapCount={race.lapCount} flagOutAtMs={race.flagOutAtMs} flagOutLeaderBib={race.flagOutLeaderBib} canAct={canAct} onChanged={refresh} />}
             onRowClick={(row) => setRacer(row.bib)}
           />
         ))}

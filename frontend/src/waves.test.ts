@@ -5,7 +5,7 @@ import { groupWaves } from "./waves";
 const row = (bib: string, laps: number, elapsedMs: number | null, status = "RACING", place: number | null = 1): Row =>
   ({ place, bib, name: `Racer ${bib}`, status, laps, elapsedMs, gapLapsDown: null, gapMs: null });
 const race = (id: string, startAtMs: number | null, rows: Row[]): RaceStandings =>
-  ({ race: { id, name: `Race ${id}` }, state: "IN_PROGRESS", lapCount: null, startAtMs, flagOutAtMs: null, rows });
+  ({ race: { id, name: `Race ${id}` }, state: "IN_PROGRESS", lapCount: null, startAtMs, flagOutAtMs: null, flagOutLeaderBib: null, rows });
 
 describe("groupWaves", () => {
   it("puts races scheduled together in one wave, waves in time order, unscheduled last", () => {
@@ -28,7 +28,7 @@ describe("groupWaves", () => {
       { ...race("early", 0, [row("1", 1, 300_000), row("2", 0, null)]), scheduledAtMs: 0 },
       { ...race("late", 60_000, [row("3", 1, 290_000), row("4", 2, 700_000)]), scheduledAtMs: 0 },
     ]);
-    expect([wave.startedRaceId, wave.flagOutAtMs]).toEqual(["early", null]);
+    expect([wave.startedRaceId, wave.flagOutAtMs, wave.flagOutLeaderBib]).toEqual(["early", null, null]);
     expect(wave.rows.map((r) => [r.position, r.bib, r.raceName])).toEqual([
       [1, "4", "Race late"],
       [2, "1", "Race early"],
