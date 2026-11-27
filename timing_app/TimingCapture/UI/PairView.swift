@@ -5,10 +5,28 @@ struct PairView: View {
     @State private var address = ""
     @State private var code = ""
     @State private var name = ""
+    @State private var unsent = 0
+    @State private var confirmed = false
+    @State private var exported: URL?
+
+    private var blocked: Bool { unsent > 0 && !confirmed }
 
     var body: some View {
         NavigationStack {
             Form {
+                if unsent > 0 {
+                    Section {
+                        Label("\(unsent) crossing\(unsent == 1 ? "" : "s") on this phone haven't reached the hub. Export the log and give it to an official before pairing again. The old log stays on this phone either way.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Button("Export log") {
+                            Task {
+                                do { exported = try await model.exportURL() } catch { model.error = error.localizedDescription }
+                            }
+                        }
+                        Button("Pair anyway") { confirmed = true }.disabled(confirmed)
+                    }
+                }
                 Section {
                     Text("On the console: Capture (or Event) → Phones → Pair a phone. Scan the QR code, or type the code shown under it.")
                         .font(.subheadline)
@@ -45,12 +63,19 @@ struct PairView: View {
                             Spacer()
                         }
                     }
-                    .disabled(model.pairBusy || (code.trimmingCharacters(in: .whitespaces).isEmpty && HubAddress.parse(address)?.code == nil))
+                    .disabled(model.pairBusy || blocked || (code.trimmingCharacters(in: .whitespaces).isEmpty && HubAddress.parse(address)?.code == nil))
                     .accessibilityIdentifier("pair")
+                    if model.pairing != nil {
+                        Button("Back to capture") { model.pairingAgain = false }.frame(maxWidth: .infinity)
+                    }
                 }
             }
             .navigationTitle("Pair this phone")
-            .onAppear { name = model.pairing?.name ?? name }
+            .sheet(item: $exported) { url in ShareSheet(url: url) }
+            .task {
+                name = model.pairing?.name ?? name
+                unsent = await model.unsentCount()
+            }
         }
     }
 }

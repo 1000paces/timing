@@ -8,6 +8,8 @@ struct CaptureView: View {
     @State private var onlyBib: String?
     @State private var editing: Row?
     @State private var deleting: Row?
+    @State private var picking = false
+    @State private var exported: URL?
 
     private var state: SyncState { model.sync?.state ?? SyncState() }
 
@@ -33,6 +35,13 @@ struct CaptureView: View {
         }
         .background(model.flash ? Color.green.opacity(0.35) : Color(.systemBackground))
         .animation(.easeOut(duration: 0.15), value: model.flash)
+        .sheet(isPresented: $picking) {
+            LocationPicker(roster: state.roster, current: state.location?.checkpointId) { id in
+                picking = false
+                Task { await model.sync?.setLocation(id) }
+            }
+        }
+        .sheet(item: $exported) { url in ShareSheet(url: url) }
         .sheet(item: $editing) { row in
             BibSheet(row: row, racerFor: racerFor, rosterLoaded: state.roster != nil, now: { model.tapClock.nowMs() },
                      onCancel: { editing = nil },
@@ -83,11 +92,43 @@ struct CaptureView: View {
         HStack(spacing: 8) {
             Text(state.roster?.event.name ?? "Capture").font(.headline).lineLimit(1)
             Spacer()
+            if !(state.roster?.checkpoints.isEmpty ?? true) {
+                Button { picking = true } label: {
+                    Text(locationName(state.location?.checkpointId, state.roster))
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.accentColor))
+                        .foregroundStyle(.white)
+                }
+                .accessibilityIdentifier("location")
+            }
             SyncPill(state: state)
+            menu
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.bar)
+    }
+
+    private var menu: some View {
+        Menu {
+            Section {
+                Text(model.pairing?.name ?? "Phone")
+                Text("Last sync: \(state.lastSyncAtMs.map { formatClock($0) } ?? "never")")
+                Text("Clock: \(state.clockSynced ? "\((state.offsetMs ?? 0) > 0 ? "+" : "")\(state.offsetMs ?? 0) ms" : "not synced")")
+            }
+            Button("Export log", systemImage: "square.and.arrow.up") {
+                Task {
+                    do { exported = try await model.exportURL() } catch { model.error = error.localizedDescription }
+                }
+            }
+            Button("Pair again", systemImage: "qrcode") { model.pairingAgain = true }
+            Button("Unpair", systemImage: "xmark.circle", role: .destructive) { Task { await model.unpair() } }
+        } label: {
+            Image(systemName: "ellipsis.circle").font(.title3)
+        }
+        .accessibilityLabel("Menu")
     }
 
     @ViewBuilder private var banners: some View {

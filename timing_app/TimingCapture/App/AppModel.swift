@@ -130,6 +130,38 @@ final class AuthBox: @unchecked Sendable {
         }
     }
 
+    // MARK: the menu
+
+    // Crossings (and other entries) the hub hasn't stored yet.
+    func unsentCount() async -> Int {
+        let last = (try? await store.lastSeq()) ?? 0
+        let ack = (try? await store.get("ackSeq", as: Int.self)) ?? 0
+        return max(0, last - (ack ?? 0))
+    }
+
+    func unpair() async {
+        guard canUnpair(lastSeq: (try? await store.lastSeq()) ?? 0, ackSeq: ((try? await store.get("ackSeq", as: Int.self)) ?? 0) ?? 0) else {
+            error = "Can't unpair: some crossings haven't reached the hub yet."
+            return
+        }
+        do {
+            try await store.clearPairing()
+            sync?.stop()
+            sync = nil
+            pairing = nil
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    // The whole log as a file to hand to the share sheet.
+    func exportURL() async throws -> URL {
+        let data = try exportJSON(pairing: try await store.pairing(), entries: try await store.allEntries(), archives: try await store.archives())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(exportFileName(phoneName: pairing?.name, at: Date()))
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
     // MARK: lifecycle
 
     func scenePhaseChanged(_ phase: ScenePhase) {

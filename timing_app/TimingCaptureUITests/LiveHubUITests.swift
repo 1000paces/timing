@@ -30,9 +30,9 @@ final class LiveHubUITests: XCTestCase {
     // Pairs on the first test of a run; later tests find the phone already paired.
     private func launchPaired() throws {
         let address = try env("HUB_ADDRESS")
-        let code = try env("HUB_CODE")
         app.launch()
         if app.buttons["Enter"].waitForExistence(timeout: 3) { return }
+        let code = try env("HUB_CODE")
         let field = app.textFields["hub-address"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
@@ -92,6 +92,40 @@ final class LiveHubUITests: XCTestCase {
         attach("filtered")
         app.buttons["Show all bibs"].tap()
         XCTAssertFalse(app.buttons["Show all bibs"].exists)
+    }
+
+    // Course events: the volunteer picks where the phone is. (Pair with a course event: EVENT=<id>.)
+    func testLocationPick() throws {
+        try launchPaired()
+        let chip = app.buttons["location"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 30), "no location chip (not a course event?)")
+        XCTAssertEqual(chip.label, "Finish")
+        chip.tap()
+        app.buttons["Aid 1"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier == 'location' AND label == 'Aid 1'")).firstMatch.waitForExistence(timeout: 5))
+        waitForPill("Synced")
+    }
+
+    // An official moved the phone to Aid 2 on the hub; the phone follows within a roster refresh.
+    func testLocationAdoptsHubMove() throws {
+        try launchPaired()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier == 'location' AND label == 'Aid 2'")).firstMatch.waitForExistence(timeout: 90))
+        attach("moved-by-hub")
+    }
+
+    func testExportAndUnpair() throws {
+        try launchPaired()
+        waitForPill("Synced")
+        app.buttons["Menu"].tap()
+        app.buttons["Export log"].tap()
+        let share = app.otherElements["ActivityListView"]
+        XCTAssertTrue(share.waitForExistence(timeout: 10), "no share sheet")
+        attach("export")
+        app.buttons["Close"].firstMatch.tap()
+        XCTAssertTrue(share.waitForNonExistence(timeout: 5))
+        app.buttons["Menu"].tap()
+        app.buttons["Unpair"].tap()
+        XCTAssertTrue(app.textFields["hub-address"].waitForExistence(timeout: 5), "unpair didn't return to the pair screen")
     }
 
     private func attach(_ name: String) {
