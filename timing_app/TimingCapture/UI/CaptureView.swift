@@ -47,10 +47,7 @@ struct CaptureView: View {
         }
         .background(KeyCatcher(enabled: editing == nil && deleting == nil && !picking && exported == nil,
                                 onDigit: model.typeDigit, onDelete: model.backspace,
-                                onReturn: {
-                                    let at = model.tapClock.nowMs()
-                                    Task { await model.tap(atMs: at) }
-                                }))
+                                onReturn: { model.enter(atMs: model.tapClock.nowMs()) }))
         .background(model.flash ? Color.green.opacity(0.35) : Color(.systemBackground))
         .animation(.easeOut(duration: 0.15), value: model.flash)
         .sheet(isPresented: $picking) {
@@ -165,7 +162,7 @@ struct CaptureView: View {
         VStack(spacing: compact ? 6 : 12) {
             bibDisplay(compact: compact)
             Keypad(compact: compact, fill: fill, now: { model.tapClock.nowMs() }, onDigit: model.typeDigit, onBack: model.backspace,
-                   onEnter: { at in Task { await model.tap(atMs: at) } })
+                   onEnter: { at in model.enter(atMs: at) })
         }
         .padding(compact ? 8 : 16)
     }

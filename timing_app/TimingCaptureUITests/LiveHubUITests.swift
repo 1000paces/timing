@@ -80,11 +80,13 @@ final class LiveHubUITests: XCTestCase {
 
         press("99999")
         enter()
-        XCTAssertTrue(app.staticTexts["Unknown bib"].waitForExistence(timeout: 5))
+        XCTAssertTrue(firstRow.staticTexts["Unknown bib"].waitForExistence(timeout: 5))
         attach("unknown-bib")
+        XCTAssertEqual(firstRow.buttons["Edit bib"].value as? String, "99999")
         firstRow.buttons["Delete crossing"].tap()
         app.buttons["Delete"].tap()
-        XCTAssertTrue(app.staticTexts["Unknown bib"].waitForNonExistence(timeout: 5))
+        let gone = expectation(for: NSPredicate(format: "value != '99999'"), evaluatedWith: firstRow.buttons["Edit bib"])
+        wait(for: [gone], timeout: 5)
         waitForPill("Synced")
 
         firstRow.buttons["Show only this bib"].tap()

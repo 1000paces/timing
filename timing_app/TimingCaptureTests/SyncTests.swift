@@ -11,6 +11,7 @@ final class FakeHub: HubAPI, @unchecked Sendable {
     var calls: [String] = []
     var pushError: Error?
     var rosterResult: () throws -> Roster? = { nil }
+    var beforePushAnswers: (() async -> Void)?
 
     func pair(token: String, name: String) async throws -> Paired { throw HubError.failed("unused") }
 
@@ -21,6 +22,7 @@ final class FakeHub: HubAPI, @unchecked Sendable {
 
     func push(_ entries: [Entry]) async throws -> PushResult {
         calls.append("push")
+        if let beforePushAnswers { await beforePushAnswers() }
         if let pushError { throw pushError }
         if fail { throw HubError.failed("offline") }
         if conflict { return PushResult(conflict: true, ackSeq: stored.count) }
@@ -304,5 +306,28 @@ final class FakeHub: HubAPI, @unchecked Sendable {
         await s.load()
         await s.syncClock()
         #expect(seen == [7, 50])
+    }
+}
+
+@MainActor @Suite struct SyncRetireTests {
+    // Final review #1: a stopped Sync whose push is still in flight must not write
+    // into the state of the pairing that replaced it.
+    @Test func stoppedSyncLeavesNewPairingAlone() async throws {
+        let store = try await pairedStore()
+        for bib in ["1", "2", "3"] { _ = try await store.appendCapture(atMs: 1, offsetMs: 0, bib: bib, checkpointId: nil) }
+        let hub = FakeHub()
+        var release: CheckedContinuation<Void, Never>?
+        hub.beforePushAnswers = { await withCheckedContinuation { release = $0 } }
+        let old = Sync(store: store, api: hub, now: { 0 }, sleep: { _ in throw CancellationError() })
+        let push = Task { await old.pushNow() }
+        await eventually { release != nil }
+        old.stop()
+        var next = testPairing
+        next.deviceId = "dev-2"
+        try await store.startNewPairing(next)
+        release?.resume()
+        await push.value
+        #expect(try await store.get("ackSeq", as: Int.self) == nil)
+        #expect(try await store.get("lastSyncAtMs", as: Int.self) == nil)
     }
 }

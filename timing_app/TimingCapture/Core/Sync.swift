@@ -50,6 +50,8 @@ func syncLabel(_ s: SyncState) -> String {
     @ObservationIgnored private var loopTask: Task<Void, Never>?
     @ObservationIgnored private var retryTask: Task<Void, Never>?
     @ObservationIgnored private var pushing: Task<Void, Never>?
+    // stop() was called: nothing that was in flight may write to the store any more
+    // (the phone may have re-paired since). start() clears it.
     @ObservationIgnored private var halted = false
 
     init(store: CaptureStore, api: HubAPI, now: @escaping () -> Int = { Int(Date().timeIntervalSince1970 * 1000) },
@@ -94,6 +96,7 @@ func syncLabel(_ s: SyncState) -> String {
             for _ in 0..<5 {
                 let t0 = now()
                 let (t1, t2) = try await api.clock(t0: t0)
+                if halted { return }
                 samples.append(ClockSample(t0: t0, t1: t1, t2: t2, t3: now()))
             }
             let offset = pickOffset(samples).offsetMs
@@ -110,6 +113,7 @@ func syncLabel(_ s: SyncState) -> String {
     func refreshStatus() async {
         do {
             let status = try await api.status()
+            if halted { return }
             try await store.put("status", status)
             state.status = status
             state.online = true
@@ -120,7 +124,9 @@ func syncLabel(_ s: SyncState) -> String {
 
     func refreshRoster() async {
         do {
-            if let roster = try await api.roster(version: state.roster?.version) {
+            let fetched = try await api.roster(version: state.roster?.version)
+            if halted { return }
+            if let roster = fetched {
                 try await store.put("roster", roster)
                 state.roster = roster
                 if shouldAdopt(state.location, roster.device), let setAt = roster.device.checkpoint_set_at_ms {
@@ -213,6 +219,7 @@ func syncLabel(_ s: SyncState) -> String {
                 let result: PushResult
                 do {
                     result = try await api.push(batch)
+                    if halted { return } // stopped mid-push (maybe re-paired): the answer is for a log that may be gone
                 } catch {
                     if failed(error) || halted { return }
                     backoffMs = nextBackoff(backoffMs)

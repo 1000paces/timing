@@ -27,7 +27,6 @@ final class AuthBox: @unchecked Sendable {
     var error: String?
     var pairBusy = false
     @ObservationIgnored var tapClock = TapClock()
-    @ObservationIgnored private let auth = AuthBox()
 
     init(store: CaptureStore) {
         self.store = store
@@ -67,6 +66,7 @@ final class AuthBox: @unchecked Sendable {
         do {
             let paired = try await HTTPHubAPI(base: parsed.base, auth: { nil }).pair(token: code, name: name)
             let next = Pairing(hubURL: parsed.base, deviceId: paired.device_id, credential: paired.credential, eventId: paired.event_id, name: name)
+            sync?.stop() // the old pairing's requests must not write into the new one's state
             try await store.startNewPairing(next) // the old log is archived on the phone, never deleted
             pairing = next
             pairingAgain = false
@@ -88,13 +88,28 @@ final class AuthBox: @unchecked Sendable {
         if !bib.isEmpty { bib.removeLast() }
     }
 
-    // Every tap is written to the phone first; only then do we confirm it.
-    func tap(atMs: Double) async {
+    @ObservationIgnored private var lastTap: Task<Void, Never>?
+
+    // Enter (or Return) at atMs: the bib typed so far belongs to this tap and is
+    // taken now, so the next racer's digits start fresh. Taps are written in the
+    // order they were pressed.
+    @discardableResult func enter(atMs: Double) -> Task<Void, Never> {
         let typed = bib
+        bib = ""
+        let previous = lastTap
+        let task = Task {
+            await previous?.value
+            await record(atMs: atMs, bib: typed)
+        }
+        lastTap = task
+        return task
+    }
+
+    // Every tap is written to the phone first; only then do we confirm it.
+    private func record(atMs: Double, bib typed: String) async {
         do {
             _ = try await store.appendCapture(atMs: atMs, offsetMs: sync?.state.offsetMs, bib: typed,
                                               checkpointId: sync?.state.location?.checkpointId)
-            bib = ""
             error = nil
             flash = true
             UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -105,6 +120,7 @@ final class AuthBox: @unchecked Sendable {
             await reload()
             await sync?.kick()
         } catch {
+            if bib.isEmpty { bib = typed } // not recorded: give the bib back to try again
             self.error = "Not recorded: \(error.localizedDescription)"
             UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
@@ -181,6 +197,7 @@ final class AuthBox: @unchecked Sendable {
     private func startSync() {
         sync?.stop()
         guard let pairing else { return }
+        let auth = AuthBox() // per pairing: an old in-flight request never sends the new credential
         auth.value = DeviceAuth(deviceId: pairing.deviceId, credential: pairing.credential, offsetMs: nil)
         let box = auth
         let api = HTTPHubAPI(base: pairing.hubURL, auth: { box.value })

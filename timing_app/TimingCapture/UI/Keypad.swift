@@ -59,7 +59,9 @@ private struct EnterKey: View {
     let height: CGFloat?
     let now: () -> Double
     let action: (Double) -> Void
-    @State private var down = false
+    // Gesture state resets when the touch ends or is cancelled (a call, Control
+    // Center, a sheet), so Enter can never get stuck "down".
+    @GestureState private var down = false
 
     var body: some View {
         Text(label)
@@ -69,12 +71,11 @@ private struct EnterKey: View {
             .background(RoundedRectangle(cornerRadius: 10).fill(Color.green.opacity(down ? 0.7 : 1)))
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !down else { return }
-                    down = true
+                .updating($down) { _, isDown, _ in
+                    guard !isDown else { return }
+                    isDown = true
                     action(now())
-                }
-                .onEnded { _ in down = false })
+                })
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(label)
             .accessibilityAction { action(now()) }

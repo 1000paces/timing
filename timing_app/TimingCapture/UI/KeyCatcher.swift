@@ -39,12 +39,24 @@ final class KeyCatcherView: UIView {
         return [UIKeyCommand.inputDelete, "\r"].map { input in
             let command = UIKeyCommand(input: input, modifierFlags: [], action: #selector(keyCommand(_:)))
             command.wantsPriorityOverSystemBehavior = true
+            command.repeatBehavior = .nonRepeatable // holding Return must not record more crossings
             return command
         }
     }
 
     @objc private func keyCommand(_ command: UIKeyCommand) {
-        if command.input == "\r" { handlers?.enter() } else { handlers?.delete() }
+        if command.input == "\r" { enterOnce() } else { handlers?.delete() }
+    }
+
+    // One Return press is one crossing, even if both the key command and
+    // pressesBegan see it.
+    private var lastEnter: CFTimeInterval = 0
+
+    private func enterOnce() {
+        let now = CACurrentMediaTime()
+        guard now - lastEnter > 0.05 else { return }
+        lastEnter = now
+        handlers?.enter()
     }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
@@ -56,7 +68,7 @@ final class KeyCatcherView: UIView {
             }
             let c = key.charactersIgnoringModifiers
             if key.keyCode == .keyboardReturnOrEnter || key.keyCode == .keypadEnter || c == "\r" || c == "\n" {
-                handlers.enter()
+                enterOnce()
             } else if key.keyCode == .keyboardDeleteOrBackspace || c == "\u{8}" || c == "\u{7f}" {
                 handlers.delete()
             } else if c.count == 1, let ch = c.first, ch.isASCII, ch.isNumber {
