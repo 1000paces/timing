@@ -1,0 +1,31 @@
+#!/bin/zsh
+# Archives a Release build and uploads it to App Store Connect for TestFlight.
+#   bin/testflight            archive and upload
+#   bin/testflight --archive  archive only (no upload)
+# The build number is the repo's commit count, so every upload from a new commit is higher than the last.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ -n "$(git status --porcelain -- .)" ]]; then
+  echo "Commit your timing_app changes first, so the build number matches the code that was uploaded." >&2
+  exit 1
+fi
+
+build_number=$(git rev-list --count HEAD)
+archive=build/TimingCapture.xcarchive
+echo "Archiving TimingCapture build $build_number…"
+
+xcodegen generate -q
+xcodebuild archive -scheme TimingCapture -configuration Release \
+  -destination "generic/platform=iOS" -archivePath "$archive" \
+  -allowProvisioningUpdates CURRENT_PROJECT_VERSION="$build_number" -quiet
+
+if [[ "${1:-}" == "--archive" ]]; then
+  echo "Archived to $archive (not uploaded)."
+  exit 0
+fi
+
+echo "Uploading build $build_number to App Store Connect…"
+xcodebuild -exportArchive -archivePath "$archive" -exportPath build/export \
+  -exportOptionsPlist bin/ExportOptions.plist -allowProvisioningUpdates -quiet
+echo "Uploaded. It appears in App Store Connect → TestFlight after Apple finishes processing (usually 5–30 minutes)."
