@@ -103,23 +103,26 @@ struct CaptureView: View {
         .accessibilityIdentifier("crossing-log")
     }
 
+    // The event name gets its own line, so a long name never squeezes the controls.
     private var topBar: some View {
-        HStack(spacing: 8) {
-            Text(state.roster?.event.name ?? "Capture").font(.headline).lineLimit(1)
-            Spacer()
-            if !(state.roster?.checkpoints.isEmpty ?? true) {
-                Button { picking = true } label: {
-                    Text(locationName(state.location?.checkpointId, state.roster))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(Color.accentColor))
-                        .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(state.roster?.event.name ?? "Capture").font(.headline).lineLimit(2)
+            HStack(spacing: 8) {
+                if !(state.roster?.checkpoints.isEmpty ?? true) {
+                    Button { picking = true } label: {
+                        Text(locationName(state.location?.checkpointId, state.roster))
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Color.accentColor))
+                            .foregroundStyle(.white)
+                    }
+                    .accessibilityIdentifier("location")
                 }
-                .accessibilityIdentifier("location")
+                Spacer()
+                SyncPill(state: state)
+                menu
             }
-            SyncPill(state: state)
-            menu
         }
         .padding(.horizontal)
         .padding(.vertical, 8)

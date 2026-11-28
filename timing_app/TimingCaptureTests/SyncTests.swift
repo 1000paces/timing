@@ -100,6 +100,26 @@ final class FakeHub: HubAPI, @unchecked Sendable {
         #expect(try await store.get("ackSeq", as: Int.self) == 3)
     }
 
+    // Device crash (build 192, watchdog 0x8BADF00D): a tap during a push started a second
+    // pushNow, which spun on the main actor once the first push finished.
+    @Test func overlappingPushesBothFinish() async throws {
+        let store = try await pairedStore()
+        try await capture(store, "1")
+        let hub = FakeHub()
+        var release: CheckedContinuation<Void, Never>?
+        hub.beforePushAnswers = { hub.beforePushAnswers = nil; await withCheckedContinuation { release = $0 } }
+        let s = sync(store, hub)
+        let first = Task { await s.pushNow() }
+        await eventually { release != nil }
+        try await capture(store, "2")
+        let second = Task { await s.pushNow() }
+        await Task.yield()
+        release?.resume()
+        await first.value
+        await second.value
+        #expect(hub.stored.map(\.device_seq) == [1, 2])
+    }
+
     // Review Focus: a restart picks up from the stored ack.
     @Test func restartResumesFromStoredAck() async throws {
         let store = try await pairedStore()

@@ -23,7 +23,7 @@ final class LiveHubUITests: XCTestCase {
     private func enter() { app.buttons["Enter"].tap() }
 
     private func waitForPill(_ label: String, timeout: TimeInterval = 30) {
-        let pill = app.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+        let pill = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'sync-pill' AND label == %@", label)).firstMatch
         XCTAssertTrue(pill.waitForExistence(timeout: timeout), "sync pill never showed \(label)")
     }
 

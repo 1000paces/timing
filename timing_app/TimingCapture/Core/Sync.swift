@@ -82,12 +82,17 @@ func syncLabel(_ s: SyncState) -> String {
     }
 
     // One push at a time; a tap during a push is picked up by a follow-up push.
+    // The task clears `pushing` itself before it finishes: if the caller cleared it after
+    // `await task.value`, a second caller could wake first, find the finished task still
+    // there, and spin on the main actor (awaiting a finished task doesn't suspend).
     func pushNow() async {
         while let current = pushing { await current.value }
-        let task = Task { await self.pushOnce() }
+        let task = Task {
+            await self.pushOnce()
+            self.pushing = nil
+        }
         pushing = task
         await task.value
-        pushing = nil
     }
 
     func syncClock() async {
