@@ -118,12 +118,19 @@ final class AuthBox: @unchecked Sendable {
                 flash = false
             }
             await reload()
-            await sync?.kick()
+            send()
         } catch {
             if bib.isEmpty { bib = typed } // not recorded: give the bib back to try again
             self.error = "Not recorded: \(error.localizedDescription)"
             UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
+    }
+
+    // Sends in the background: a tap is done once it's on disk. Waiting here would hold
+    // the next tap behind this push, which takes the full timeout when the hub is away.
+    private func send() {
+        guard let sync else { return }
+        Task { await sync.kick() }
     }
 
     // A correction or a delete is an entry too: written first, then shown and sent.
@@ -139,7 +146,7 @@ final class AuthBox: @unchecked Sendable {
         do {
             try await append()
             await reload()
-            await sync?.kick()
+            send()
         } catch {
             self.error = "Not saved: \(error.localizedDescription)"
             UINotificationFeedbackGenerator().notificationOccurred(.error)

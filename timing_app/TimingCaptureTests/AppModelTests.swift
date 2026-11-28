@@ -37,4 +37,25 @@ import Testing
         #expect(model.bib == "12")
         #expect(model.error?.hasPrefix("Not recorded") == true)
     }
+
+    // Device report (build 192): offline, taps stopped registering. Each tap waited for the
+    // previous tap's push, which waits out the network timeout when the hub is unreachable.
+    @Test func tapsAreWrittenWithoutWaitingForTheHub() async throws {
+        let (model, store) = try await model()
+        let hub = FakeHub()
+        var held: [CheckedContinuation<Void, Never>] = []
+        hub.beforePushAnswers = { await withCheckedContinuation { held.append($0) } } // a hub that never answers
+        model.sync = Sync(store: store, api: hub, now: { 0 }, sleep: { _ in throw CancellationError() })
+        model.enter(atMs: 1)
+        model.enter(atMs: 2)
+        await eventually { held.count >= 1 }
+        var written = 0
+        for _ in 0..<250 {
+            written = try await store.allEntries().count
+            if written == 2 { break }
+            try await Task.sleep(nanoseconds: 2_000_000)
+        }
+        #expect(written == 2)
+        while !held.isEmpty { held.removeFirst().resume() }
+    }
 }
